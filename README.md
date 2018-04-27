@@ -1,2 +1,2 @@
-# seriatim
+# Seriatim
 Web application for making outlines

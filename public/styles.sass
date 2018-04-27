@@ -1,0 +1,133 @@
+$bg-color: #E7E7E7
+$documentFont: "Helvetica", "Arial", sans-serif
+$monoFont: "Consolas", "Courier New", monospace;
+
+body
+	background-color: $bg-color
+	font-family: $documentFont
+
+main
+	width: 8.5in
+	margin-left: auto
+	margin-right: auto
+	background-color: #FAFAFA
+	padding: 0
+	box-shadow: 0px 0px 5px #CCC
+
+#document
+	padding: 0.5in
+	padding-left: 0.25in
+	padding-top: 0.25in
+
+=PageComponent
+	margin-left: 0.25in
+	position: relative
+
+=ItemContent
+	word-wrap: break-word
+	min-height: 24pt
+	margin-top: 6pt
+
+	h1, h2, h3, h4, h5, h6
+		margin-bottom: 0
+		margin-top: 0
+	
+	p
+		font-size: 14pt
+		margin-top: 0
+		margin-bottom: 0.5em
+		font-weight: normal
+
+	a
+		color: #0AC
+		text-decoration: none
+		&:hover
+			text-decoration: underline
+
+	.itemContentRenderedEmpty
+		color: lightgray
+
+.Header
+	+PageComponent
+
+	.itemContent
+		+ItemContent
+		border-bottom: 1px solid #CCC
+
+.Item
+	+PageComponent
+
+	.itemContent
+		+ItemContent	
+		border-bottom: 1px dashed #CCC
+
+=ItemButton
+	background: transparent
+	border: none
+	font-size: 14pt
+	font-weight: bold
+
+.addChild
+	color: #00F
+
+.addSibling
+	color: #0C0
+
+.removeItem
+	color: #E7E7E7
+	&:hover
+		color: red
+
+.buttons
+	.buttonMenu
+		button
+			+ItemButton
+			width: 0.4in
+			height: 1.5em
+			padding-bottom: 0.2em
+			&:not(:first-child)
+				display: none
+		
+		width: auto
+		display: inline-block
+		border-radius: 2px
+		opacity: 0.25
+
+		&:hover
+			opacity: 1
+			background: #F0F0F0
+			border: 1px solid #BBB	
+			button
+				display: inline-block
+
+		
+	
+	float: right
+	position: absolute
+	width: 8em
+	right: calc(-8em - 0.025in)
+	text-align: left
+
+
+.collapseExpand
+	button
+		+ItemButton
+		color: gray
+		padding-left: 0
+	float: left
+	position: absolute
+	left: -0.8in
+	width: 0.8in
+	text-align: right
+
+.editArea
+	width: calc(100% - 1em)
+	font-family: $monoFont
+	border-radius: 5px
+	border: 1px solid gray
+	font-size: 12pt
+
+.showFocused
+	display: inline-block
+	color: lightgray
+	margin-right: 0.5em

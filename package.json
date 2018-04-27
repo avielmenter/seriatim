@@ -1,0 +1,52 @@
+{
+  "name": "seriatim",
+  "version": "1.0.0",
+  "description": "Software for creating law school outlines",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/avielmenter/seriatim.git"
+  },
+  "main": "index.html",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node build/app.js",
+    "start:dev": "tsc-watch --onSuccess \"node build/app.js\"",
+    "build": "elm-make public/Main.elm --output dist/index.html",
+    "build:watch": "webpack --mode development --watch",
+    "postinstall": "tsc && webpack --mode production"
+  },
+  "author": "Aviel Menter",
+  "license": "MIT",
+  "dependencies": {
+    "@types/dotenv": "^4.0.3",
+    "@types/express": "^4.11.1",
+    "@types/method-override": "0.0.31",
+    "@types/morgan": "^1.7.35",
+    "@types/react": "^16.3.12",
+    "@types/react-dom": "^16.0.5",
+    "@types/react-redux": "^5.0.18",
+    "@types/serve-favicon": "^2.2.30",
+    "awesome-typescript-loader": "^5.0.0",
+    "css-loader": "^0.28.11",
+    "dotenv": "^5.0.1",
+    "elm": "^0.18.0",
+    "elm-css": "^0.6.1",
+    "express": "^4.16.3",
+    "html-loader": "^0.5.5",
+    "html-webpack-plugin": "^3.2.0",
+    "method-override": "^2.3.10",
+    "mini-css-extract-plugin": "^0.4.0",
+    "morgan": "^1.9.0",
+    "node-sass": "^4.8.3",
+    "react": "^16.3.2",
+    "react-dom": "^16.3.2",
+    "react-markdown": "^3.3.0",
+    "react-redux": "^5.0.7",
+    "sass-loader": "^7.0.1",
+    "serve-favicon": "^2.5.0",
+    "style-loader": "^0.21.0",
+    "tsc-watch": "^1.0.21",
+    "webpack": "^4.6.0",
+    "webpack-cli": "^2.0.15"
+  }
+}

@@ -1,0 +1,24 @@
+{
+	"compilerOptions": {
+		"target": "es5",
+		"experimentalDecorators": true,
+		"strict": true,
+		"strictNullChecks": true,
+		"noImplicitAny": true,
+		"noImplicitReturns": true,
+		"moduleResolution": "node",
+		"sourceMap": true,
+		"outDir": "build",
+		"lib": [
+			"esnext",
+			"dom"
+		]
+	},
+	"include": [
+		"src/**/*"
+	],
+	"exclude": [
+		"node_modules",
+	],
+	"compileOnSave": true
+}

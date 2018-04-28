@@ -111,7 +111,7 @@ function generateItemID() : Item.ItemID { 	// copied from https://stackoverflow.
 const emptyDocument : Document = {
 	title: "Untitled Document",
 	rootItemID: "root",
-	focusedItemID: undefined,
+	focusedItemID: "root",
 	items: { 
 		"root": {
 			itemID: "root",
@@ -120,7 +120,7 @@ const emptyDocument : Document = {
 			parentID: "",
 			children: [],
 			view: {
-				focused: false,
+				focused: true,
 				collapsed: false
 			}
 		}

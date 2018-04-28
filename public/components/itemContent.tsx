@@ -32,6 +32,54 @@ class ItemContent extends React.Component<ComponentProps> {
 		const item = node.item;
 		const actions = this.props.actions.document;
 
+		if (!event.ctrlKey) {
+			switch (event.key.toLowerCase()) {
+				case 'esc':
+				case 'escape':
+					actions.setFocus(undefined);
+					break;
+
+				case 'tab':
+					if (event.shiftKey)
+						actions.decrementFocus();
+					else
+						actions.incrementFocus(true);
+					break;
+
+				default:
+					preventDefault = false;
+					break;
+			}
+		}
+		else  {
+			switch (event.key.toLowerCase()) {
+				case '[':
+					actions.unindentItem(item);
+				break;
+
+				case ']':
+					actions.indentItem(item);
+				break;
+
+				case ' ':
+					if (node.children.length > 0 || item.view.collapsed)
+						actions.toggleItemCollapse(item);
+					break;
+				
+				case 'return':
+				case 'enter':
+					if (event.shiftKey)
+						actions.addItemToParent(item);
+					else
+						actions.addItemAfterSibling(item);
+
+				default:
+					preventDefault = false;
+					break;
+			}
+		}
+
+		/*
 		if (event.key.toLowerCase().startsWith('esc') || event.keyCode == 27) {
 			actions.setFocus(undefined);
 		}
@@ -59,17 +107,17 @@ class ItemContent extends React.Component<ComponentProps> {
 		}
 		else {
 			preventDefault = false;
-		}
+		} */
 
 		if (preventDefault)
 			event.preventDefault();
 	}
 
-	onFocus(event : React.FocusEvent<HTMLTextAreaElement>) : void {
+	onEditAreaFocus(event : React.FocusEvent<HTMLTextAreaElement>) : void {
 		event.target.setSelectionRange(event.target.value.length, event.target.value.length);
 	}
 
-	onBlur() {
+	onEditAreaBlur() {
 		//if (this.props.node.item.view.focused)
 		//	this.props.actions.document.setFocus(undefined);
 	}
@@ -98,8 +146,8 @@ class ItemContent extends React.Component<ComponentProps> {
 				{item.view.focused && 
 					<textarea id={this.getTextAreaId()} className="editArea"
 						onChange={(event) => actions.updateItemText(item, event.target.value)}
-						onFocus={(event) => this.onFocus(event)}
-						onBlur={() => this.onBlur()}
+						onFocus={(event) => this.onEditAreaFocus(event)}
+						onBlur={() => this.onEditAreaBlur()}
 						onKeyDown={(event) => this.handleKeyDown(event)}
 						value={item.text}
 					></textarea>
@@ -107,7 +155,6 @@ class ItemContent extends React.Component<ComponentProps> {
 			</div>
 		);
 	}
-
 	
 	componentDidMount() {
 		this.focusOnTextArea();

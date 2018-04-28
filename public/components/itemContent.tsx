@@ -93,7 +93,7 @@ class ItemContent extends React.Component<ComponentProps> {
 						source={item.text.length == 0 ? "New Item" : item.text}
 						className={item.text.length == 0 ? "itemContentRenderedEmpty" : "itemContentRendered"}
 					/> :
-					<h1>{item.text}</h1>
+					<h1 className="title">{item.text}</h1>
 				}
 				{item.view.focused && 
 					<textarea id={this.getTextAreaId()} className="editArea"

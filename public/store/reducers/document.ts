@@ -54,9 +54,20 @@ type RemoveItem = {
 type SetFocus = {
 	type : "SetFocus",
 	data : {
-		focusIndex : number,
+		item: Item.Item | undefined
+	}
+}
+
+type IncrementFocus = {
+	type : "IncrementFocus",
+	data : {
 		createNewItem : boolean
 	}
+}
+
+type DecrementFocus = {
+	type : "DecrementFocus",
+	data : { }
 }
 
 type IndentItem = {
@@ -79,6 +90,8 @@ export type Action = 	AddItemToParent |
 						ToggleItemCollapse | 
 						RemoveItem |
 						SetFocus |
+						IncrementFocus |
+						DecrementFocus |
 						IndentItem |
 						UnindentItem |
 						UpdateItemText;
@@ -98,7 +111,7 @@ function generateItemID() : Item.ItemID { 	// copied from https://stackoverflow.
 const emptyDocument : Document = {
 	title: "Untitled Document",
 	rootItemID: "root",
-	focusIndex: -1,
+	focusedItemID: undefined,
 	items: { 
 		"root": {
 			itemID: "root",
@@ -107,6 +120,7 @@ const emptyDocument : Document = {
 			parentID: "",
 			children: [],
 			view: {
+				focused: false,
 				collapsed: false
 			}
 		}
@@ -121,6 +135,7 @@ function getNewItemFromParent(parent : Item.Item) : Item.Item {
 		children: [],
 		text: "",
 		view: {
+			focused: false,
 			collapsed: false
 		}
 	};
@@ -268,56 +283,133 @@ function removeItem(document : Document | undefined, action : RemoveItem) : Docu
 	
 	return {
 		...document,
+		focusedItemID: document.focusedItemID == action.data.item.itemID ? undefined : document.focusedItemID,
 		items: newDictionary
-	};
+	}
 }
 
 function setFocus(document : Document | undefined, action : SetFocus) : Document {
 	if (!document)
 		return emptyDocument;
 
-	if (!action.data.createNewItem || action.data.focusIndex != Object.keys(document.items).length) {
+	const { item } = action.data;
+	if (!item) {
+		if (!document.focusedItemID || !document.items[document.focusedItemID]) {
+			return {
+				...document,
+				focusedItemID: undefined
+			}
+		}
+
+		const prevFocus = document.items[document.focusedItemID];
+		const unfocused = {...prevFocus, view: { ...prevFocus.view, focused: false } };
+
 		return {
-			...document,
-			focusIndex: action.data.focusIndex
-		}
+			...updateDocumentDictionary(document, [unfocused]),
+			focusedItemID: undefined
+		};
 	}
 
-	let index : number = 0;
+	if (document.focusedItemID == item.itemID)
+		return document;
 
-	function findElementByIndex(document : Document, curr : Item.Item) : Item.Item | undefined {
-		if (index == action.data.focusIndex - 1)
-			return curr;
+	let newItems = [];
 
-		if (!curr)
-			return undefined;
-
-		index++;
-		for (const child of curr.children.map(childID => document.items[childID])) {
-			const found = findElementByIndex(document, child);
-			if (found)
-				return found;
+	const newFocus = {
+		...item,
+		view: {
+			...item.view,
+			focused: true
 		}
+	};
 
-		return undefined;
-	}
-	
-	const lastItem = findElementByIndex(document, document.items[document.rootItemID]);
-	if (!lastItem) {
-		return {
-			...document,
-			focusIndex : action.data.focusIndex
-		}
-	}
+	newItems.push(newFocus);
 
-	const newDocument = lastItem.itemType == "Title" ? 
-							addItemToParent(document, { type: "AddItemToParent", data: { parent: lastItem } }) :
-							addItemAfterSibling(document, { type: "AddItemAfterSibling", data: { sibling: lastItem } });
+	if (document.focusedItemID !== undefined && document.items[document.focusedItemID]) {
+		const oldFocused = {
+			...document.items[document.focusedItemID],
+			view: {
+				...document.items[document.focusedItemID].view,
+				focused: false
+			}
+		};
+
+		newItems.push(oldFocused);
+	}
 
 	return {
-		...newDocument,
-		focusIndex: action.data.focusIndex
+		...updateDocumentDictionary(document, newItems),
+		focusedItemID: item.itemID
+	};
+}
+
+function incrementFocus(document : Document | undefined, action : IncrementFocus) : Document {
+	if (!document)
+		return emptyDocument;
+	if (!document.focusedItemID || !document.items[document.focusedItemID])
+		return document;
+
+	const { createNewItem } = action.data;
+	const focusedItem = document.items[document.focusedItemID];
+	const focusedParent = (focusedItem.itemType == "Title" ? {...focusedItem} : document.items[focusedItem.parentID]);
+
+	function getNextItem(doc: Document, curr : Item.Item, prevIndex : number) : Item.Item | undefined {
+		if (curr.children.length > prevIndex + 1)
+			return doc.items[curr.children[prevIndex + 1]];
+
+		const currParent = doc.items[curr.parentID];
+		if (!currParent)
+			return undefined;
+
+		const currIndex = currParent.children.indexOf(curr.itemID);
+		return getNextItem(doc, currParent, currIndex);
 	}
+
+	const nextItem = getNextItem(document, focusedItem, -1);
+	if (nextItem)
+		return setFocus(document, { type: "SetFocus", data: { item: nextItem } });
+	else if (!createNewItem)
+		return setFocus(document, { type: "SetFocus", data: { item: undefined } });
+	
+	const newItem = getNewItemFromParent(focusedParent);
+
+	const newParent = {
+		...focusedParent,
+		children: focusedParent.children.concat([newItem.itemID])
+	};
+
+	return setFocus(
+		updateDocumentDictionary(document, [newItem, newParent]),
+		{ type: "SetFocus", data: { item: newItem } }
+	);
+}
+
+function decrementFocus(document : Document | undefined, action : DecrementFocus) : Document {
+	if (!document)
+		return emptyDocument;
+	if (!document.focusedItemID || !document.items[document.focusedItemID])
+		return document;
+
+	const focusedItem = document.items[document.focusedItemID];
+	if (focusedItem.itemType == "Title")
+		return document;
+
+	const focusedParent = document.items[focusedItem.parentID];
+	const focusedIndex = focusedParent.children.indexOf(focusedItem.itemID);
+
+	if (focusedIndex <= 0)
+		return setFocus(document, { type: "SetFocus", data: { item: focusedParent } } );
+
+	function getLastChild(doc : Document, curr : Item.Item) : Item.Item {
+		if (curr.children.length == 0)
+			return curr;
+
+		const lastChild = doc.items[curr.children[curr.children.length - 1]];
+		return getLastChild(doc, lastChild);
+	}
+
+	const prevItem = document.items[focusedParent.children[focusedIndex - 1]];
+	return setFocus(document, { type: "SetFocus", data: { item: getLastChild(document, prevItem) } });
 }
 
 function indentItem(document : Document | undefined, action : IndentItem) : Document {
@@ -415,6 +507,10 @@ export function reducer(doc : Document | undefined, action : Store.Action) : Doc
 			return removeItem(doc, action);
 		case "SetFocus":
 			return setFocus(doc, action);
+		case "IncrementFocus":
+			return incrementFocus(doc, action);
+		case "DecrementFocus":
+			return decrementFocus(doc, action);
 		case "IndentItem":
 			return indentItem(doc, action);
 		case "UnindentItem":
@@ -453,9 +549,17 @@ export const creators = (dispatch: Dispatch) => ({
 		type: "UpdateItemText",
 		data: { item, newText }
 	}),
-	setFocus: (focusIndex : number, createNewItem : boolean) => dispatch({
+	setFocus: (item : Item.Item | undefined) => dispatch({
 		type: "SetFocus",
-		data: { focusIndex, createNewItem }
+		data: { item }
+	}),
+	incrementFocus: (createNewItem : boolean) => dispatch({
+		type: "IncrementFocus",
+		data: { createNewItem }
+	}),
+	decrementFocus: () => dispatch({
+		type: "DecrementFocus",
+		data: { }
 	}),
 	indentItem: (item : Item.Item) => dispatch({
 		type: "IndentItem",
@@ -474,7 +578,9 @@ export type DispatchProps = {
 	initializeDocument: (document: Document | undefined) => void,
 	updateItemText: (item: Item.Item, newText: string) => void,
 	removeItem: (item: Item.Item) => void,
-	setFocus: (focusIndex : number, createNewItem : boolean) => void,
+	setFocus: (item : Item.Item | undefined) => void,
+	incrementFocus: (createNewData : boolean) => void,
+	decrementFocus: () => void,
 	indentItem: (item : Item.Item) => void,
 	unindentItem: (item : Item.Item) => void
 }

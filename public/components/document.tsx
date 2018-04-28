@@ -32,8 +32,6 @@ class Document extends React.Component<ComponentProps> {
 	
 		return {
 			item: rootItem,
-			viewIndex: nodeIndex,
-			focused: nodeIndex == doc.focusIndex,
 			children: nodeChildren
 		};
 	}

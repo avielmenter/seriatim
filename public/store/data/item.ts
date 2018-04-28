@@ -8,13 +8,12 @@ export interface Item {
 	children : ItemID[],
 	itemType : ItemType,
 	view : {
-		collapsed : boolean
+		collapsed : boolean,
+		focused : boolean
 	}
 }
 
 export interface ItemTree {
 	item : Item,
-	viewIndex : number,
-	focused : boolean,
 	children : ItemTree[]
 }

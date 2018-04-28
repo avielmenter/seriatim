@@ -33,13 +33,13 @@ class ItemContent extends React.Component<ComponentProps> {
 		const actions = this.props.actions.document;
 
 		if (event.key.toLowerCase().startsWith('esc') || event.keyCode == 27) {
-			this.props.actions.document.setFocus(-1, false);
+			actions.setFocus(undefined);
 		}
 		else if (event.shiftKey && event.key.toLowerCase().startsWith('tab')) {
-			actions.setFocus(node.viewIndex - 1, false);
+			actions.decrementFocus();
 		}
 		else if (event.key.toLowerCase().startsWith('tab')) {
-			actions.setFocus(node.viewIndex + 1, true);
+			actions.incrementFocus(true);
 		}
 		else if (event.ctrlKey && event.key == '[') {
 			actions.unindentItem(item);
@@ -70,13 +70,14 @@ class ItemContent extends React.Component<ComponentProps> {
 	}
 
 	onBlur() {
-		this.props.actions.document.setFocus(-1, false);
+		//if (this.props.node.item.view.focused)
+		//	this.props.actions.document.setFocus(undefined);
 	}
 
 	focusOnTextArea() {
 		const editArea = document.getElementById(this.getTextAreaId());
 
-		if (this.props.node.focused && editArea)
+		if (this.props.node.item.view.focused && editArea)
 			editArea.focus();
 	}
 
@@ -86,7 +87,7 @@ class ItemContent extends React.Component<ComponentProps> {
 		const actions = this.props.actions.document;
 
 		return (
-			<div className="itemContent" id={this.getContentDivId()} onClick={() => actions.setFocus(node.viewIndex, false)}>
+			<div className="itemContent" id={this.getContentDivId()} onClick={() => actions.setFocus(node.item)}>
 				{item.itemType != "Title" ? 
 					<ReactMarkdown 
 						source={item.text.length == 0 ? "New Item" : item.text}
@@ -94,7 +95,7 @@ class ItemContent extends React.Component<ComponentProps> {
 					/> :
 					<h1>{item.text}</h1>
 				}
-				{node.focused && 
+				{item.view.focused && 
 					<textarea id={this.getTextAreaId()} className="editArea"
 						onChange={(event) => actions.updateItemText(item, event.target.value)}
 						onFocus={(event) => this.onFocus(event)}

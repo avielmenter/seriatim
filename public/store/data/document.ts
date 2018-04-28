@@ -1,10 +1,10 @@
-import { Item } from './item';
+import { Item, ItemID } from './item';
 
 export type ItemDictionary = { [itemID : string] : Item};
 
 export interface Document {
 	title : string,
-	rootItemID : string,
-	focusIndex : number,
+	rootItemID : ItemID,
+	focusedItemID : ItemID | undefined
 	items : ItemDictionary
 }

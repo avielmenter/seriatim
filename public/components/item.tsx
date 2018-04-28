@@ -19,7 +19,7 @@ const Item : React.SFC<ComponentProps> = (props) => {
 	return (
 		<div className={itemType == "Title" ? "Header" : itemType} id={item.itemID}>
 			<div className="collapseExpand">
-				{props.node.focused && <div className="showFocused">
+				{props.node.item.view.focused && <div className="showFocused">
 					&ndash;
 				</div>}
 				{item.children.length > 0 && <button className={item.view.collapsed ? "expandButton" : "collapseButton"}

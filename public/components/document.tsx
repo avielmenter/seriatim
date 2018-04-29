@@ -17,17 +17,17 @@ type ComponentProps = DataProps & DispatchProps;
 
 class Document extends React.Component<ComponentProps> {
 	viewIndex : number = 0;
+	documentDiv : React.RefObject<HTMLDivElement>;
 
 	constructor(props : ComponentProps) {
 		super(props);
 		props.actions.document.initializeDocument(undefined);
+
+		this.documentDiv = React.createRef<HTMLDivElement>();
 	}
 
 	getDocumentTree(doc : Doc.Document, nodeID : ItemID) : ItemTree {
 		const rootItem = doc.items[nodeID];
-		const nodeIndex = this.viewIndex;
-
-		this.viewIndex++;
 		const nodeChildren = rootItem.children.map(child => this.getDocumentTree(doc, child));
 	
 		return {
@@ -36,24 +36,65 @@ class Document extends React.Component<ComponentProps> {
 		};
 	}
 
+	handleKeyDown(event: KeyboardEvent) {
+		const actions = this.props.actions.document;
+		let preventDefault = true;
+
+		if (!event.ctrlKey) {
+			switch (event.key.toLowerCase()) {
+				case 'tab':
+					if (event.shiftKey)
+						actions.decrementFocus();
+					else
+						actions.incrementFocus(true);
+					break;
+
+				default:
+					preventDefault = false;
+					break;
+			}
+		} else {
+			switch (event.key.toLowerCase()) {
+				default:
+					preventDefault = false;
+					break;
+			}
+		}
+
+		if (preventDefault)
+			event.preventDefault();
+	}
+
+	componentWillMount() {
+		document.addEventListener('keydown', (event) => this.handleKeyDown(event));
+	}
+
 	render() {
 		const doc = this.props.document;
 
 		if (!doc)
 			return <h1>NODOC</h1>;
 
-		this.viewIndex = 0;
 		const tree = this.getDocumentTree(doc, doc.rootItemID);
 
 		document.title = doc.title + " | Seriatim";
 
 		return (
 			<main>
-				<div id="document">
+				<div id="document" tabIndex={0} ref={this.documentDiv}>
 					<Item node={tree} key={tree.item.itemID} />
 				</div>
 			</main>
 		);
+	}
+
+	componentDidMount() {
+		if (this.documentDiv.current) 
+			this.documentDiv.current.focus();
+	}
+
+	componentWillUnmount() {
+		document.removeEventListener('keydown', this.handleKeyDown);
 	}
 }
 

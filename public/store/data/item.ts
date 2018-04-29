@@ -6,8 +6,8 @@ export interface Item {
 	parentID : ItemID,
 	text : string,
 	children : ItemID[],
-	itemType : ItemType,
-	view : {
+	view : {	
+		itemType : ItemType,
 		collapsed : boolean,
 		focused : boolean
 	}

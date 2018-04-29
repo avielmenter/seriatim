@@ -13,8 +13,11 @@ type DataProps = {
 type ComponentProps = DataProps & DispatchProps;
 
 class ItemContent extends React.Component<ComponentProps> {
+	editArea : React.RefObject<HTMLTextAreaElement>;
+
 	constructor(props: ComponentProps) {
 		super(props);
+		this.editArea = React.createRef<HTMLTextAreaElement>();
 	}
 
 	getContentDivId() {
@@ -38,14 +41,7 @@ class ItemContent extends React.Component<ComponentProps> {
 				case 'escape':
 					actions.setFocus(undefined);
 					break;
-
-				case 'tab':
-					if (event.shiftKey)
-						actions.decrementFocus();
-					else
-						actions.incrementFocus(true);
-					break;
-
+					
 				default:
 					preventDefault = false;
 					break;
@@ -68,10 +64,12 @@ class ItemContent extends React.Component<ComponentProps> {
 				
 				case 'return':
 				case 'enter':
-					if (event.shiftKey)
+					if (event.shiftKey) {
 						actions.addItemToParent(item);
-					else
-						actions.addItemAfterSibling(item);
+						actions.incrementFocus(false);
+					} else {
+						actions.addItemAfterSibling(item, true);
+					}
 
 				default:
 					preventDefault = false;
@@ -79,42 +77,13 @@ class ItemContent extends React.Component<ComponentProps> {
 			}
 		}
 
-		/*
-		if (event.key.toLowerCase().startsWith('esc') || event.keyCode == 27) {
-			actions.setFocus(undefined);
-		}
-		else if (event.shiftKey && event.key.toLowerCase().startsWith('tab')) {
-			actions.decrementFocus();
-		}
-		else if (event.key.toLowerCase().startsWith('tab')) {
-			actions.incrementFocus(true);
-		}
-		else if (event.ctrlKey && event.key == '[') {
-			actions.unindentItem(item);
-		}
-		else if (event.ctrlKey && event.key == ']') {
-			actions.indentItem(item);
-		}
-		else if (event.ctrlKey && event.key == ' ') {
-			if (node.children.length > 0 || item.view.collapsed)
-				actions.toggleItemCollapse(item);
-		}
-		else if (event.ctrlKey && (event.key.toLowerCase().startsWith('return') || event.key.toLowerCase().startsWith('enter'))) {
-			if (event.shiftKey)
-				actions.addItemToParent(item);
-			else if (item.itemType != "Title")
-				actions.addItemAfterSibling(item);
-		}
-		else {
-			preventDefault = false;
-		} */
-
 		if (preventDefault)
 			event.preventDefault();
 	}
 
-	onEditAreaFocus(event : React.FocusEvent<HTMLTextAreaElement>) : void {
-		event.target.setSelectionRange(event.target.value.length, event.target.value.length);
+	setSelectionRange() {
+		if (this.editArea.current)
+			this.editArea.current.setSelectionRange(this.editArea.current.value.length, this.editArea.current.value.length);
 	}
 
 	onEditAreaBlur() {
@@ -123,10 +92,8 @@ class ItemContent extends React.Component<ComponentProps> {
 	}
 
 	focusOnTextArea() {
-		const editArea = document.getElementById(this.getTextAreaId());
-
-		if (this.props.node.item.view.focused && editArea)
-			editArea.focus();
+		if (this.props.node.item.view.focused && this.editArea.current) 
+			this.editArea.current.focus();
 	}
 
 	render() {
@@ -136,7 +103,7 @@ class ItemContent extends React.Component<ComponentProps> {
 
 		return (
 			<div className="itemContent" id={this.getContentDivId()} onClick={() => actions.setFocus(node.item)}>
-				{item.itemType != "Title" ? 
+				{item.view.itemType != "Title" ? 
 					<ReactMarkdown 
 						source={item.text.length == 0 ? "New Item" : item.text}
 						className={item.text.length == 0 ? "itemContentRenderedEmpty" : "itemContentRendered"}
@@ -146,23 +113,24 @@ class ItemContent extends React.Component<ComponentProps> {
 				{item.view.focused && 
 					<textarea id={this.getTextAreaId()} className="editArea"
 						onChange={(event) => actions.updateItemText(item, event.target.value)}
-						onFocus={(event) => this.onEditAreaFocus(event)}
 						onBlur={() => this.onEditAreaBlur()}
+						onFocus={(event) => this.setSelectionRange()}
 						onKeyDown={(event) => this.handleKeyDown(event)}
 						value={item.text}
+						ref={this.editArea}
 					></textarea>
 				}
 			</div>
 		);
 	}
-	
+	//*
 	componentDidMount() {
 		this.focusOnTextArea();
 	}
 
 	componentDidUpdate() {
 		this.focusOnTextArea();
-	}
+	} //*/
 }
 
 const mapStateToProps = (state : any) => ({});

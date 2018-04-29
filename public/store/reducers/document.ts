@@ -18,7 +18,8 @@ type AddItemToParent = {
 type AddItemAfterSibling = {
 	type : "AddItemAfterSibling",
 	data : {
-		sibling : Item.Item
+		sibling : Item.Item,
+		focusOnNew : boolean
 	}
 }
 
@@ -111,16 +112,16 @@ function generateItemID() : Item.ItemID { 	// copied from https://stackoverflow.
 const emptyDocument : Document = {
 	title: "Untitled Document",
 	rootItemID: "root",
-	focusedItemID: "root",
+	focusedItemID: undefined,
 	items: { 
 		"root": {
 			itemID: "root",
-			itemType: "Title",
 			text: "Untitled Document",
 			parentID: "",
 			children: [],
 			view: {
-				focused: true,
+				itemType: "Title",
+				focused: false,
 				collapsed: false
 			}
 		}
@@ -131,10 +132,10 @@ function getNewItemFromParent(parent : Item.Item) : Item.Item {
 	return {
 		itemID: generateItemID(), // parent.itemID + "." + parent.children.length.toString(),
 		parentID: parent.itemID,
-		itemType: "Item",
 		children: [],
 		text: "",
 		view: {
+			itemType: "Item",
 			focused: false,
 			collapsed: false
 		}
@@ -151,25 +152,6 @@ function updateDocumentDictionary(doc : Document, newItemsList : Item.Item[]) : 
 		...doc,
 		items: newItems
 	}
-}
-
-function setItemEditability(document: Document | undefined, itemID : Item.ItemID, editable : boolean) : Document {
-	if (!document)
-		return emptyDocument;
-	else if (!document.items[itemID])
-		return document;
-
-	const oldItem = document.items[itemID];
-
-	const newItem = {
-		...oldItem,
-		view: {
-			...oldItem.view,
-			editable
-		}
-	};
-
-	return updateDocumentDictionary(document, [newItem]);
 }
 
 // REDUCERS
@@ -195,7 +177,7 @@ function addItemAfterSibling(document : Document | undefined, action : AddItemAf
 	if (!doc)
 		return emptyDocument;
 
-	const { sibling } = action.data;
+	const { sibling, focusOnNew } = action.data;
 	const parent = doc.items[sibling.parentID];
 	if (!parent)
 		return doc;
@@ -208,7 +190,10 @@ function addItemAfterSibling(document : Document | undefined, action : AddItemAf
 	let newParent = { ...parent };
 	newParent.children.splice(indexOfSibling + 1, 0, item.itemID);
 
-	return updateDocumentDictionary(doc, [item, newParent]);
+	const docWithSibling = updateDocumentDictionary(doc, [item, newParent]);
+	return focusOnNew ? 
+			setFocus(docWithSibling, { type: "SetFocus", data: { item } }) :
+			docWithSibling;
 }
 
 function toggleItemCollapse(document : Document | undefined, action : ToggleItemCollapse) : Document {
@@ -241,10 +226,13 @@ function updateItemText(document : Document | undefined, action : UpdateItemText
 	const newItem = {
 		...item,
 		text: newText,
-		itemType: (item.itemType == "Title" ? "Title" : newType) as Item.ItemType
+		view: {
+			...item.view,
+			itemType: (item.view.itemType == "Title" ? "Title" : newType) as Item.ItemType
+		}
 	};
 
-	const newTitle = newItem.itemType == "Title" ? newItem.text : document.title; 
+	const newTitle = newItem.view.itemType == "Title" ? newItem.text : document.title; 
 
 	return updateDocumentDictionary({ ...document, title: newTitle }, [newItem]);
 }
@@ -347,11 +335,11 @@ function incrementFocus(document : Document | undefined, action : IncrementFocus
 	if (!document)
 		return emptyDocument;
 	if (!document.focusedItemID || !document.items[document.focusedItemID])
-		return document;
+		return setFocus(document, { type: "SetFocus", data: { item: document.items[document.rootItemID] } });
 
 	const { createNewItem } = action.data;
 	const focusedItem = document.items[document.focusedItemID];
-	const focusedParent = (focusedItem.itemType == "Title" ? {...focusedItem} : document.items[focusedItem.parentID]);
+	const focusedParent = (focusedItem.itemID == document.rootItemID ? {...focusedItem} : document.items[focusedItem.parentID]);
 
 	function getNextItem(doc: Document, curr : Item.Item, prevIndex : number) : Item.Item | undefined {
 		if (curr.children.length > prevIndex + 1)
@@ -391,8 +379,8 @@ function decrementFocus(document : Document | undefined, action : DecrementFocus
 		return document;
 
 	const focusedItem = document.items[document.focusedItemID];
-	if (focusedItem.itemType == "Title")
-		return document;
+	if (focusedItem.itemID == document.rootItemID)
+		return setFocus(document, { type: "SetFocus", data: { item: undefined } });
 
 	const focusedParent = document.items[focusedItem.parentID];
 	const focusedIndex = focusedParent.children.indexOf(focusedItem.itemID);
@@ -453,7 +441,7 @@ function UnindentItem(document : Document | undefined, action : UnindentItem) : 
 
 	const item = action.data.item;
 	const oldParent = document.items[item.parentID];
-	if (!oldParent || oldParent.itemType == "Title") {
+	if (!oldParent || oldParent.itemID == document.rootItemID) {
 		if (item.children.length > 0 && document.items[item.children[0]]) 
 			return UnindentItem(document, { ...action, data: { item: document.items[item.children[0]] } });
 		return document;
@@ -491,7 +479,6 @@ function initializeDocument(document : Document | undefined, action : Initialize
 }
 
 export function reducer(doc : Document | undefined, action : Store.Action) : Document {
-
 	switch (action.type) {
 		case "AddItemToParent":
 			return addItemToParent(doc, action);			
@@ -529,9 +516,9 @@ export const creators = (dispatch: Dispatch) => ({
 		type: "AddItemToParent",
 		data: { parent }
 	}),
-	addItemAfterSibling: (sibling: Item.Item) => dispatch({
+	addItemAfterSibling: (sibling: Item.Item, focusOnNew: boolean) => dispatch({
 		type: "AddItemAfterSibling",
-		data: { sibling }
+		data: { sibling, focusOnNew }
 	}),
 	toggleItemCollapse: (item: Item.Item) => dispatch({
 		type: "ToggleItemCollapse",
@@ -573,7 +560,7 @@ export const creators = (dispatch: Dispatch) => ({
 
 export type DispatchProps = {
 	addItemToParent: (parent: Item.Item) => void,
-	addItemAfterSibling: (parent: Item.Item) => void,
+	addItemAfterSibling: (parent: Item.Item, focusOnNew: boolean) => void,
 	toggleItemCollapse: (item: Item.Item) => void,
 	initializeDocument: (document: Document | undefined) => void,
 	updateItemText: (item: Item.Item, newText: string) => void,

@@ -18,6 +18,7 @@ main
 	padding: 0.5in
 	padding-left: 0.25in
 	padding-top: 0.25in
+	outline: none
 
 =PageComponent
 	margin-left: 0.25in
@@ -91,8 +92,7 @@ main
 			&:not(:first-child)
 				display: none
 		
-		width: auto
-		display: inline-block
+		width: 7.5em
 		border-radius: 2px
 		opacity: 0.25
 
@@ -102,14 +102,24 @@ main
 			border: 1px solid #BBB	
 			button
 				display: inline-block
-
-		
 	
-	float: right
 	position: absolute
-	width: 8em
-	right: calc(-8em - 0.025in)
+	width: 0
+	right: 0
+	top: 0
 	text-align: left
+	z-index: 0
+
+	.buttonText
+		visibility: hidden
+		font-weight: normal
+		font-size: 12pt
+		margin-left: 1ch
+
+	&:hover
+		.buttonText
+			visibility: visible
+		z-index: 1
 
 
 .collapseExpand
@@ -117,7 +127,7 @@ main
 		+ItemButton
 		color: gray
 		padding-left: 0
-	float: left
+	
 	position: absolute
 	left: -0.8in
 	width: 0.8in

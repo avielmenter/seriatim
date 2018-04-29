@@ -14,7 +14,8 @@ type ComponentProps = DataProps & DispatchProps;
 
 const Item : React.SFC<ComponentProps> = (props) => {
 	const { item, children } = props.node;
-	const { text, itemType } = item;
+	const { text } = item;
+	const { itemType } = item.view;
 
 	return (
 		<div className={itemType == "Title" ? "Header" : itemType} id={item.itemID}>
@@ -27,13 +28,14 @@ const Item : React.SFC<ComponentProps> = (props) => {
 					{item.view.collapsed ? "▶" : "▼"}
 				</button>}
 			</div>
+			<ItemContent node={props.node} />
 			<div className="buttons">
 				<div className="buttonMenu">
 					{itemType != "Title" && 
 						<button
 							title="Add item after this one"
 							className="addSibling"
-							onClick={() => props.actions.document.addItemAfterSibling(item)}
+							onClick={() => props.actions.document.addItemAfterSibling(item, false)}
 						>
 							+
 						</button>
@@ -56,7 +58,6 @@ const Item : React.SFC<ComponentProps> = (props) => {
 					}
 				</div>
 			</div>
-			<ItemContent node={props.node} />
 			{!item.view.collapsed && children.map(child =>
 				<Item {...props} node={child} key={child.item.itemID} />
 			)}

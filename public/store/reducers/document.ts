@@ -375,8 +375,17 @@ function incrementFocus(document : Document | undefined, action : IncrementFocus
 function decrementFocus(document : Document | undefined, action : DecrementFocus) : Document {
 	if (!document)
 		return emptyDocument;
+
+	function getLastChild(doc : Document, curr : Item.Item) : Item.Item {
+		if (curr.children.length == 0)
+			return curr;
+
+		const lastChild = doc.items[curr.children[curr.children.length - 1]];
+		return getLastChild(doc, lastChild);
+	}
+
 	if (!document.focusedItemID || !document.items[document.focusedItemID])
-		return document;
+		return setFocus(document, { type: "SetFocus", data: { item: getLastChild(document, document.items[document.rootItemID]) } });
 
 	const focusedItem = document.items[document.focusedItemID];
 	if (focusedItem.itemID == document.rootItemID)
@@ -387,14 +396,6 @@ function decrementFocus(document : Document | undefined, action : DecrementFocus
 
 	if (focusedIndex <= 0)
 		return setFocus(document, { type: "SetFocus", data: { item: focusedParent } } );
-
-	function getLastChild(doc : Document, curr : Item.Item) : Item.Item {
-		if (curr.children.length == 0)
-			return curr;
-
-		const lastChild = doc.items[curr.children[curr.children.length - 1]];
-		return getLastChild(doc, lastChild);
-	}
 
 	const prevItem = document.items[focusedParent.children[focusedIndex - 1]];
 	return setFocus(document, { type: "SetFocus", data: { item: getLastChild(document, prevItem) } });

@@ -28,7 +28,7 @@ class ItemContent extends React.Component<ComponentProps> {
 		return '__edit__' + this.props.node.item.itemID;
 	}
 
-	handleKeyDown(event : React.KeyboardEvent<HTMLTextAreaElement>) : void {
+	handleKeyDown = (event : React.KeyboardEvent<HTMLTextAreaElement>) : void => {
 		let preventDefault : boolean = true;
 
 		const node = this.props.node;
@@ -70,6 +70,12 @@ class ItemContent extends React.Component<ComponentProps> {
 					} else {
 						actions.addItemAfterSibling(item, true);
 					}
+					break;
+
+				case 'del':
+				case 'delete':
+					actions.removeItem(item);
+					break;
 
 				default:
 					preventDefault = false;
@@ -81,7 +87,7 @@ class ItemContent extends React.Component<ComponentProps> {
 			event.preventDefault();
 	}
 
-	setSelectionRange() {
+	setSelectionRange = () : void => {
 		const item = this.props.node.item;
 
 		if (this.editArea.current) {
@@ -92,7 +98,7 @@ class ItemContent extends React.Component<ComponentProps> {
 		}
 	}
 
-	onEditAreaBlur() {
+	onEditAreaBlur = () : void => {
 		//if (this.props.node.item.view.focused)
 		//	this.props.actions.document.setFocus(undefined);
 	}
@@ -119,9 +125,9 @@ class ItemContent extends React.Component<ComponentProps> {
 				{item.view.focused && 
 					<textarea id={this.getTextAreaId()} className="editArea"
 						onChange={(event) => actions.updateItemText(item, event.target.value)}
-						onBlur={() => this.onEditAreaBlur()}
-						onFocus={(event) => this.setSelectionRange()}
-						onKeyDown={(event) => this.handleKeyDown(event)}
+						onBlur={this.onEditAreaBlur}
+						onFocus={this.setSelectionRange}
+						onKeyDown={this.handleKeyDown}
 						value={item.text}
 						ref={this.editArea}
 					></textarea>

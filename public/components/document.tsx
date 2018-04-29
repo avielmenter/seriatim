@@ -36,7 +36,7 @@ class Document extends React.Component<ComponentProps> {
 		};
 	}
 
-	handleKeyDown(event: KeyboardEvent) {
+	handleKeyDown = (event: KeyboardEvent) : void => {
 		const actions = this.props.actions.document;
 		let preventDefault = true;
 
@@ -65,8 +65,13 @@ class Document extends React.Component<ComponentProps> {
 			event.preventDefault();
 	}
 
+	handleClick = (event: MouseEvent) : void => {
+		this.props.actions.document.setFocus(undefined);
+	}
+
 	componentWillMount() {
-		document.addEventListener('keydown', (event) => this.handleKeyDown(event));
+		document.addEventListener('keydown', this.handleKeyDown);
+		document.addEventListener('click', this.handleClick, { capture: true });
 	}
 
 	render() {
@@ -95,6 +100,7 @@ class Document extends React.Component<ComponentProps> {
 
 	componentWillUnmount() {
 		document.removeEventListener('keydown', this.handleKeyDown);
+		document.removeEventListener('click', this.handleClick);
 	}
 }
 

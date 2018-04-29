@@ -82,8 +82,14 @@ class ItemContent extends React.Component<ComponentProps> {
 	}
 
 	setSelectionRange() {
-		if (this.editArea.current)
-			this.editArea.current.setSelectionRange(this.editArea.current.value.length, this.editArea.current.value.length);
+		const item = this.props.node.item;
+
+		if (this.editArea.current) {
+			const selectionEnd = this.editArea.current.value.length;
+			const selectionStart = item.view.itemType == "Title" && item.text == "Untitled Document" ? 0 : selectionEnd;
+
+			this.editArea.current.setSelectionRange(selectionStart, selectionEnd);
+		}
 	}
 
 	onEditAreaBlur() {

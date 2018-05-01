@@ -2,7 +2,7 @@ import * as React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 
-import * as Doc from '../store/data/document';
+import { Document as DocumentData } from '../store/data/document';
 import { ItemTree, ItemID, Item as ItemData } from '../store/data/item';
 
 import Item from './item';
@@ -10,7 +10,7 @@ import Item from './item';
 import { DispatchProps, mapDispatchToProps, ApplicationState } from '../store';
 
 type DataProps = {
-	document : Doc.Document | undefined
+	document : DocumentData | undefined
 }
 
 type ComponentProps = DataProps & DispatchProps;
@@ -26,7 +26,7 @@ class Document extends React.Component<ComponentProps> {
 		this.documentDiv = React.createRef<HTMLDivElement>();
 	}
 
-	getDocumentTree(doc : Doc.Document, nodeID : ItemID) : ItemTree {
+	getDocumentTree(doc : DocumentData, nodeID : ItemID) : ItemTree {
 		const rootItem = doc.items[nodeID];
 		const nodeChildren = rootItem.children.map(child => this.getDocumentTree(doc, child));
 	
@@ -55,6 +55,17 @@ class Document extends React.Component<ComponentProps> {
 			}
 		} else {
 			switch (event.key.toLowerCase()) {
+				case 'z':
+					if (event.shiftKey)
+						actions.redo();
+					else
+						actions.undo();
+					break;
+
+				case 'y':
+					actions.redo();
+					break;
+
 				default:
 					preventDefault = false;
 					break;
@@ -104,6 +115,8 @@ class Document extends React.Component<ComponentProps> {
 	}
 }
 
-const mapStateToProps = (state : ApplicationState) => ({ document: state.document });
+const mapStateToProps = (state : ApplicationState | { }) => ({ 
+	document: state == {} ? undefined : (state as ApplicationState).document.present 
+});
 
-export default connect(mapStateToProps, mapDispatchToProps)(Document);
+export default connect<DataProps, DispatchProps, {}>(mapStateToProps, mapDispatchToProps)(Document);

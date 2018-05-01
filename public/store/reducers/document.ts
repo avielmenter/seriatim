@@ -1,6 +1,6 @@
-import { ActionCreator } from 'redux';
+import { ActionCreator, AnyAction } from 'redux';
+import undoable, { ActionCreators } from 'redux-undo';
 
-import { ApplicationState } from '../data';
 import * as Item from '../data/item';
 import { Document, ItemDictionary } from '../data/document';
 
@@ -143,7 +143,8 @@ function getNewItemFromParent(parent : Item.Item) : Item.Item {
 }
 
 function updateDocumentDictionary(doc : Document, newItemsList : Item.Item[]) : Document {
-	let newItems : ItemDictionary = Object.assign({}, doc.items);
+	let newItems : ItemDictionary = {...doc.items};
+
 	for (const i of newItemsList) {
 		newItems[i.itemID] = i;
 	}
@@ -411,7 +412,7 @@ function decrementFocus(document : Document | undefined, action : DecrementFocus
 	return setFocus(document, { type: "SetFocus", data: { item: getLastChild(document, prevItem) } });
 }
 
-function indentItem(document : Document | undefined, action : IndentItem) : Document {
+function indentItem(document : Document | undefined, action : IndentItem) : Document {	
 	if (!document)
 		return emptyDocument;
 
@@ -435,8 +436,10 @@ function indentItem(document : Document | undefined, action : IndentItem) : Docu
 	let newParent = { ...parent };
 	let newSiblingIDs = newParent.children.splice(childIndex, parent.children.length - childIndex);
 
-	let newPrevSibling = { ...prevSibling }
-	newPrevSibling.children = newPrevSibling.children.concat(newSiblingIDs);
+	const newPrevSibling = { 
+		...prevSibling,
+		children: prevSibling.children.concat(newSiblingIDs)
+	};
 
 	const newSiblings = newSiblingIDs
 							.map(id => document.items[id])
@@ -450,14 +453,14 @@ function unindentItem(document : Document | undefined, action : UnindentItem) : 
 	if (!document)
 		return emptyDocument;
 
-	const item = action.data.item;
-	const oldParent = document.items[item.parentID];
+	const item = {...action.data.item};
+	const oldParent = {...document.items[item.parentID]};
 	if (!oldParent || oldParent.itemID == document.rootItemID) {
 		if (item.children.length > 0 && document.items[item.children[0]]) 
 			return unindentItem(document, { ...action, data: { item: document.items[item.children[0]] } });
 		return document;
 	}
-	const oldGrandparent = document.items[oldParent.parentID];
+	const oldGrandparent = {...document.items[oldParent.parentID]};
 	if (!oldGrandparent)
 		return document;
 
@@ -489,7 +492,10 @@ function initializeDocument(document : Document | undefined, action : Initialize
 	return emptyDocument;
 }
 
-export function reducer(doc : Document | undefined, action : Store.Action) : Document {
+export function reducer(document : Document | undefined, anyAction : AnyAction) : Document {
+	const action = anyAction as Action;
+	let doc = !document ? undefined : JSON.parse(JSON.stringify(document)); // only way to force a deep copy
+
 	switch (action.type) {
 		case "AddItemToParent":
 			return addItemToParent(doc, action);			
@@ -520,7 +526,7 @@ export function reducer(doc : Document | undefined, action : Store.Action) : Doc
 
 // DISPATCH PROPERTIES
 
-type Dispatch = (action: Action) => void;
+type Dispatch = (action: AnyAction) => void;
 
 export const creators = (dispatch: Dispatch) => ({
 	addItemToParent: (parent: Item.Item) => dispatch({
@@ -566,7 +572,9 @@ export const creators = (dispatch: Dispatch) => ({
 	unindentItem: (item : Item.Item) => dispatch({
 		type: "UnindentItem",
 		data: { item }
-	})
+	}),
+	undo: () => dispatch(ActionCreators.undo()),
+	redo: () => dispatch(ActionCreators.redo()),
 });
 
 export type DispatchProps = {
@@ -580,5 +588,7 @@ export type DispatchProps = {
 	incrementFocus: (createNewData : boolean) => void,
 	decrementFocus: () => void,
 	indentItem: (item : Item.Item) => void,
-	unindentItem: (item : Item.Item) => void
+	unindentItem: (item : Item.Item) => void,
+	undo: () => void,
+	redo: () => void
 }

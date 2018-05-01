@@ -240,7 +240,7 @@ function updateItemText(document : Document | undefined, action : UpdateItemText
 function removeItem(document : Document | undefined, action : RemoveItem) : Document {
 	if (!document)
 		return emptyDocument;
-	else if (!document.items[action.data.item.itemID])
+	else if (!document.items[action.data.item.itemID] || action.data.item.itemID == document.rootItemID)
 		return document;
 
 	function removeItemFromDictionary(dict : ItemDictionary, itemID : Item.ItemID) : void {
@@ -256,11 +256,11 @@ function removeItem(document : Document | undefined, action : RemoveItem) : Docu
 
 	const { item } = action.data;
 
-	let newDictionary = Object.assign({}, document.items);
+	let newDictionary = { ...document.items };
 	removeItemFromDictionary(newDictionary, item.itemID);
 
 	if (newDictionary[item.parentID]) {
-		let parent = newDictionary[item.parentID];
+		let parent = { ...newDictionary[item.parentID] };
 		const childIndex = parent.children.indexOf(item.itemID);
 
 		if (childIndex >= 0) {
@@ -269,11 +269,22 @@ function removeItem(document : Document | undefined, action : RemoveItem) : Docu
 		}
 	}
 	
-	return {
+	const unrefocusedDocument =  {
 		...document,
-		focusedItemID: document.focusedItemID == action.data.item.itemID ? undefined : document.focusedItemID,
 		items: newDictionary
-	}
+	};
+
+	if (unrefocusedDocument.focusedItemID == undefined || unrefocusedDocument.focusedItemID != action.data.item.itemID)
+		return unrefocusedDocument;
+
+	const prevFocusID = decrementFocus(document, { type: "DecrementFocus", data: { } }).focusedItemID;
+	if (!prevFocusID)
+		return unrefocusedDocument;
+
+	const prevFocusedDocument = setFocus(unrefocusedDocument, { type : "SetFocus", data: { item: unrefocusedDocument.items[prevFocusID] } });
+	const incremented = incrementFocus(prevFocusedDocument, { type: "IncrementFocus", data: { createNewItem: false } });
+
+	return incremented.focusedItemID != undefined ? incremented : prevFocusedDocument;
 }
 
 function setFocus(document : Document | undefined, action : SetFocus) : Document {
@@ -393,7 +404,6 @@ function decrementFocus(document : Document | undefined, action : DecrementFocus
 
 	const focusedParent = document.items[focusedItem.parentID];
 	const focusedIndex = focusedParent.children.indexOf(focusedItem.itemID);
-
 	if (focusedIndex <= 0)
 		return setFocus(document, { type: "SetFocus", data: { item: focusedParent } } );
 
@@ -436,7 +446,7 @@ function indentItem(document : Document | undefined, action : IndentItem) : Docu
 	return updateDocumentDictionary(document, [newParent, newPrevSibling, ...newSiblings]);
 }
 
-function UnindentItem(document : Document | undefined, action : UnindentItem) : Document {
+function unindentItem(document : Document | undefined, action : UnindentItem) : Document {
 	if (!document)
 		return emptyDocument;
 
@@ -444,7 +454,7 @@ function UnindentItem(document : Document | undefined, action : UnindentItem) : 
 	const oldParent = document.items[item.parentID];
 	if (!oldParent || oldParent.itemID == document.rootItemID) {
 		if (item.children.length > 0 && document.items[item.children[0]]) 
-			return UnindentItem(document, { ...action, data: { item: document.items[item.children[0]] } });
+			return unindentItem(document, { ...action, data: { item: document.items[item.children[0]] } });
 		return document;
 	}
 	const oldGrandparent = document.items[oldParent.parentID];
@@ -502,7 +512,7 @@ export function reducer(doc : Document | undefined, action : Store.Action) : Doc
 		case "IndentItem":
 			return indentItem(doc, action);
 		case "UnindentItem":
-			return UnindentItem(doc, action);
+			return unindentItem(doc, action);
 		default:
 			return doc || emptyDocument;
 	}

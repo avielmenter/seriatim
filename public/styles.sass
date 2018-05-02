@@ -2,23 +2,111 @@ $bg-color: #E7E7E7
 $documentFont: "Helvetica", "Arial", sans-serif
 $monoFont: "Consolas", "Courier New", monospace;
 
+*
+	padding: 0
+	margin: 0
+	border: 0
+	outline: 0
+	vertical-align: baseline
+
 body
 	background-color: $bg-color
 	font-family: $documentFont
 
 main
+	width: 100%
+
+#documentScrollContainer
+	
+
+#document
 	width: 8.5in
+	margin-top: 0
 	margin-left: auto
 	margin-right: auto
 	background-color: #FAFAFA
-	padding: 0
-	box-shadow: 0px 0px 5px #CCC
-
-#document
+	box-shadow: 0px 5px 5px #CCC
 	padding: 0.5in
 	padding-left: 0.25in
 	padding-top: 0.25in
-	outline: none
+
+#documentHeader
+	background: #FAFAFA
+	min-width: 8.5in
+	max-width: 100%
+	margin: 0
+	margin-left: auto
+	margin-right: auto
+
+	h1
+		margin-left: 0.25in
+		margin-right: 0.25in
+		padding-top: 0.25em
+		padding-bottom: 0.25em
+	
+	#documentMenu
+		padding-left: 0.25in
+		padding-right: 0.25in
+		border-top: 1px dotted gray
+		border-bottom: 1px solid gray
+
+		.menuItem
+			$vertSpacing: 0.25em
+			display: inline-block
+			vertical-align: top
+			position: relative
+			padding-left: 1ch
+			padding-right: 1ch
+			padding-top: $vertSpacing
+			padding-bottom: $vertSpacing
+
+			ul
+				visibility: hidden
+				position: absolute
+				width: auto
+				white-space: nowrap
+				z-index: 1
+				left: 0
+				background: #FAFAFA
+				border: 1px solid gray
+				border-top: none
+				border-bottom-left-radius: 2px
+				border-bottom-right-radius: 2px
+
+				li
+					list-style: none
+					position: relative
+					padding-left: 1ch
+					padding-right: 1ch
+					padding-top: 0.25em
+					padding-bottom: 0.25em
+
+					&:not(:last-child)
+						border-bottom: 1px dashed gray
+
+					.icon
+						display: inline-block
+						width: 2ch
+						text-align: center
+						font-size: 14pt
+						font-weight: bold
+
+					.shortcut
+						font-size: 8pt
+						color: darkgray
+						margin-left: 1ch
+
+				.ddMenuItemDisabled
+					color: darkgray
+
+				.ddMenuItem:hover
+					background: #EEE
+
+			&:hover
+				text-decoration: underline
+				background: #EEE
+				ul
+					visibility: visible
 
 =PageComponent
 	margin-left: 0.25in

@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-type DataProps = {
+type AttrProps = {
 	icon : string,
 	text : string,
 	shortcut : string,
@@ -8,7 +8,13 @@ type DataProps = {
 	callback : () => void
 }
 
-const ItemButton : React.SFC<DataProps> = (props : DataProps) => {
+type StateProps = {
+
+}
+
+type ComponentProps = AttrProps & StateProps;
+
+const ItemButton : React.SFC<ComponentProps> = (props : ComponentProps) => {
 	const { icon, text, shortcut, callback, buttonClass } = props;
 
 	return (

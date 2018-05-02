@@ -1,3 +1,5 @@
+import * as React from 'react';
+
 import { Store, createStore, combineReducers, AnyAction } from 'redux';
 
 import * as DocumentReducers from './reducers/document';
@@ -17,8 +19,6 @@ export const store = createStore(combineReducers({
         filter: (action, curr, prev) => !curr ? true : !Document.equals(curr, prev._latestUnfiltered)
     })
 }));
-
-export type Action = DocumentReducers.Action;
 
 export type DispatchProps = {
     actions : {

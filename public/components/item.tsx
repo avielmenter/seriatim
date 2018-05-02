@@ -7,11 +7,15 @@ import { ItemTree, ItemID, ItemType, Item as ItemData } from '../store/data/item
 import ItemContent from './itemContent';
 import ItemButton from './itemButton';
 
-type DataProps = {
+type AttrProps = {
 	node : ItemTree
 }
 
-type ComponentProps = DataProps & DispatchProps;
+type StateProps = {
+
+}
+
+type ComponentProps = StateProps & AttrProps & DispatchProps;
 
 const Item : React.SFC<ComponentProps> = (props) => {
 	const { item, children } = props.node;
@@ -58,4 +62,4 @@ const Item : React.SFC<ComponentProps> = (props) => {
 
 const mapStateToProps = (state : any) => ({ })
 
-export default connect<{}, DispatchProps, DataProps>(mapStateToProps, mapDispatchToProps)(Item);
+export default connect<StateProps, DispatchProps, AttrProps>(mapStateToProps, mapDispatchToProps)(Item);

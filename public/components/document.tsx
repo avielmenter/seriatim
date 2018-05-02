@@ -6,14 +6,19 @@ import { Document as DocumentData } from '../store/data/document';
 import { ItemTree, ItemID, Item as ItemData } from '../store/data/item';
 
 import Item from './item';
+import DocumentHeader from './documentHeader';
 
 import { DispatchProps, mapDispatchToProps, ApplicationState } from '../store';
 
-type DataProps = {
+type StateProps = {
 	document : DocumentData | undefined
 }
 
-type ComponentProps = DataProps & DispatchProps;
+type AttrProps = {
+
+}
+
+type ComponentProps = StateProps & AttrProps & DispatchProps;
 
 class Document extends React.Component<ComponentProps> {
 	viewIndex : number = 0;
@@ -97,8 +102,11 @@ class Document extends React.Component<ComponentProps> {
 
 		return (
 			<main>
-				<div id="document" tabIndex={0} ref={this.documentDiv}>
-					<Item node={tree} key={tree.item.itemID} />
+				<DocumentHeader />
+				<div id="documentScrollContainer">
+					<div id="document" tabIndex={0} ref={this.documentDiv}>
+						<Item node={tree} key={tree.item.itemID} />
+					</div>
 				</div>
 			</main>
 		);
@@ -119,4 +127,4 @@ const mapStateToProps = (state : ApplicationState | { }) => ({
 	document: state == {} ? undefined : (state as ApplicationState).document.present 
 });
 
-export default connect<DataProps, DispatchProps, {}>(mapStateToProps, mapDispatchToProps)(Document);
+export default connect<StateProps, DispatchProps, AttrProps>(mapStateToProps, mapDispatchToProps)(Document);

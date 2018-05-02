@@ -32,9 +32,9 @@ app.use((err : Error, req : express.Request, res : express.Response, next : expr
 	console.error(err);
 
 	if (status == 404)
-		res.sendFile(path.join(__dirname, '../src/404.html'));
+		res.send('HTTP 404 -- File Not Found');
 	else
-		res.sendFile(path.join(__dirname, '../src/500.html'));
+		res.send('HTTP 500 -- The Server Could Not Complete Your Request');
 });
 
 app.listen(process.env.PORT || 3000, () => console.log('Outliner listening on port ' + (process.env.PORT || 3000) + '.'));

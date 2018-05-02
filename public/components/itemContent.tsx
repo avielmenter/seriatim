@@ -6,16 +6,20 @@ import { DispatchProps, mapDispatchToProps } from '../store';
 
 import { ItemTree } from '../store/data/item';
 
-type DataProps = {
+type StateProps = {
+	
+}
+
+type AttrProps = { 
 	node : ItemTree
 }
 
-type ComponentProps = DataProps & DispatchProps;
+type ComponentProps = StateProps & AttrProps & DispatchProps;
 
 class ItemContent extends React.Component<ComponentProps> {
 	editArea : React.RefObject<HTMLTextAreaElement>;
 
-	constructor(props: ComponentProps) {
+	constructor(props : ComponentProps) {
 		super(props);
 		this.editArea = React.createRef<HTMLTextAreaElement>();
 	}
@@ -148,4 +152,4 @@ class ItemContent extends React.Component<ComponentProps> {
 }
 
 const mapStateToProps = (state : any) => ({});
-export default connect<{}, DispatchProps, DataProps>(mapStateToProps, mapDispatchToProps)(ItemContent);
+export default connect<StateProps, DispatchProps, AttrProps>(mapStateToProps, mapDispatchToProps)(ItemContent);

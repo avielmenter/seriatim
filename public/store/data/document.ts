@@ -5,11 +5,11 @@ export type ItemDictionary = { [itemID : string] : Item};
 export interface Document {
 	title : string,
 	rootItemID : ItemID,
-	focusedItemID : ItemID | undefined
+	focusedItemID : ItemID | undefined,
 	items : ItemDictionary
 }
 
-export function copy(d : Document) : Document {
+export function copyDocument(d : Document) : Document {
 	return JSON.parse(JSON.stringify(d));
 }
 

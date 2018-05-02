@@ -74,6 +74,8 @@ class ItemContent extends React.Component<ComponentProps> {
 
 				case 'del':
 				case 'delete':
+				case 'back':
+				case 'backspace':
 					actions.removeItem(item);
 					break;
 

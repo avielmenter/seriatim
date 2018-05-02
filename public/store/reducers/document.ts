@@ -2,7 +2,7 @@ import { ActionCreator, AnyAction } from 'redux';
 import undoable, { ActionCreators } from 'redux-undo';
 
 import * as Item from '../data/item';
-import { Document, ItemDictionary } from '../data/document';
+import { Document, ItemDictionary, copyDocument } from '../data/document';
 
 import * as Store from '../';
 
@@ -494,7 +494,7 @@ function initializeDocument(document : Document | undefined, action : Initialize
 
 export function reducer(document : Document | undefined, anyAction : AnyAction) : Document {
 	const action = anyAction as Action;
-	let doc = !document ? undefined : JSON.parse(JSON.stringify(document)); // only way to force a deep copy
+	let doc = !document ? undefined : copyDocument(document);
 
 	switch (action.type) {
 		case "AddItemToParent":

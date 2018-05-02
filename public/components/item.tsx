@@ -5,6 +5,7 @@ import { ApplicationState, DispatchProps, mapDispatchToProps } from '../store';
 import { ItemTree, ItemID, ItemType, Item as ItemData } from '../store/data/item';
 
 import ItemContent from './itemContent';
+import ItemButton from './itemButton';
 
 type DataProps = {
 	node : ItemTree
@@ -17,6 +18,8 @@ const Item : React.SFC<ComponentProps> = (props) => {
 	const { text } = item;
 	const { itemType } = item.view;
 
+	const actions = props.actions.document;
+
 	return (
 		<div className={itemType == "Title" ? "Header" : itemType} id={item.itemID}>
 			<div className="collapseExpand">
@@ -24,40 +27,28 @@ const Item : React.SFC<ComponentProps> = (props) => {
 					&ndash;
 				</div>}
 				{item.children.length > 0 && <button className={item.view.collapsed ? "expandButton" : "collapseButton"}
-						onClick={() => props.actions.document.toggleItemCollapse(item)}>
+						onClick={() => actions.toggleItemCollapse(item)}>
 					{item.view.collapsed ? "▶" : "▼"}
 				</button>}
 			</div>
-			<ItemContent node={props.node} />
 			<div className="buttons">
 				<div className="buttonMenu">
 					{itemType != "Title" && 
-						<button
-							title="Add item after this one"
-							className="addSibling"
-							onClick={() => props.actions.document.addItemAfterSibling(item, false)}
-						>
-							+
-						</button>
+						<ItemButton icon="+" text="Add Item" shortcut="Ctrl-⏎" callback={() => actions.addItemAfterSibling(item, false)} buttonClass="addSibling" />
 					}
-					<button
-						title = "Add child item"
-						className="addChild"
-						onClick={() => props.actions.document.addItemToParent(item)}
-					>
-						&#9660;
-					</button>
+					<ItemButton icon="▼" text="Add Sub-Item" shortcut="Ctrl-⇧-⏎" callback={() => actions.addItemToParent(item)} buttonClass="addChild" />
 					{itemType != "Title" && 
-						<button
-							title="Remove this item"
-							className="removeItem"
-							onClick={() => props.actions.document.removeItem(item)}
-						>
-							X
-						</button>
+						<ItemButton icon="»" text="Indent" shortcut="Ctrl-]" callback={() => actions.indentItem(item)} buttonClass="indentItem" />
+					}
+					{itemType != "Title" &&
+						<ItemButton icon="«" text="Un-Indent" shortcut={"Ctrl-["} callback={() => actions.unindentItem(item)} buttonClass="unindentItem" />
+					}
+					{itemType != "Title" && 
+						<ItemButton icon="X" text="Remove Item" shortcut="Ctrl-⌫" callback={() => actions.removeItem(item)} buttonClass="removeItem" />
 					}
 				</div>
 			</div>
+			<ItemContent node={props.node} />
 			{!item.view.collapsed && children.map(child =>
 				<Item {...props} node={child} key={child.item.itemID} />
 			)}

@@ -114,7 +114,12 @@ class Document extends React.Component<ComponentProps> {
 					break;
 
 				default:
-					preventDefault = false;
+					if (event.keyCode == 219 && focusedItem != undefined)		// use keycodes for edge compatibility
+						actions.unindentItem(focusedItem);						// I thought I didn't have to write separate websites for IE anymore
+					else if (event.keyCode == 221 && focusedItem != undefined)
+						actions.indentItem(focusedItem)
+					else
+						preventDefault = false;
 					break;
 			}
 		}

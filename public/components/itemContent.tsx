@@ -75,7 +75,7 @@ class ItemContent extends React.Component<ComponentProps> {
 	}
 
 	focusOnTextArea() {
-		if (this.props.node.item.view.focused && this.editArea.current) 
+		if (this.props.node.focused && this.editArea.current) 
 			this.editArea.current.focus();
 	}
 
@@ -93,7 +93,7 @@ class ItemContent extends React.Component<ComponentProps> {
 					/> :
 					<h1 className="title">{item.text}</h1>
 				}
-				{item.view.focused && 
+				{node.focused && 
 					<textarea id={this.getTextAreaId()} className="editArea"
 						onChange={(event) => actions.updateItemText(item, event.target.value)}
 						onFocus={this.setSelectionRange}

@@ -37,6 +37,8 @@ class Document extends React.Component<ComponentProps> {
 	
 		return {
 			item: rootItem,
+			focused: doc.focusedItemID == nodeID,
+			selected: false,
 			children: nodeChildren
 		};
 	}
@@ -80,6 +82,20 @@ class Document extends React.Component<ComponentProps> {
 					actions.redo();
 					break;
 
+				case 'h':
+					if (event.shiftKey)
+						actions.makeHeader(item);
+					else
+						preventDefault = false;
+					break;
+
+				case 'i':
+					if (event.shiftKey)
+						actions.makeItem(item);
+					else
+						preventDefault = false;
+					break;
+
 				case '[':
 					if (focusedItem != undefined)
 						actions.unindentItem(focusedItem);
@@ -108,8 +124,6 @@ class Document extends React.Component<ComponentProps> {
 
 				case 'del':
 				case 'delete':
-				case 'back':
-				case 'backspace':
 					actions.removeItem(item);
 					break;
 

@@ -85,6 +85,20 @@ type UnindentItem = {
 	}
 }
 
+type MakeHeader = {
+	type : "MakeHeader",
+	data : {
+		item : Item.Item
+	}
+}
+
+type MakeItem = {
+	type : "MakeItem",
+	data : {
+		item : Item.Item
+	}
+}
+
 export type Action = 	AddItemToParent | 
 						AddItemAfterSibling | 
 						InitializeDocument | 
@@ -95,7 +109,9 @@ export type Action = 	AddItemToParent |
 						DecrementFocus |
 						IndentItem |
 						UnindentItem |
-						UpdateItemText;
+						UpdateItemText |
+						MakeHeader |
+						MakeItem;
 
 // HELPER FUNCTIONS
 
@@ -121,7 +137,6 @@ const emptyDocument : Document = {
 			children: [],
 			view: {
 				itemType: "Title",
-				focused: false,
 				collapsed: false
 			}
 		}
@@ -136,8 +151,7 @@ function getNewItemFromParent(parent : Item.Item) : Item.Item {
 		text: "",
 		view: {
 			itemType: "Item",
-			focused: false,
-			collapsed: false
+			collapsed: false,
 		}
 	};
 }
@@ -292,6 +306,13 @@ function setFocus(document : Document | undefined, action : SetFocus) : Document
 	if (!document)
 		return emptyDocument;
 
+	const item = action.data.item;
+
+	return {
+		...document,
+		focusedItemID: (item == undefined ? undefined : item.itemID)
+	};
+	/*
 	const { item } = action.data;
 	if (!item) {
 		if (!document.focusedItemID || !document.items[document.focusedItemID]) {
@@ -340,7 +361,7 @@ function setFocus(document : Document | undefined, action : SetFocus) : Document
 	return {
 		...updateDocumentDictionary(document, newItems),
 		focusedItemID: item.itemID
-	};
+	};*/
 }
 
 function incrementFocus(document : Document | undefined, action : IncrementFocus) : Document {
@@ -486,6 +507,66 @@ function unindentItem(document : Document | undefined, action : UnindentItem) : 
 	return updateDocumentDictionary(document, [newItem, newParent, newGrandparent, ...newSiblings]);
 }
 
+function makeHeader(document : Document | undefined, action : MakeHeader) : Document {
+	if (!document)
+		return emptyDocument;
+
+	const item = action.data.item;
+
+	if (item.itemID == document.rootItemID)
+		return document;
+
+	function getPreviousHeaderLevel(doc : Document, curr : Item.Item) : number {
+		if (!curr || !curr.parentID || curr.itemID == doc.rootItemID)
+			return 0;
+
+		const hashes = curr.text.match(/(#+)\s+.*/);
+		if (!hashes || hashes.length < 2)
+			return getPreviousHeaderLevel(doc, doc.items[curr.parentID]);
+
+		return hashes[1].length;
+	}
+
+	let hashes = '';
+	const numHashes = getPreviousHeaderLevel(document, document.items[item.parentID]) + 1;
+
+	for (let i = 0; i < numHashes; i++) {
+		hashes += '#';
+	}
+
+	const newItem : Item.Item = {
+		...item,
+		text: item.text.replace(/^(#+\s)?/, hashes + ' '),
+		view: {
+			...item.view,
+			itemType: "Header"
+		}
+	};
+
+	return updateDocumentDictionary(document, [newItem]);
+}
+
+function makeItem(document : Document | undefined, action : MakeItem) : Document {
+	if (!document)
+		return emptyDocument;
+
+	const item = action.data.item;
+
+	if (item.itemID == document.rootItemID)
+		return document;
+
+	const newItem : Item.Item = {
+		...item,
+		text: item.text.replace(/^(#+\s)?/, ''),
+		view: {
+			...item.view,
+			itemType: "Item"
+		}
+	};
+
+	return updateDocumentDictionary(document, [newItem]);
+}
+
 function initializeDocument(document : Document | undefined, action : InitializeDocument) : Document {
 	if (action.data.document)
 		return action.data.document;
@@ -519,6 +600,10 @@ export function reducer(document : Document | undefined, anyAction : AnyAction) 
 			return indentItem(doc, action);
 		case "UnindentItem":
 			return unindentItem(doc, action);
+		case "MakeHeader":
+			return makeHeader(doc, action);
+		case "MakeItem":
+			return makeItem(doc, action);
 		default:
 			return doc || emptyDocument;
 	}
@@ -573,6 +658,14 @@ export const creators = (dispatch: Dispatch) => ({
 		type: "UnindentItem",
 		data: { item }
 	}),
+	makeHeader: (item : Item.Item) => dispatch({
+		type: "MakeHeader",
+		data: { item }
+	}),
+	makeItem: (item : Item.Item) => dispatch({
+		type: "MakeItem",
+		data: { item }
+	}),
 	undo: () => dispatch(ActionCreators.undo()),
 	redo: () => dispatch(ActionCreators.redo()),
 });
@@ -589,6 +682,8 @@ export type DispatchProps = {
 	decrementFocus: () => void,
 	indentItem: (item : Item.Item) => void,
 	unindentItem: (item : Item.Item) => void,
+	makeHeader: (item : Item.Item) => void,
+	makeItem: (item : Item.Item) => void,
 	undo: () => void,
 	redo: () => void
 }

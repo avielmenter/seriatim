@@ -17,6 +17,7 @@ type StateProps = {
 type ComponentProps = StateProps & AttrProps & DispatchProps;
 
 const Item : React.SFC<ComponentProps> = (props) => {
+	const node = props.node;
 	const { item, children } = props.node;
 	const { text } = item;
 	const { itemType } = item.view;
@@ -26,7 +27,7 @@ const Item : React.SFC<ComponentProps> = (props) => {
 	return (
 		<div className={itemType == "Title" ? "Header" : itemType} id={item.itemID}>
 			<div className="collapseExpand">
-				{props.node.item.view.focused && <div className="showFocused">
+				{node.focused && <div className="showFocused">
 					&ndash;
 				</div>}
 				{item.children.length > 0 && <button className={item.view.collapsed ? "expandButton" : "collapseButton"}

@@ -30,6 +30,9 @@ const DocumentHeader : React.SFC<ComponentProps> = (props) => {
 	const addSibling = (focused || lastItem).view.itemType == "Title" ? 
 							() => actions.addItemToParent(focused || lastItem) :
 							() => actions.addItemAfterSibling(focused || lastItem, false);
+
+	const collapsable = focused != undefined && focused.children.length > 0;
+	const expandable = focused != undefined && collapsable && focused.view.collapsed;
 	
 	return (
 		<div id="documentHeader">
@@ -40,7 +43,7 @@ const DocumentHeader : React.SFC<ComponentProps> = (props) => {
 						File
 						<ul>
 							<MenuItem enabled={false} text="Save" shortcut="Ctrl-S" callback={() => {}} />
-							<MenuItem text="Rename..." shortcut="Esc + ↹" 
+							<MenuItem text="Rename" shortcut="Esc, ↹" 
 								callback={(event) => handleClick(event, () => actions.setFocus(document.items[document.rootItemID]))} />
 							<MenuItem enabled={false} text="Exit" callback={() => {}} />
 						</ul>
@@ -56,8 +59,20 @@ const DocumentHeader : React.SFC<ComponentProps> = (props) => {
 								callback={(event) => handleClick(event, () => actions.indentItem(focused || lastItem))} />
 							<MenuItem text="Indent" icon="«" shortcut="Ctrl-[" enabled={focused != undefined} ID="unindentItem"
 								callback={(event) => handleClick(event, () => actions.unindentItem(focused || lastItem))} />
-							<MenuItem text="Remove Item" icon="X" shortcut="Ctrl-⌫" ID="removeItem" enabled={lastItem.view.itemType != "Title"}
+							<MenuItem text="Remove Item" icon="X" shortcut="Ctrl-⌫" ID="removeItem"
+								enabled={!(focused && focused.view.itemType == "Title") && lastItem.view.itemType != "Title"}
 								callback={(event) => handleClick(event, () => actions.removeItem(focused || lastItem))} />
+						</ul>
+					</div>
+					<div className="menuItem">
+						View
+						<ul>
+							<MenuItem text={expandable ? "Expand Item" : "Collapse Item"} icon={expandable ? "▼" : "▶"} shortcut="Ctrl-␣" ID="collapse"
+								enabled={collapsable} callback={(event) => handleClick(event, () => actions.toggleItemCollapse(focused as Item))} />
+							<MenuItem text="Turn Into Header" shortcut="Ctrl-⇧-H" ID="makeHeader" enabled={(focused || lastItem).view.itemType != "Title"}
+								callback={(event) => handleClick(event, () => actions.makeHeader(focused || lastItem))} />
+							<MenuItem text="Turn Into Item" shortcut="Ctrl-⇧-I" ID="makeItem" enabled={(focused || lastItem).view.itemType != "Title"}
+								callback={(event) => handleClick(event, () => actions.makeItem(focused || lastItem))} />
 						</ul>
 					</div>
 				</div>

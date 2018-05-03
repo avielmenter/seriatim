@@ -1,10 +1,10 @@
 import * as React from 'react';
 import { connect } from 'react-redux';
 
-import { Document } from '../store/data/document';
+import { Document, getLastItem } from '../store/data/document';
 import { Item } from '../store/data/item';
 
-import { DispatchProps, mapDispatchToProps, ApplicationState } from '../store';
+import { DispatchProps, mapDispatchToProps, ApplicationState, handleClick } from '../store';
 
 import MenuItem from './menuItem';
 
@@ -18,16 +18,6 @@ type AttrProps = {
 
 type ComponentProps = StateProps & AttrProps & DispatchProps;
 
-function getLastItem(document : Document, curr : Item) : Item {
-	if (curr.children.length == 0)
-		return curr;
-
-	const lastChild = document.items[curr.children[curr.children.length]];
-	if (!lastChild)
-		return curr;
-	return getLastItem(document, lastChild); 
-}
-
 const DocumentHeader : React.SFC<ComponentProps> = (props) => {
 	const document = props.document;
 	if (!document)
@@ -36,6 +26,10 @@ const DocumentHeader : React.SFC<ComponentProps> = (props) => {
 	const actions = props.actions.document;
 	const focused = !document.focusedItemID ? undefined : document.items[document.focusedItemID];
 	const lastItem = getLastItem(document, document.items[document.rootItemID]);
+
+	const addSibling = (focused || lastItem).view.itemType == "Title" ? 
+							() => actions.addItemToParent(focused || lastItem) :
+							() => actions.addItemAfterSibling(focused || lastItem, false);
 	
 	return (
 		<div id="documentHeader">
@@ -46,18 +40,24 @@ const DocumentHeader : React.SFC<ComponentProps> = (props) => {
 						File
 						<ul>
 							<MenuItem enabled={false} text="Save" shortcut="Ctrl-S" callback={() => {}} />
+							<MenuItem text="Rename..." shortcut="Esc + ↹" 
+								callback={(event) => handleClick(event, () => actions.setFocus(document.items[document.rootItemID]))} />
 							<MenuItem enabled={false} text="Exit" callback={() => {}} />
 						</ul>
 					</div>
 					<div className="menuItem">
 						Edit
 						<ul>
-							<MenuItem text="Add Item" icon="+" shortcut="Ctrl-⏎" 
-								callback={() => actions.addItemAfterSibling(focused || lastItem, true)} />
-							<MenuItem text="Add Item To Sibling" icon="▼" shortcut="Ctrl-⇧-⏎"
-								callback={() => actions.addItemToParent(focused || lastItem)} />
-							<MenuItem text="Remove Item" icon="X" shortcut="Ctrl-⌫"
-								callback={() => actions.removeItem(focused || lastItem)} />
+							<MenuItem text="Add Item" icon="+" shortcut="Ctrl-⏎" ID="addSibling"
+								callback={(event) => handleClick(event, addSibling)} />
+							<MenuItem text="Add Sub-Item" icon="▼" shortcut="Ctrl-⇧-⏎" ID="addChild"
+								callback={(event) => handleClick(event, () => actions.addItemToParent(focused || lastItem))} />
+							<MenuItem text="Indent" icon="»" shortcut="Ctrl-]" enabled={focused != undefined} ID="indentItem"
+								callback={(event) => handleClick(event, () => actions.indentItem(focused || lastItem))} />
+							<MenuItem text="Indent" icon="«" shortcut="Ctrl-[" enabled={focused != undefined} ID="unindentItem"
+								callback={(event) => handleClick(event, () => actions.unindentItem(focused || lastItem))} />
+							<MenuItem text="Remove Item" icon="X" shortcut="Ctrl-⌫" ID="removeItem"
+								callback={(event) => handleClick(event, () => actions.removeItem(focused || lastItem))} />
 						</ul>
 					</div>
 				</div>

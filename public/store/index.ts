@@ -32,3 +32,8 @@ export const mapDispatchToProps = (dispatch : Dispatch) => ({
         document: DocumentReducers.creators(dispatch)
     }
 });
+
+export function handleClick<HTMLElement>(event : React.MouseEvent<HTMLElement>, callback : () => void) : void {
+    event.stopPropagation();
+    callback();
+}

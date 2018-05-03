@@ -2,7 +2,7 @@ import * as React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 
-import { Document as DocumentData } from '../store/data/document';
+import { Document as DocumentData, getLastItem } from '../store/data/document';
 import { ItemTree, ItemID, Item as ItemData } from '../store/data/item';
 
 import Item from './item';
@@ -45,6 +45,15 @@ class Document extends React.Component<ComponentProps> {
 		const actions = this.props.actions.document;
 		let preventDefault = true;
 
+		const doc = this.props.document;
+		if (!doc)
+			return;
+
+		const focusedItem = doc.focusedItemID ?doc.items[doc.focusedItemID] : undefined;
+		const lastItem = getLastItem(doc, doc.items[doc.rootItemID]);
+
+		const item = focusedItem || lastItem;
+
 		if (!event.ctrlKey) {
 			switch (event.key.toLowerCase()) {
 				case 'tab':
@@ -71,6 +80,39 @@ class Document extends React.Component<ComponentProps> {
 					actions.redo();
 					break;
 
+				case '[':
+					if (focusedItem != undefined)
+						actions.unindentItem(focusedItem);
+				break;
+
+				case ']':
+					if (focusedItem != undefined)
+						actions.indentItem(item);
+				break;
+
+				case ' ':
+					if (item.children.length > 0 || item.view.collapsed)
+						actions.toggleItemCollapse(item);
+					break;
+				
+				case 'return':
+				case 'enter':
+					if (event.shiftKey || lastItem.itemID == doc.rootItemID) {
+						actions.addItemToParent(item);
+						if (focusedItem != undefined)
+							actions.incrementFocus(false);
+					} else {
+						actions.addItemAfterSibling(item, focusedItem != undefined);
+					}
+					break;
+
+				case 'del':
+				case 'delete':
+				case 'back':
+				case 'backspace':
+					actions.removeItem(item);
+					break;
+
 				default:
 					preventDefault = false;
 					break;
@@ -81,13 +123,8 @@ class Document extends React.Component<ComponentProps> {
 			event.preventDefault();
 	}
 
-	handleClick = (event: MouseEvent) : void => {
-		this.props.actions.document.setFocus(undefined);
-	}
-
 	componentWillMount() {
 		document.addEventListener('keydown', this.handleKeyDown);
-		document.addEventListener('click', this.handleClick, { capture: true });
 	}
 
 	render() {
@@ -101,7 +138,7 @@ class Document extends React.Component<ComponentProps> {
 		document.title = doc.title + " | Seriatim";
 
 		return (
-			<main>
+			<main onClick={(event) => { this.props.actions.document.setFocus(undefined); } }>
 				<DocumentHeader />
 				<div id="documentScrollContainer">
 					<div id="document" tabIndex={0} ref={this.documentDiv}>
@@ -119,7 +156,6 @@ class Document extends React.Component<ComponentProps> {
 
 	componentWillUnmount() {
 		document.removeEventListener('keydown', this.handleKeyDown);
-		document.removeEventListener('click', this.handleClick);
 	}
 }
 

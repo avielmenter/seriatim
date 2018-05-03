@@ -530,7 +530,7 @@ function makeHeader(document : Document | undefined, action : MakeHeader) : Docu
 	let hashes = '';
 	const numHashes = getPreviousHeaderLevel(document, document.items[item.parentID]) + 1;
 
-	for (let i = 0; i < numHashes; i++) {
+	for (let i = 0; i < numHashes && i < 6; i++) {
 		hashes += '#';
 	}
 

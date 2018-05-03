@@ -107,14 +107,14 @@ class ItemContent extends React.Component<ComponentProps> {
 			</div>
 		);
 	}
-	//*
+	
 	componentDidMount() {
 		this.focusOnTextArea();
 	}
 
 	componentDidUpdate() {
 		this.focusOnTextArea();
-	} //*/
+	}
 }
 
 const mapStateToProps = (state : any) => ({});

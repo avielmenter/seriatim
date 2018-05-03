@@ -312,56 +312,6 @@ function setFocus(document : Document | undefined, action : SetFocus) : Document
 		...document,
 		focusedItemID: (item == undefined ? undefined : item.itemID)
 	};
-	/*
-	const { item } = action.data;
-	if (!item) {
-		if (!document.focusedItemID || !document.items[document.focusedItemID]) {
-			return {
-				...document,
-				focusedItemID: undefined
-			}
-		}
-
-		const prevFocus = document.items[document.focusedItemID];
-		const unfocused = {...prevFocus, view: { ...prevFocus.view, focused: false } };
-
-		return {
-			...updateDocumentDictionary(document, [unfocused]),
-			focusedItemID: undefined
-		};
-	}
-
-	if (document.focusedItemID == item.itemID)
-		return document;
-
-	let newItems = [];
-
-	const newFocus = {
-		...item,
-		view: {
-			...item.view,
-			focused: true
-		}
-	};
-
-	newItems.push(newFocus);
-
-	if (document.focusedItemID !== undefined && document.items[document.focusedItemID]) {
-		const oldFocused = {
-			...document.items[document.focusedItemID],
-			view: {
-				...document.items[document.focusedItemID].view,
-				focused: false
-			}
-		};
-
-		newItems.push(oldFocused);
-	}
-
-	return {
-		...updateDocumentDictionary(document, newItems),
-		focusedItemID: item.itemID
-	};*/
 }
 
 function incrementFocus(document : Document | undefined, action : IncrementFocus) : Document {
@@ -477,8 +427,14 @@ function unindentItem(document : Document | undefined, action : UnindentItem) : 
 	const item = {...action.data.item};
 	const oldParent = {...document.items[item.parentID]};
 	if (!oldParent || oldParent.itemID == document.rootItemID) {
-		if (item.children.length > 0 && document.items[item.children[0]]) 
+		if (item.children.length > 0 && document.items[item.children[0]]) {
 			return unindentItem(document, { ...action, data: { item: document.items[item.children[0]] } });
+		} else if (oldParent) {
+			const childIndex = oldParent.children.indexOf(item.itemID);
+			return childIndex < oldParent.children.length - 1 ?
+					unindentItem(document, { ...action, data: { item: document.items[oldParent.children[childIndex + 1]] } }) :
+					document; 
+		}
 		return document;
 	}
 	const oldGrandparent = {...document.items[oldParent.parentID]};

@@ -56,7 +56,7 @@ const DocumentHeader : React.SFC<ComponentProps> = (props) => {
 								callback={(event) => handleClick(event, () => actions.indentItem(focused || lastItem))} />
 							<MenuItem text="Indent" icon="«" shortcut="Ctrl-[" enabled={focused != undefined} ID="unindentItem"
 								callback={(event) => handleClick(event, () => actions.unindentItem(focused || lastItem))} />
-							<MenuItem text="Remove Item" icon="X" shortcut="Ctrl-⌫" ID="removeItem"
+							<MenuItem text="Remove Item" icon="X" shortcut="Ctrl-⌫" ID="removeItem" enabled={lastItem.view.itemType != "Title"}
 								callback={(event) => handleClick(event, () => actions.removeItem(focused || lastItem))} />
 						</ul>
 					</div>

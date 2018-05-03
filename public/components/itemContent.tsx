@@ -2,20 +2,24 @@ import * as React from 'react';
 import { connect } from 'react-redux';
 import * as ReactMarkdown from 'react-markdown';
 
-import { DispatchProps, mapDispatchToProps } from '../store';
+import { DispatchProps, mapDispatchToProps, handleClick } from '../store';
 
 import { ItemTree } from '../store/data/item';
 
-type DataProps = {
+type StateProps = {
+	
+}
+
+type AttrProps = { 
 	node : ItemTree
 }
 
-type ComponentProps = DataProps & DispatchProps;
+type ComponentProps = StateProps & AttrProps & DispatchProps;
 
 class ItemContent extends React.Component<ComponentProps> {
 	editArea : React.RefObject<HTMLTextAreaElement>;
 
-	constructor(props: ComponentProps) {
+	constructor(props : ComponentProps) {
 		super(props);
 		this.editArea = React.createRef<HTMLTextAreaElement>();
 	}
@@ -49,36 +53,6 @@ class ItemContent extends React.Component<ComponentProps> {
 		}
 		else  {
 			switch (event.key.toLowerCase()) {
-				case '[':
-					actions.unindentItem(item);
-				break;
-
-				case ']':
-					actions.indentItem(item);
-				break;
-
-				case ' ':
-					if (node.children.length > 0 || item.view.collapsed)
-						actions.toggleItemCollapse(item);
-					break;
-				
-				case 'return':
-				case 'enter':
-					if (event.shiftKey) {
-						actions.addItemToParent(item);
-						actions.incrementFocus(false);
-					} else {
-						actions.addItemAfterSibling(item, true);
-					}
-					break;
-
-				case 'del':
-				case 'delete':
-				case 'back':
-				case 'backspace':
-					actions.removeItem(item);
-					break;
-
 				default:
 					preventDefault = false;
 					break;
@@ -100,11 +74,6 @@ class ItemContent extends React.Component<ComponentProps> {
 		}
 	}
 
-	onEditAreaBlur = () : void => {
-		//if (this.props.node.item.view.focused)
-		//	this.props.actions.document.setFocus(undefined);
-	}
-
 	focusOnTextArea() {
 		if (this.props.node.item.view.focused && this.editArea.current) 
 			this.editArea.current.focus();
@@ -116,7 +85,7 @@ class ItemContent extends React.Component<ComponentProps> {
 		const actions = this.props.actions.document;
 
 		return (
-			<div className="itemContent" id={this.getContentDivId()} onClick={() => actions.setFocus(node.item)}>
+			<div className="itemContent" id={this.getContentDivId()} onClick={(event) => handleClick(event, () => actions.setFocus(item))}>
 				{item.view.itemType != "Title" ? 
 					<ReactMarkdown 
 						source={item.text.length == 0 ? "New Item" : item.text}
@@ -127,7 +96,6 @@ class ItemContent extends React.Component<ComponentProps> {
 				{item.view.focused && 
 					<textarea id={this.getTextAreaId()} className="editArea"
 						onChange={(event) => actions.updateItemText(item, event.target.value)}
-						onBlur={this.onEditAreaBlur}
 						onFocus={this.setSelectionRange}
 						onKeyDown={this.handleKeyDown}
 						value={item.text}
@@ -148,4 +116,4 @@ class ItemContent extends React.Component<ComponentProps> {
 }
 
 const mapStateToProps = (state : any) => ({});
-export default connect<{}, DispatchProps, DataProps>(mapStateToProps, mapDispatchToProps)(ItemContent);
+export default connect<StateProps, DispatchProps, AttrProps>(mapStateToProps, mapDispatchToProps)(ItemContent);

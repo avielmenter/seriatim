@@ -2,23 +2,133 @@ $bg-color: #E7E7E7
 $documentFont: "Helvetica", "Arial", sans-serif
 $monoFont: "Consolas", "Courier New", monospace;
 
+*
+	padding: 0
+	margin: 0
+	border: 0
+	outline: 0
+	vertical-align: baseline
+
+html, body, #root, main
+	height: 100%
+
 body
 	background-color: $bg-color
 	font-family: $documentFont
 
 main
+	width: 100%
+	display: flex
+	flex-direction: column
+
+#documentScrollContainer
+	height: 100%	
+	overflow-y: auto
+
+	flex-grow: 1
+
+#document
 	width: 8.5in
+	margin-top: 0
 	margin-left: auto
 	margin-right: auto
 	background-color: #FAFAFA
-	padding: 0
-	box-shadow: 0px 0px 5px #CCC
-
-#document
+	box-shadow: 0px 5px 5px #CCC
 	padding: 0.5in
 	padding-left: 0.25in
 	padding-top: 0.25in
-	outline: none
+
+#documentHeader
+	background: #FAFAFA
+	min-width: 8.5in
+	max-width: 100%
+	margin: 0
+
+	h1
+		margin-left: 0.25in
+		margin-right: 0.25in
+		padding-top: 0.25em
+		padding-bottom: 0.25em
+	
+	#documentMenu
+		padding-left: 0.25in
+		padding-right: 0.25in
+		border-top: 1px dotted gray
+		border-bottom: 1px solid gray
+
+		.menuItem
+			$vertSpacing: 0.25em
+			display: inline-block
+			vertical-align: top
+			position: relative
+			padding-left: 1ch
+			padding-right: 1ch
+			padding-top: $vertSpacing
+			padding-bottom: $vertSpacing
+
+			ul
+				visibility: hidden
+				position: absolute
+				width: auto
+				white-space: nowrap
+				z-index: 1
+				left: 0
+				background: #FAFAFA
+				border: 1px solid gray
+				border-top: none
+				border-bottom-left-radius: 2px
+				border-bottom-right-radius: 2px
+
+				#addChild .icon
+					color: #00F
+
+				#addSibling .icon
+					color: #0C0
+
+				#removeItem .icon
+					color: red
+
+				#indentItem .icon, #unindentItem .icon
+					color: navy
+
+				#removeItem:hover
+					background: #FEE
+
+				li
+					list-style: none
+					position: relative
+					padding-right: 1ch
+					padding-top: 0.25em
+					padding-bottom: 0.25em
+
+					&:not(:last-child)
+						border-bottom: 1px dashed gray
+
+					.icon
+						display: inline-block
+						width: 3ch
+						text-align: center
+						font-size: 14pt
+						font-weight: bold
+
+					.shortcut
+						font-size: 8pt
+						color: darkgray
+						margin-left: 1ch
+
+				.ddMenuItemDisabled
+					color: darkgray !important
+					.icon
+						color: darkgray !important
+
+				.ddMenuItem:hover
+					background: #EEE
+
+			&:hover
+				text-decoration: underline
+				background: #EEE
+				ul
+					visibility: visible
 
 =PageComponent
 	margin-left: 0.25in
@@ -78,80 +188,6 @@ main
 	border: none
 	font-size: 14pt
 	font-weight: bold
-
-.buttons
-	.addChild
-		color: #00F
-
-	.addSibling
-		color: #0C0
-
-	.removeItem
-		color: red
-
-	.indentItem, .unindentItem
-		color: navy
-
-	.buttonMenu
-		button
-			+ItemButton
-			height: 1.5em
-			padding-bottom: 0.2em
-			text-align: left	
-			width: 100%
-			&:not(:first-child)
-				display: none
-			&:hover
-				background: white
-		
-		.removeItem:hover
-			background: #FFEEEE
-		
-		width: 12em
-		border-radius: 2px
-		opacity: 0.25
-
-		&:hover
-			opacity: 1
-			background: #F0F0F0
-			border: 1px solid #BBB	
-			button
-				display: inline-block
-	
-	position: absolute
-	width: 0
-	right: 0
-	top: 0
-	text-align: left
-	z-index: 0
-
-	.buttonText
-		visibility: hidden
-		font-weight: normal
-		font-size: 10pt
-		margin-left: 1ch
-
-	.buttonShortcut
-		visibility: hidden
-		font-size: 8pt
-		font-weight: normal
-		margin-left: 1ch
-		color: darkgray
-
-	.buttonIcon
-		display: inline-block
-		text-align: center
-		width: 2ch
-
-	&:hover
-		.buttonText
-			visibility: visible
-		.buttonShortcut
-			visibility: visible
-		button:not(:last-child)
-			border-bottom: 1px solid lightgray
-		z-index: 1
-
 
 .collapseExpand
 	button

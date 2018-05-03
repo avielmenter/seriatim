@@ -2,18 +2,23 @@ import * as React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 
-import { Document as DocumentData } from '../store/data/document';
+import { Document as DocumentData, getLastItem } from '../store/data/document';
 import { ItemTree, ItemID, Item as ItemData } from '../store/data/item';
 
 import Item from './item';
+import DocumentHeader from './documentHeader';
 
 import { DispatchProps, mapDispatchToProps, ApplicationState } from '../store';
 
-type DataProps = {
+type StateProps = {
 	document : DocumentData | undefined
 }
 
-type ComponentProps = DataProps & DispatchProps;
+type AttrProps = {
+
+}
+
+type ComponentProps = StateProps & AttrProps & DispatchProps;
 
 class Document extends React.Component<ComponentProps> {
 	viewIndex : number = 0;
@@ -39,6 +44,15 @@ class Document extends React.Component<ComponentProps> {
 	handleKeyDown = (event: KeyboardEvent) : void => {
 		const actions = this.props.actions.document;
 		let preventDefault = true;
+
+		const doc = this.props.document;
+		if (!doc)
+			return;
+
+		const focusedItem = doc.focusedItemID ?doc.items[doc.focusedItemID] : undefined;
+		const lastItem = getLastItem(doc, doc.items[doc.rootItemID]);
+
+		const item = focusedItem || lastItem;
 
 		if (!event.ctrlKey) {
 			switch (event.key.toLowerCase()) {
@@ -66,6 +80,39 @@ class Document extends React.Component<ComponentProps> {
 					actions.redo();
 					break;
 
+				case '[':
+					if (focusedItem != undefined)
+						actions.unindentItem(focusedItem);
+				break;
+
+				case ']':
+					if (focusedItem != undefined)
+						actions.indentItem(item);
+				break;
+
+				case ' ':
+					if (item.children.length > 0 || item.view.collapsed)
+						actions.toggleItemCollapse(item);
+					break;
+				
+				case 'return':
+				case 'enter':
+					if (event.shiftKey || lastItem.itemID == doc.rootItemID) {
+						actions.addItemToParent(item);
+						if (focusedItem != undefined)
+							actions.incrementFocus(false);
+					} else {
+						actions.addItemAfterSibling(item, focusedItem != undefined);
+					}
+					break;
+
+				case 'del':
+				case 'delete':
+				case 'back':
+				case 'backspace':
+					actions.removeItem(item);
+					break;
+
 				default:
 					preventDefault = false;
 					break;
@@ -76,13 +123,8 @@ class Document extends React.Component<ComponentProps> {
 			event.preventDefault();
 	}
 
-	handleClick = (event: MouseEvent) : void => {
-		this.props.actions.document.setFocus(undefined);
-	}
-
 	componentWillMount() {
 		document.addEventListener('keydown', this.handleKeyDown);
-		document.addEventListener('click', this.handleClick, { capture: true });
 	}
 
 	render() {
@@ -96,9 +138,12 @@ class Document extends React.Component<ComponentProps> {
 		document.title = doc.title + " | Seriatim";
 
 		return (
-			<main>
-				<div id="document" tabIndex={0} ref={this.documentDiv}>
-					<Item node={tree} key={tree.item.itemID} />
+			<main onClick={(event) => { this.props.actions.document.setFocus(undefined); } }>
+				<DocumentHeader />
+				<div id="documentScrollContainer">
+					<div id="document" tabIndex={0} ref={this.documentDiv}>
+						<Item node={tree} key={tree.item.itemID} />
+					</div>
 				</div>
 			</main>
 		);
@@ -111,7 +156,6 @@ class Document extends React.Component<ComponentProps> {
 
 	componentWillUnmount() {
 		document.removeEventListener('keydown', this.handleKeyDown);
-		document.removeEventListener('click', this.handleClick);
 	}
 }
 
@@ -119,4 +163,4 @@ const mapStateToProps = (state : ApplicationState | { }) => ({
 	document: state == {} ? undefined : (state as ApplicationState).document.present 
 });
 
-export default connect<DataProps, DispatchProps, {}>(mapStateToProps, mapDispatchToProps)(Document);
+export default connect<StateProps, DispatchProps, AttrProps>(mapStateToProps, mapDispatchToProps)(Document);

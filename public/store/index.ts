@@ -1,3 +1,5 @@
+import * as React from 'react';
+
 import { Store, createStore, combineReducers, AnyAction } from 'redux';
 
 import * as DocumentReducers from './reducers/document';
@@ -18,8 +20,6 @@ export const store = createStore(combineReducers({
     })
 }));
 
-export type Action = DocumentReducers.Action;
-
 export type DispatchProps = {
     actions : {
         document : DocumentReducers.DispatchProps
@@ -32,3 +32,8 @@ export const mapDispatchToProps = (dispatch : Dispatch) => ({
         document: DocumentReducers.creators(dispatch)
     }
 });
+
+export function handleClick<HTMLElement>(event : React.MouseEvent<HTMLElement>, callback : () => void) : void {
+    event.stopPropagation();
+    callback();
+}

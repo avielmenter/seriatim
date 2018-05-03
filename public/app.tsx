@@ -6,6 +6,7 @@ import * as Store from './store';
 import * as Doc from './store/data/document';
 
 import Document from './components/document';
+import DocumentHeader from './components/documentHeader';
 
 export default class App extends React.Component {
 	render() {

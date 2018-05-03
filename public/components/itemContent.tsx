@@ -84,12 +84,14 @@ class ItemContent extends React.Component<ComponentProps> {
 		const item = this.props.node.item;
 		const actions = this.props.actions.document;
 
+		const textWithoutHeader = item.text.replace(/(^#+\s+)?/, '')
+
 		return (
 			<div className="itemContent" id={this.getContentDivId()} onClick={(event) => handleClick(event, () => actions.setFocus(item))}>
 				{item.view.itemType != "Title" ? 
 					<ReactMarkdown 
-						source={item.text.length == 0 ? "New Item" : item.text}
-						className={item.text.length == 0 ? "itemContentRenderedEmpty" : "itemContentRendered"}
+						source={textWithoutHeader.length == 0 ? "New Item" : item.text}
+						className={textWithoutHeader.length == 0 ? "itemContentRenderedEmpty" : "itemContentRendered"}
 					/> :
 					<h1 className="title">{item.text}</h1>
 				}

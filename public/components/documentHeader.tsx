@@ -75,6 +75,17 @@ const DocumentHeader : React.SFC<ComponentProps> = (props) => {
 								callback={(event) => handleClick(event, () => actions.makeItem(focused || lastItem))} />
 						</ul>
 					</div>
+					<div className="menuItem">
+						Selection
+						<ul>
+							<MenuItem text="Select Next Item" icon="→" shortcut="↹" ID="selectNext"
+								callback={(event) => handleClick(event, () => actions.incrementFocus(false))} />
+							<MenuItem text="Select Previous Item" icon="←" shortcut="⇧-↹" ID="selectPrev"
+								callback={(event) => handleClick(event, () => actions.decrementFocus())} />
+							<MenuItem text="Unselect All" shortcut="Esc" ID="unselect"
+								callback={(event) => handleClick(event, () => actions.setFocus(undefined))} />
+						</ul>
+					</div>
 				</div>
 			</div>
 		</div>

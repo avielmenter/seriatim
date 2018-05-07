@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { connect } from 'react-redux';
+import * as classNames from 'classnames';
 
 import { ApplicationState, DispatchProps, mapDispatchToProps, handleClick } from '../store';
 import { ItemTree, ItemID, ItemType, Item as ItemData } from '../store/data/item';
@@ -24,8 +25,14 @@ const Item : React.SFC<ComponentProps> = (props) => {
 
 	const actions = props.actions.document;
 
+	const classes = classNames({
+		'Header': itemType == 'Title' || itemType == 'Header',
+		'Item': itemType == 'Item',
+		'selectedItem': node.selected
+	});
+
 	return (
-		<div className={itemType == "Title" ? "Header" : itemType} id={item.itemID}>
+		<div className={classes} id={item.itemID}>
 			<div className="collapseExpand">
 				{node.focused && <div className="showFocused">
 					&ndash;

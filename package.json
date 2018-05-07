@@ -18,6 +18,7 @@
   "author": "Aviel Menter",
   "license": "MIT",
   "dependencies": {
+    "@types/classnames": "^2.2.3",
     "@types/dotenv": "^4.0.3",
     "@types/express": "^4.11.1",
     "@types/method-override": "0.0.31",
@@ -27,6 +28,7 @@
     "@types/react-redux": "^5.0.18",
     "@types/serve-favicon": "^2.2.30",
     "awesome-typescript-loader": "^5.0.0",
+    "classnames": "^2.2.5",
     "css-loader": "^0.28.11",
     "dotenv": "^5.0.1",
     "express": "^4.16.3",

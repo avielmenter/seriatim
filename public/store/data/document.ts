@@ -2,10 +2,16 @@ import { Item, ItemID } from './item';
 
 export type ItemDictionary = { [itemID : string] : Item};
 
+type SelectionRange = {
+	start : ItemID,
+	end : ItemID
+}
+
 export interface Document {
 	title : string,
 	rootItemID : ItemID,
 	focusedItemID : ItemID | undefined,
+	selection : SelectionRange | undefined,
 	items : ItemDictionary
 }
 

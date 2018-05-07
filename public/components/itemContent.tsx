@@ -32,37 +32,6 @@ class ItemContent extends React.Component<ComponentProps> {
 		return '__edit__' + this.props.node.item.itemID;
 	}
 
-	handleKeyDown = (event : React.KeyboardEvent<HTMLTextAreaElement>) : void => {
-		let preventDefault : boolean = true;
-
-		const node = this.props.node;
-		const item = node.item;
-		const actions = this.props.actions.document;
-
-		if (!event.ctrlKey) {
-			switch (event.key.toLowerCase()) {
-				case 'esc':
-				case 'escape':
-					actions.setFocus(undefined);
-					break;
-					
-				default:
-					preventDefault = false;
-					break;
-			}
-		}
-		else  {
-			switch (event.key.toLowerCase()) {
-				default:
-					preventDefault = false;
-					break;
-			}
-		}
-
-		if (preventDefault)
-			event.preventDefault();
-	}
-
 	setSelectionRange = () : void => {
 		const item = this.props.node.item;
 
@@ -79,6 +48,19 @@ class ItemContent extends React.Component<ComponentProps> {
 			this.editArea.current.focus();
 	}
 
+	handleContentClick(event : React.MouseEvent<HTMLDivElement>) : void {
+		event.stopPropagation();
+		event.preventDefault();
+
+		const actions = this.props.actions.document;
+		const item = this.props.node.item;
+
+		if (event.shiftKey)
+			actions.multiSelect(item);
+		else
+			actions.setFocus(item);
+	}
+
 	render() {
 		const node = this.props.node;
 		const item = this.props.node.item;
@@ -87,7 +69,7 @@ class ItemContent extends React.Component<ComponentProps> {
 		const textWithoutHeader = item.text.replace(/(^#+\s+)?/, '')
 
 		return (
-			<div className="itemContent" id={this.getContentDivId()} onClick={(event) => handleClick(event, () => actions.setFocus(item))}>
+			<div className="itemContent" id={this.getContentDivId()} onClick={(event) => this.handleContentClick(event)}>
 				{item.view.itemType != "Title" ? 
 					<ReactMarkdown 
 						source={textWithoutHeader.length == 0 ? "New Item" : item.text}
@@ -99,7 +81,6 @@ class ItemContent extends React.Component<ComponentProps> {
 					<textarea id={this.getTextAreaId()} className="editArea"
 						onChange={(event) => actions.updateItemText(item, event.target.value)}
 						onFocus={this.setSelectionRange}
-						onKeyDown={this.handleKeyDown}
 						value={item.text}
 						ref={this.editArea}
 					></textarea>

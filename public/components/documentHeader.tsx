@@ -78,12 +78,14 @@ const DocumentHeader : React.SFC<ComponentProps> = (props) => {
 					<div className="menuItem">
 						Selection
 						<ul>
-							<MenuItem text="Select Next Item" icon="→" shortcut="↹" ID="selectNext"
+							<MenuItem text="Focus on Next Item" icon="→" shortcut="↹" ID="selectNext"
 								callback={(event) => handleClick(event, () => actions.incrementFocus(false))} />
-							<MenuItem text="Select Previous Item" icon="←" shortcut="⇧-↹" ID="selectPrev"
+							<MenuItem text="Focus Previous Item" icon="←" shortcut="⇧-↹" ID="selectPrev"
 								callback={(event) => handleClick(event, () => actions.decrementFocus())} />
-							<MenuItem text="Unselect All" shortcut="Esc" ID="unselect" enabled={focused != undefined}
-								callback={(event) => handleClick(event, () => actions.setFocus(undefined))} />
+							<MenuItem text="Select Item Range" shortcut="⇧-⏎" ID="multiSelect" enabled={focused != undefined}
+								callback={(event) => handleClick(event, () => actions.multiSelect(focused))} />
+							<MenuItem text="Unselect All" shortcut="Esc" ID="unselect" enabled={focused != undefined || document.selection != undefined}
+								callback={(event) => handleClick(event, () => { actions.setFocus(undefined); actions.multiSelect(undefined); } )} />
 						</ul>
 					</div>
 				</div>

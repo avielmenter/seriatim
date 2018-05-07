@@ -24,6 +24,8 @@ class Document extends React.Component<ComponentProps> {
 	viewIndex : number = 0;
 	documentDiv : React.RefObject<HTMLDivElement>;
 
+	prevSelected : boolean = false;
+
 	constructor(props : ComponentProps) {
 		super(props);
 		props.actions.document.initializeDocument(undefined);
@@ -33,12 +35,26 @@ class Document extends React.Component<ComponentProps> {
 
 	getDocumentTree(doc : DocumentData, nodeID : ItemID) : ItemTree {
 		const rootItem = doc.items[nodeID];
+
+		const isSelectionStart = doc.selection && nodeID == doc.selection.start;
+		const isSelectionEnd = doc.selection && nodeID == doc.selection.end;
+
+		const thisSelected = (doc.selection && (
+								this.prevSelected || 
+								(!this.prevSelected && (isSelectionEnd || isSelectionStart))
+							)) as boolean;
+
+		let nextSelected = thisSelected;
+		if (this.prevSelected && (thisSelected && (isSelectionStart || isSelectionEnd)) || (isSelectionEnd && isSelectionStart))
+			nextSelected = false;
+		this.prevSelected = nextSelected;
+
 		const nodeChildren = rootItem.children.map(child => this.getDocumentTree(doc, child));
 	
 		return {
 			item: rootItem,
 			focused: doc.focusedItemID == nodeID,
-			selected: false,
+			selected: thisSelected,
 			children: nodeChildren
 		};
 	}
@@ -63,6 +79,21 @@ class Document extends React.Component<ComponentProps> {
 						actions.decrementFocus();
 					else
 						actions.incrementFocus(true);
+					break;
+
+				case 'esc':
+				case 'escape':
+					if (doc.focusedItemID != undefined)
+						actions.setFocus(undefined);
+					else
+						actions.multiSelect(undefined);
+					break
+
+				case 'enter':
+					if (event.shiftKey)
+						actions.multiSelect(focusedItem);
+					else
+						preventDefault = false;
 					break;
 
 				default:
@@ -142,6 +173,16 @@ class Document extends React.Component<ComponentProps> {
 			event.preventDefault();
 	}
 
+	handleMainClick(event : React.MouseEvent<HTMLMainElement>) {
+		const actions = this.props.actions.document;
+		const doc = this.props.document;
+
+		if (doc != undefined && doc.focusedItemID != undefined)
+			actions.setFocus(undefined);
+		else
+			actions.multiSelect(undefined);
+	}
+
 	componentWillMount() {
 		document.addEventListener('keydown', this.handleKeyDown);
 	}
@@ -152,12 +193,13 @@ class Document extends React.Component<ComponentProps> {
 		if (!doc)
 			return <h1>NODOC</h1>;
 
+		this.prevSelected = false;
 		const tree = this.getDocumentTree(doc, doc.rootItemID);
 
 		document.title = doc.title + " | Seriatim";
 
 		return (
-			<main onClick={(event) => { this.props.actions.document.setFocus(undefined); } }>
+			<main onClick={(event) => this.handleMainClick(event) }>
 				<DocumentHeader />
 				<div id="documentScrollContainer">
 					<div id="document" tabIndex={0} ref={this.documentDiv}>

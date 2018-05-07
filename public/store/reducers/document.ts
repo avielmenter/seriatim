@@ -99,6 +99,13 @@ type MakeItem = {
 	}
 }
 
+type MultiSelect = {
+	type : "MultiSelect",
+	data : {
+		item : Item.Item | undefined
+	}
+}
+
 export type Action = 	AddItemToParent | 
 						AddItemAfterSibling | 
 						InitializeDocument | 
@@ -111,7 +118,8 @@ export type Action = 	AddItemToParent |
 						UnindentItem |
 						UpdateItemText |
 						MakeHeader |
-						MakeItem;
+						MakeItem |
+						MultiSelect;
 
 // HELPER FUNCTIONS
 
@@ -129,6 +137,7 @@ const emptyDocument : Document = {
 	title: "Untitled Document",
 	rootItemID: "root",
 	focusedItemID: undefined,
+	selection: undefined,
 	items: { 
 		"root": {
 			itemID: "root",
@@ -523,6 +532,42 @@ function makeItem(document : Document | undefined, action : MakeItem) : Document
 	return updateDocumentDictionary(document, [newItem]);
 }
 
+function multiSelect(document : Document | undefined, action : MultiSelect) : Document {
+	if (!document)
+		return emptyDocument;
+
+	const item = action.data.item;
+	if (item == undefined)
+		return {
+			...document,
+			selection: undefined
+		}
+
+	if (document.selection != undefined && 
+		(document.selection.start == item.itemID || document.selection.end == item.itemID))
+		return {
+			...document,
+			selection: undefined
+		};
+
+	if (!document.selection)
+		return {
+			...document,
+			selection: {
+				start: document.focusedItemID || item.itemID,
+				end: item.itemID
+			}
+		};
+
+	return {
+		...document,
+		selection: {
+			...document.selection,
+			end: item.itemID
+		}
+	};
+}
+
 function initializeDocument(document : Document | undefined, action : InitializeDocument) : Document {
 	if (action.data.document)
 		return action.data.document;
@@ -560,6 +605,8 @@ export function reducer(document : Document | undefined, anyAction : AnyAction) 
 			return makeHeader(doc, action);
 		case "MakeItem":
 			return makeItem(doc, action);
+		case "MultiSelect":
+			return multiSelect(doc, action);
 		default:
 			return doc || emptyDocument;
 	}
@@ -622,6 +669,10 @@ export const creators = (dispatch: Dispatch) => ({
 		type: "MakeItem",
 		data: { item }
 	}),
+	multiSelect: (item: Item.Item | undefined) => dispatch({
+		type: "MultiSelect",
+		data: { item }
+	}),
 	undo: () => dispatch(ActionCreators.undo()),
 	redo: () => dispatch(ActionCreators.redo()),
 });
@@ -640,6 +691,7 @@ export type DispatchProps = {
 	unindentItem: (item : Item.Item) => void,
 	makeHeader: (item : Item.Item) => void,
 	makeItem: (item : Item.Item) => void,
+	multiSelect: (item : Item.Item | undefined) => void,
 	undo: () => void,
 	redo: () => void
 }

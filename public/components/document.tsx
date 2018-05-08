@@ -2,7 +2,7 @@ import * as React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 
-import { Document as DocumentData, getLastItem } from '../store/data/document';
+import { default as DocumentData, getLastItem } from '../store/data/document';
 import { ItemTree, ItemID, Item as ItemData } from '../store/data/item';
 
 import Item from './item';

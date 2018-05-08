@@ -10,7 +10,7 @@ import * as Document from './data/document';
 export type Store = Store<any, AnyAction>;
 
 export type ApplicationState = {
-    document: StateWithHistory<Document.Document | undefined>
+    document: StateWithHistory<Document.default | undefined>
 };
 
 export const store = createStore(combineReducers({

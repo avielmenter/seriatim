@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { connect } from 'react-redux';
 
-import { Document, getLastItem } from '../store/data/document';
+import Document, { getLastItem } from '../store/data/document';
 import { Item } from '../store/data/item';
 
 import { DispatchProps, mapDispatchToProps, ApplicationState, handleClick } from '../store';

@@ -2,7 +2,7 @@ import { ActionCreator, AnyAction } from 'redux';
 import undoable, { ActionCreators } from 'redux-undo';
 
 import * as Item from '../data/item';
-import { Document, ItemDictionary, copyDocument } from '../data/document';
+import Document, * as Doc from '../data/document';
 
 import * as Store from '../';
 
@@ -121,125 +121,56 @@ export type Action = 	AddItemToParent |
 						MakeItem |
 						MultiSelect;
 
-// HELPER FUNCTIONS
-
-function generateItemID() : Item.ItemID { 	// copied from https://stackoverflow.com/a/105074 
-	function s4() : string {				// NOT GUARANTEED TO BE GLOBALLY UNIQUE
-		return Math.floor((1 + Math.random()) * 0x10000)
-		.toString(16)
-		.substring(1);
-	}
-
-	return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
-}
-
-const emptyDocument : Document = {
-	title: "Untitled Document",
-	rootItemID: "root",
-	focusedItemID: undefined,
-	selection: undefined,
-	items: { 
-		"root": {
-			itemID: "root",
-			text: "Untitled Document",
-			parentID: "",
-			children: [],
-			view: {
-				itemType: "Title",
-				collapsed: false
-			}
-		}
-	}
-}
-
-function getNewItemFromParent(parent : Item.Item) : Item.Item {
-	return {
-		itemID: generateItemID(), // parent.itemID + "." + parent.children.length.toString(),
-		parentID: parent.itemID,
-		children: [],
-		text: "",
-		view: {
-			itemType: "Item",
-			collapsed: false,
-		}
-	};
-}
-
-function updateDocumentDictionary(doc : Document, newItemsList : Item.Item[]) : Document {
-	let newItems : ItemDictionary = {...doc.items};
-
-	for (const i of newItemsList) {
-		newItems[i.itemID] = i;
-	}
-
-	return {
-		...doc,
-		items: newItems
-	}
-}
-
 // REDUCERS
 
 function addItemToParent(document : Document | undefined, action : AddItemToParent) : Document {
-	const doc = document;
-	if (!doc)
-		return emptyDocument;
+	if (!document)
+		return Doc.getEmptyDocument();
 
-	const { parent } = action.data;
-	const item = getNewItemFromParent(parent);
-
-	const newParent = {
-		...parent,
-		children: parent.children.concat([item.itemID])
-	};
-
-	return updateDocumentDictionary(doc, [item, newParent]);
+	Doc.addItem(document, action.data.parent);
+	return document;
 }
 
 function addItemAfterSibling(document : Document | undefined, action : AddItemAfterSibling) : Document {
-	const doc = document;
-	if (!doc)
-		return emptyDocument;
+	if (!document)
+		return Doc.getEmptyDocument();
 
 	const { sibling, focusOnNew } = action.data;
-	const parent = doc.items[sibling.parentID];
+	const parent = document.items[sibling.parentID];
 	if (!parent)
-		return doc;
+		return document;
 
 	const indexOfSibling = parent.children.findIndex(sid => sid == sibling.itemID);
 	if (indexOfSibling == -1)
-		return doc;
+		return document;
 
-	const item = getNewItemFromParent(parent);
-	let newParent = { ...parent };
-	newParent.children.splice(indexOfSibling + 1, 0, item.itemID);
-
-	const docWithSibling = updateDocumentDictionary(doc, [item, newParent]);
+	const item = Doc.addItem(document, parent, indexOfSibling + 1);
+	
 	return focusOnNew ? 
-			setFocus(docWithSibling, { type: "SetFocus", data: { item } }) :
-			docWithSibling;
+			setFocus(document, { type: "SetFocus", data: { item } }) :
+			document;
 }
 
 function toggleItemCollapse(document : Document | undefined, action : ToggleItemCollapse) : Document {
 	if (!document)
-		return emptyDocument;
-	else if (!document.items[action.data.item.itemID])
+		return Doc.getEmptyDocument();
+
+	const item = action.data.item;
+	if (item.children.length <= 0)
 		return document;
 
-	const newItem = {
-		...action.data.item,
+	return Doc.updateItems(document, {
+		...item,
 		view: {
-			...action.data.item.view,
-			collapsed: !action.data.item.view.collapsed
+			...item.view,
+			collapsed: !item.view.collapsed
 		}
-	};
-
-	return updateDocumentDictionary(document, [newItem])
+	});
 }
 
 function updateItemText(document : Document | undefined, action : UpdateItemText) : Document {
 	if (!document)
-		return emptyDocument;
+		return Doc.getEmptyDocument();
 	else if (!document.items[action.data.item.itemID])
 		return document;
 
@@ -258,62 +189,29 @@ function updateItemText(document : Document | undefined, action : UpdateItemText
 
 	const newTitle = newItem.view.itemType == "Title" ? newItem.text : document.title; 
 
-	return updateDocumentDictionary({ ...document, title: newTitle }, [newItem]);
+	return Doc.updateItems({
+		...document,
+		title: newTitle
+	}, newItem);
 }
 
 function removeItem(document : Document | undefined, action : RemoveItem) : Document {
 	if (!document)
-		return emptyDocument;
+		return Doc.getEmptyDocument();
 	else if (!document.items[action.data.item.itemID] || action.data.item.itemID == document.rootItemID)
 		return document;
 
-	function removeItemFromDictionary(dict : ItemDictionary, itemID : Item.ItemID) : void {
-		const item = dict[itemID];
-		if (!item)
-			return;
-
-		delete dict[itemID];
-		const children = item.children;
-
-		children.forEach(child => removeItemFromDictionary(dict, child));
-	}
-
-	const { item } = action.data;
-
-	let newDictionary = { ...document.items };
-	removeItemFromDictionary(newDictionary, item.itemID);
-
-	if (newDictionary[item.parentID]) {
-		let parent = { ...newDictionary[item.parentID] };
-		const childIndex = parent.children.indexOf(item.itemID);
-
-		if (childIndex >= 0) {
-			parent.children = parent.children.slice(0, childIndex).concat(parent.children.slice(childIndex + 1));
-			newDictionary[item.parentID] = parent;
-		}
-	}
+	const item = action.data.item;
+	const prevItem = Doc.getPrevItem(document, item);
 	
-	const unrefocusedDocument =  {
-		...document,
-		items: newDictionary
-	};
-
-	if (unrefocusedDocument.focusedItemID == undefined || unrefocusedDocument.focusedItemID != action.data.item.itemID)
-		return unrefocusedDocument;
-
-	const prevFocusID = decrementFocus(document, { type: "DecrementFocus", data: { } }).focusedItemID;
-	if (!prevFocusID)
-		return unrefocusedDocument;
-
-	const prevFocusedDocument = setFocus(unrefocusedDocument, { type : "SetFocus", data: { item: unrefocusedDocument.items[prevFocusID] } });
-	const incremented = incrementFocus(prevFocusedDocument, { type: "IncrementFocus", data: { createNewItem: false } });
-
-	return incremented.focusedItemID != undefined ? incremented : prevFocusedDocument;
+	Doc.removeItem(document, item);
+	
+	return (document.focusedItemID == item.itemID) ? setFocus(document, { type: "SetFocus", data: { item: prevItem } }) : document;
 }
 
 function setFocus(document : Document | undefined, action : SetFocus) : Document {
 	if (!document)
-		return emptyDocument;
+		return Doc.getEmptyDocument();
 
 	const item = action.data.item;
 
@@ -325,7 +223,7 @@ function setFocus(document : Document | undefined, action : SetFocus) : Document
 
 function incrementFocus(document : Document | undefined, action : IncrementFocus) : Document {
 	if (!document)
-		return emptyDocument;
+		return Doc.getEmptyDocument();
 	if (!document.focusedItemID || !document.items[document.focusedItemID])
 		return setFocus(document, { type: "SetFocus", data: { item: document.items[document.rootItemID] } });
 
@@ -333,108 +231,55 @@ function incrementFocus(document : Document | undefined, action : IncrementFocus
 	const focusedItem = document.items[document.focusedItemID];
 	const focusedParent = (focusedItem.itemID == document.rootItemID ? {...focusedItem} : document.items[focusedItem.parentID]);
 
-	function getNextItem(doc: Document, curr : Item.Item, prevIndex : number) : Item.Item | undefined {
-		if (curr.children.length > prevIndex + 1)
-			return doc.items[curr.children[prevIndex + 1]];
-
-		const currParent = doc.items[curr.parentID];
-		if (!currParent)
-			return undefined;
-
-		const currIndex = currParent.children.indexOf(curr.itemID);
-		return getNextItem(doc, currParent, currIndex);
+	const nextItem = Doc.getNextItem(document, focusedItem);
+	if (nextItem != undefined) {
+		return setFocus(document, { type: "SetFocus", data: { item: nextItem } });
+	} else if (!createNewItem) {
+		return setFocus(document, { type: "SetFocus", data: { item: undefined } });
 	}
 
-	const nextItem = getNextItem(document, focusedItem, -1);
-	if (nextItem)
-		return setFocus(document, { type: "SetFocus", data: { item: nextItem } });
-	else if (!createNewItem)
-		return setFocus(document, { type: "SetFocus", data: { item: undefined } });
-	
-	const newItem = getNewItemFromParent(focusedParent);
-
-	const newParent = {
-		...focusedParent,
-		children: focusedParent.children.concat([newItem.itemID])
-	};
-
-	return setFocus(
-		updateDocumentDictionary(document, [newItem, newParent]),
-		{ type: "SetFocus", data: { item: newItem } }
-	);
+	return setFocus(document, { type: "SetFocus", data: { 
+		item: Doc.addItem(document, focusedParent, focusedParent.children.length) 
+	} });	
 }
 
 function decrementFocus(document : Document | undefined, action : DecrementFocus) : Document {
 	if (!document)
-		return emptyDocument;
-
-	function getLastChild(doc : Document, curr : Item.Item) : Item.Item {
-		if (curr.children.length == 0)
-			return curr;
-
-		const lastChild = doc.items[curr.children[curr.children.length - 1]];
-		return getLastChild(doc, lastChild);
-	}
-
+		return Doc.getEmptyDocument();
 	if (!document.focusedItemID || !document.items[document.focusedItemID])
-		return setFocus(document, { type: "SetFocus", data: { item: getLastChild(document, document.items[document.rootItemID]) } });
+		return setFocus(document, { type: "SetFocus", data: { item: Doc.getLastItem(document) } });
 
 	const focusedItem = document.items[document.focusedItemID];
 	if (focusedItem.itemID == document.rootItemID)
 		return setFocus(document, { type: "SetFocus", data: { item: undefined } });
 
-	const focusedParent = document.items[focusedItem.parentID];
-	const focusedIndex = focusedParent.children.indexOf(focusedItem.itemID);
-	if (focusedIndex <= 0)
-		return setFocus(document, { type: "SetFocus", data: { item: focusedParent } } );
-
-	const prevItem = document.items[focusedParent.children[focusedIndex - 1]];
-	return setFocus(document, { type: "SetFocus", data: { item: getLastChild(document, prevItem) } });
+	const prevItem = Doc.getPrevItem(document, focusedItem);
+	return setFocus(document, { type: "SetFocus", data: { item: prevItem } });
 }
 
 function indentItem(document : Document | undefined, action : IndentItem) : Document {	
 	if (!document)
-		return emptyDocument;
+		return Doc.getEmptyDocument();
 
 	const item = action.data.item;
 	const parent = document.items[item.parentID];
 	if (!parent)
 		return document;
 
-	const childIndex = parent.children.indexOf(item.itemID);
-	if (childIndex < 0)
-		return document;
-	else if (childIndex == 0)
-		return indentItem(document, { type: "IndentItem", data: { item: parent } });
-
-	const prevSiblingID = parent.children[childIndex - 1];
-	const prevSibling = document.items[prevSiblingID];
-
-	if (!prevSibling)
-		return document;
-
-	let newParent = { ...parent };
-	let newSiblingIDs = newParent.children.splice(childIndex, parent.children.length - childIndex);
-
-	const newPrevSibling = { 
-		...prevSibling,
-		children: prevSibling.children.concat(newSiblingIDs)
-	};
-
-	const newSiblings = newSiblingIDs
-							.map(id => document.items[id])
-							.filter(sibling => sibling !== undefined && sibling !== null)
-							.map(sibling => ({...sibling, parentID: prevSibling.itemID }));
-
-	return updateDocumentDictionary(document, [newParent, newPrevSibling, ...newSiblings]);
+	const indented = Doc.indentItem(document, item);
+	if (indented.parentID == item.parentID)
+		return indentItem(document, { type: "IndentItem", data: { item: document.items[item.parentID] } });
+	return document;
 }
 
 function unindentItem(document : Document | undefined, action : UnindentItem) : Document {
 	if (!document)
-		return emptyDocument;
+		return Doc.getEmptyDocument();
 
+	//*
 	const item = {...action.data.item};
 	const oldParent = {...document.items[item.parentID]};
+
 	if (!oldParent || oldParent.itemID == document.rootItemID) {
 		if (item.children.length > 0 && document.items[item.children[0]]) {
 			return unindentItem(document, { ...action, data: { item: document.items[item.children[0]] } });
@@ -469,12 +314,12 @@ function unindentItem(document : Document | undefined, action : UnindentItem) : 
 							.filter(sibling => sibling !== undefined && sibling !== null)
 							.map(sibling => ({...sibling, parentID: newGrandparent.itemID }));
 
-	return updateDocumentDictionary(document, [newItem, newParent, newGrandparent, ...newSiblings]);
+	return Doc.updateItems(document, newItem, newParent, newGrandparent, ...newSiblings);//*/
 }
 
 function makeHeader(document : Document | undefined, action : MakeHeader) : Document {
 	if (!document)
-		return emptyDocument;
+		return Doc.getEmptyDocument();
 
 	const item = action.data.item;
 
@@ -508,12 +353,12 @@ function makeHeader(document : Document | undefined, action : MakeHeader) : Docu
 		}
 	};
 
-	return updateDocumentDictionary(document, [newItem]);
+	return Doc.updateItems(document, newItem);
 }
 
 function makeItem(document : Document | undefined, action : MakeItem) : Document {
 	if (!document)
-		return emptyDocument;
+		return Doc.getEmptyDocument();
 
 	const item = action.data.item;
 
@@ -529,12 +374,12 @@ function makeItem(document : Document | undefined, action : MakeItem) : Document
 		}
 	};
 
-	return updateDocumentDictionary(document, [newItem]);
+	return Doc.updateItems(document, newItem);
 }
 
 function multiSelect(document : Document | undefined, action : MultiSelect) : Document {
 	if (!document)
-		return emptyDocument;
+		return Doc.getEmptyDocument();
 
 	const item = action.data.item;
 	if (item == undefined)
@@ -571,12 +416,12 @@ function multiSelect(document : Document | undefined, action : MultiSelect) : Do
 function initializeDocument(document : Document | undefined, action : InitializeDocument) : Document {
 	if (action.data.document)
 		return action.data.document;
-	return emptyDocument;
+	return Doc.getEmptyDocument();
 }
 
 export function reducer(document : Document | undefined, anyAction : AnyAction) : Document {
 	const action = anyAction as Action;
-	let doc = !document ? undefined : copyDocument(document);
+	let doc = !document ? undefined : Doc.copyDocument(document);
 
 	switch (action.type) {
 		case "AddItemToParent":
@@ -608,7 +453,7 @@ export function reducer(document : Document | undefined, anyAction : AnyAction) 
 		case "MultiSelect":
 			return multiSelect(doc, action);
 		default:
-			return doc || emptyDocument;
+			return doc || Doc.getEmptyDocument();
 	}
 }
 

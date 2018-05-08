@@ -276,45 +276,18 @@ function unindentItem(document : Document | undefined, action : UnindentItem) : 
 	if (!document)
 		return Doc.getEmptyDocument();
 
-	//*
-	const item = {...action.data.item};
-	const oldParent = {...document.items[item.parentID]};
-
-	if (!oldParent || oldParent.itemID == document.rootItemID) {
-		if (item.children.length > 0 && document.items[item.children[0]]) {
-			return unindentItem(document, { ...action, data: { item: document.items[item.children[0]] } });
-		} else if (oldParent) {
-			const childIndex = oldParent.children.indexOf(item.itemID);
-			return childIndex < oldParent.children.length - 1 ?
-					unindentItem(document, { ...action, data: { item: document.items[oldParent.children[childIndex + 1]] } }) :
-					document; 
-		}
-		return document;
-	}
-	const oldGrandparent = {...document.items[oldParent.parentID]};
-	if (!oldGrandparent)
+	const item = action.data.item;
+	if (!item)
 		return document;
 
-	const childIndex = oldParent.children.indexOf(item.itemID);
-	const parentIndex = oldGrandparent.children.indexOf(oldParent.itemID);
-
-	const newItem = {
-		...item,
-		parentID: oldGrandparent.parentID
+	const indented = Doc.unindentItem(document, item);
+	if (indented.parentID == item.parentID) {
+		const nextItem = Doc.getNextItem(document, indented);
+		if (nextItem)
+			return unindentItem(document, { type: "UnindentItem", data: { item: nextItem } });
 	}
 
-	let newParent = { ...oldParent };
-	let newSiblingIDs = newParent.children.splice(childIndex, oldParent.children.length - childIndex);
-
-	let newGrandparent = { ...oldGrandparent };
-	newGrandparent.children.splice(parentIndex + 1, 0, ...newSiblingIDs);
-
-	const newSiblings = newSiblingIDs
-							.map(id => document.items[id])
-							.filter(sibling => sibling !== undefined && sibling !== null)
-							.map(sibling => ({...sibling, parentID: newGrandparent.itemID }));
-
-	return Doc.updateItems(document, newItem, newParent, newGrandparent, ...newSiblings);//*/
+	return document;
 }
 
 function makeHeader(document : Document | undefined, action : MakeHeader) : Document {

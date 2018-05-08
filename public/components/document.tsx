@@ -2,7 +2,7 @@ import * as React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 
-import { default as DocumentData, getLastItem } from '../store/data/document';
+import { default as DocumentData, getLastItem, ItemDictionary, getSelectionRange, getSelectedItems } from '../store/data/document';
 import { ItemTree, ItemID, Item as ItemData } from '../store/data/item';
 
 import Item from './item';
@@ -21,10 +21,7 @@ type AttrProps = {
 type ComponentProps = StateProps & AttrProps & DispatchProps;
 
 class Document extends React.Component<ComponentProps> {
-	viewIndex : number = 0;
 	documentDiv : React.RefObject<HTMLDivElement>;
-
-	prevSelected : boolean = false;
 
 	constructor(props : ComponentProps) {
 		super(props);
@@ -33,28 +30,15 @@ class Document extends React.Component<ComponentProps> {
 		this.documentDiv = React.createRef<HTMLDivElement>();
 	}
 
-	getDocumentTree(doc : DocumentData, nodeID : ItemID) : ItemTree {
+	getDocumentTree(doc : DocumentData, selectedItems : ItemDictionary, nodeID : ItemID) : ItemTree {
 		const rootItem = doc.items[nodeID];
 
-		const isSelectionStart = doc.selection && nodeID == doc.selection.start;
-		const isSelectionEnd = doc.selection && nodeID == doc.selection.end;
-
-		const thisSelected = (doc.selection && (
-								this.prevSelected || 
-								(!this.prevSelected && (isSelectionEnd || isSelectionStart))
-							)) as boolean;
-
-		let nextSelected = thisSelected;
-		if (this.prevSelected && (thisSelected && (isSelectionStart || isSelectionEnd)) || (isSelectionEnd && isSelectionStart))
-			nextSelected = false;
-		this.prevSelected = nextSelected;
-
-		const nodeChildren = rootItem.children.map(child => this.getDocumentTree(doc, child));
+		const nodeChildren = rootItem.children.map(child => this.getDocumentTree(doc, selectedItems, child));
 	
 		return {
 			item: rootItem,
 			focused: doc.focusedItemID == nodeID,
-			selected: thisSelected,
+			selected: nodeID in selectedItems,
 			children: nodeChildren
 		};
 	}
@@ -193,8 +177,7 @@ class Document extends React.Component<ComponentProps> {
 		if (!doc)
 			return <h1>NODOC</h1>;
 
-		this.prevSelected = false;
-		const tree = this.getDocumentTree(doc, doc.rootItemID);
+		const tree = this.getDocumentTree(doc, getSelectedItems(doc), doc.rootItemID);
 
 		document.title = doc.title + " | Seriatim";
 

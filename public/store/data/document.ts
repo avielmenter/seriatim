@@ -141,12 +141,24 @@ export function getSelectionRange(document : Document) : Item[] {
 	return items;
 }
 
+export function getSelectedItems(document : Document) : ItemDictionary {
+	const selectionRange = getSelectionRange(document);
+	let selectionDict : ItemDictionary = { }
+
+	for (const item of selectionRange) {
+		selectionDict[item.itemID] = item;
+	}
+
+	return selectionDict;
+}
+
 export function indentItem(document : Document, item : Item) : Item {
 	const parent = document.items[item.parentID];
 	if (!parent || parent.children.indexOf(item.itemID) <= 0)
 		return item;
 
-	const prevSibling = getPrevItem(document, item);
+	const itemIndex = parent.children.indexOf(item.itemID);
+	const prevSibling = document.items[parent.children[itemIndex - 1]];
 	if (!prevSibling)
 		return item;
 
@@ -163,10 +175,17 @@ export function unindentItem(document : Document, item : Item) : Item {
 	if (!grandparent)
 		return item;
 
-	const itemCopy = removeItem(document, item, false);
-	
-	const parentIndex = grandparent.children.indexOf(parent.parentID);
-	return addItem(document, grandparent, parentIndex + 1, itemCopy);
+	const itemIndex = parent.children.indexOf(item.itemID);
+	const parentIndex = grandparent.children.indexOf(parent.itemID);
+
+	const unindentedSiblings = parent.children.splice(itemIndex);
+
+	unindentedSiblings.slice(1)
+		.map(childID => document.items[childID])
+		.map(child => removeItem(document, child, false))
+		.map(child => addItem(document, item, item.children.length, child));
+
+	return addItem(document, grandparent, parentIndex + 1, item);
 }
 
 export function updateItems(document : Document, ...items : Item[]) : Document {

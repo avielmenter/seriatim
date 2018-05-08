@@ -59,9 +59,9 @@ const DocumentHeader : React.SFC<ComponentProps> = (props) => {
 								callback={(event) => handleClick(event, () => actions.indentItem(focused || lastItem))} />
 							<MenuItem text="Unindent" icon="«" shortcut="Ctrl-[" enabled={focused != undefined} ID="unindentItem"
 								callback={(event) => handleClick(event, () => actions.unindentItem(focused || lastItem))} />
-							<MenuItem text="Remove Item" icon="X" shortcut="Ctrl-⌫" ID="removeItem"
+							<MenuItem text="Remove" icon="X" shortcut="Ctrl-⌫" ID="removeItem"
 								enabled={!(focused && focused.view.itemType == "Title") && lastItem.view.itemType != "Title"}
-								callback={(event) => handleClick(event, () => actions.removeItem(focused || lastItem))} />
+								callback={(event) => handleClick(event, () => document.selection ? actions.removeSelection() : actions.removeItem(focused || lastItem))} />
 						</ul>
 					</div>
 					<div className="menuItem">
@@ -70,9 +70,9 @@ const DocumentHeader : React.SFC<ComponentProps> = (props) => {
 							<MenuItem text={expandable ? "Expand Item" : "Collapse Item"} icon={expandable ? "▼" : "▶"} shortcut="Ctrl-␣" ID="collapse"
 								enabled={collapsable} callback={(event) => handleClick(event, () => actions.toggleItemCollapse(focused as Item))} />
 							<MenuItem text="Turn Into Header" shortcut="Ctrl-⇧-H" ID="makeHeader" enabled={(focused || lastItem).view.itemType != "Title"}
-								callback={(event) => handleClick(event, () => actions.makeHeader(focused || lastItem))} />
+								callback={(event) => handleClick(event, () => document.selection ? actions.makeSelectionHeader() : actions.makeHeader(focused || lastItem))} />
 							<MenuItem text="Turn Into Item" shortcut="Ctrl-⇧-I" ID="makeItem" enabled={(focused || lastItem).view.itemType != "Title"}
-								callback={(event) => handleClick(event, () => actions.makeItem(focused || lastItem))} />
+								callback={(event) => handleClick(event, () => document.selection ? actions.makeSelectionItem() : actions.makeItem(focused || lastItem))} />
 						</ul>
 					</div>
 					<div className="menuItem">

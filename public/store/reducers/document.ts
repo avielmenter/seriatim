@@ -106,6 +106,21 @@ type MultiSelect = {
 	}
 }
 
+type MakeSelectionItem = {
+	type : "MakeSelectionItem",
+	data: { }
+}
+
+type MakeSelectionHeader = {
+	type : "MakeSelectionHeader",
+	data : { }
+}
+
+type RemoveSelection = {
+	type : "RemoveSelection",
+	data : { }
+}
+
 export type Action = 	AddItemToParent | 
 						AddItemAfterSibling | 
 						InitializeDocument | 
@@ -119,6 +134,9 @@ export type Action = 	AddItemToParent |
 						UpdateItemText |
 						MakeHeader |
 						MakeItem |
+						MakeSelectionItem | 
+						MakeSelectionHeader |
+						RemoveSelection |
 						MultiSelect;
 
 // REDUCERS
@@ -350,6 +368,37 @@ function makeItem(document : Document | undefined, action : MakeItem) : Document
 	return Doc.updateItems(document, newItem);
 }
 
+function makeSelectionItem(document : Document | undefined, action : MakeSelectionItem) : Document {
+	if (!document)
+		return Doc.getEmptyDocument();
+
+	return Doc.getSelectionRange(document)
+		.map(selected => makeItem(document, { type: "MakeItem", data : { item: selected } }))
+		.reduce((prev, curr) => curr, document);
+}
+
+function makeSelectionHeader(document : Document | undefined, action : MakeSelectionHeader) : Document {
+	if (!document)
+		return Doc.getEmptyDocument();
+
+	return Doc.getSelectionRange(document)
+			.map(selected => makeHeader(document, { type: "MakeHeader", data : { item: selected } }))
+			.reduce((prev, curr) => curr, document);
+}
+
+function removeSelection(document : Document | undefined, action : RemoveSelection) : Document {
+	if (!document)
+		return Doc.getEmptyDocument();
+
+	const selectionRange = Doc.getSelectionRange(document);
+	for (const selected of selectionRange) {
+		if (selected.itemID in document.items)
+			Doc.removeItem(document, selected);
+	}
+
+	return document;
+}
+
 function multiSelect(document : Document | undefined, action : MultiSelect) : Document {
 	if (!document)
 		return Doc.getEmptyDocument();
@@ -425,6 +474,12 @@ export function reducer(document : Document | undefined, anyAction : AnyAction) 
 			return makeItem(doc, action);
 		case "MultiSelect":
 			return multiSelect(doc, action);
+		case "MakeSelectionItem":
+			return makeSelectionItem(doc, action);
+		case "MakeSelectionHeader":
+			return makeSelectionHeader(doc, action);
+		case "RemoveSelection":
+			return removeSelection(doc, action);
 		default:
 			return doc || Doc.getEmptyDocument();
 	}
@@ -491,6 +546,18 @@ export const creators = (dispatch: Dispatch) => ({
 		type: "MultiSelect",
 		data: { item }
 	}),
+	makeSelectionItem: () => dispatch({
+		type: "MakeSelectionItem",
+		data: { }
+	}),
+	makeSelectionHeader: () => dispatch({
+		type: "MakeSelectionHeader",
+		data: { }
+	}),
+	removeSelection: () => dispatch({
+		type: "RemoveSelection",
+		data: { }
+	}),
 	undo: () => dispatch(ActionCreators.undo()),
 	redo: () => dispatch(ActionCreators.redo()),
 });
@@ -510,6 +577,9 @@ export type DispatchProps = {
 	makeHeader: (item : Item.Item) => void,
 	makeItem: (item : Item.Item) => void,
 	multiSelect: (item : Item.Item | undefined) => void,
+	makeSelectionItem: () => void,
+	makeSelectionHeader: () => void,
+	removeSelection: () => void,
 	undo: () => void,
 	redo: () => void
 }

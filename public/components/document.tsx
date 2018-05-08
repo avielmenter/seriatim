@@ -98,15 +98,19 @@ class Document extends React.Component<ComponentProps> {
 					break;
 
 				case 'h':
-					if (event.shiftKey)
+					if (event.shiftKey && !doc.selection)
 						actions.makeHeader(item);
+					else if (event.shiftKey && doc.selection)
+						actions.makeSelectionHeader();
 					else
 						preventDefault = false;
 					break;
 
 				case 'i':
-					if (event.shiftKey)
+					if (event.shiftKey && !doc.selection)
 						actions.makeItem(item);
+					else if (event.shiftKey && doc.selection)
+						actions.makeSelectionItem();
 					else
 						preventDefault = false;
 					break;
@@ -139,7 +143,10 @@ class Document extends React.Component<ComponentProps> {
 
 				case 'del':
 				case 'delete':
-					actions.removeItem(item);
+					if (doc.selection)
+						actions.removeSelection();
+					else
+						actions.removeItem(item);
 					break;
 
 				default:

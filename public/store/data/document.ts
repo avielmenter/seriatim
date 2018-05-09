@@ -24,10 +24,10 @@ export function equals(lhs : any, rhs : any) : boolean {
 }
 
 export function getEmptyDocument() : Document {
-	return {
+	let document : Document = {
 		title: "Untitled Document",
 		rootItemID: "root",
-		focusedItemID: undefined,
+		focusedItemID: "root",
 		selection: undefined,
 		items: { 
 			"root": {
@@ -41,7 +41,10 @@ export function getEmptyDocument() : Document {
 				}
 			}
 		}
-	}
+	};
+
+	addItem(document, document.items[document.rootItemID]);
+	return document;
 }
 
 export function getParent(document : Document, curr : Item) : Item | undefined {

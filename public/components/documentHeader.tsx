@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { connect } from 'react-redux';
+import { StateWithHistory } from 'redux-undo';
 
 import Document, { getLastItem } from '../store/data/document';
 import { Item } from '../store/data/item';
@@ -9,7 +10,7 @@ import { DispatchProps, mapDispatchToProps, ApplicationState, handleClick } from
 import MenuItem from './menuItem';
 
 type StateProps = {
-	document : Document | undefined
+	documentState : StateWithHistory<Document | undefined> | undefined
 }
 
 type AttrProps = {
@@ -19,7 +20,10 @@ type AttrProps = {
 type ComponentProps = StateProps & AttrProps & DispatchProps;
 
 const DocumentHeader : React.SFC<ComponentProps> = (props) => {
-	const document = props.document;
+	if (!props.documentState)
+		return (<div />);
+
+	const document = props.documentState.present;
 	if (!document)
 		return (<div />);
 
@@ -37,7 +41,10 @@ const DocumentHeader : React.SFC<ComponentProps> = (props) => {
 	return (
 		<div id="documentHeader">
 			<div id="headerContents">
-				<h1 className={document.title.length == 0 ? "empty" : ""}>{document.title.length == 0 ? "Untitled Document..." : document.title}</h1>
+				<h1 className={document.title.length == 0 ? "empty" : ""}
+					onClick={(event) => handleClick(event, () => actions.setFocus(document.items[document.rootItemID]))}>
+					{document.title.length == 0 ? "Untitled Document..." : document.title}
+				</h1>
 				<div id="documentMenu">
 					<div className="menuItem">
 						File
@@ -59,6 +66,10 @@ const DocumentHeader : React.SFC<ComponentProps> = (props) => {
 								callback={(event) => handleClick(event, () => document.selection ? actions.indentSelection() : actions.indentItem(focused || lastItem))} />
 							<MenuItem text="Unindent" icon="«" shortcut="Ctrl-[" enabled={focused != undefined || document.selection != undefined} ID="unindentItem"
 								callback={(event) => handleClick(event, () => document.selection ? actions.unindentSelection() : actions.unindentItem(focused || lastItem))} />
+							<MenuItem text="Undo" icon="⟲" shortcut="Ctrl-Z" ID="undo" enabled={props.documentState.past.length > 0}
+								callback={(event) => handleClick(event, () => actions.undo())} />
+							<MenuItem text="Redo" icon="⟳" shortcut="Ctrl-⇧-Z" ID="redo" enabled={props.documentState.future.length > 0}
+								callback={(event) => handleClick(event, () => actions.redo())} />
 							<MenuItem text="Remove" icon="X" shortcut="Ctrl-⌫" ID="removeItem"
 								enabled={!(focused && focused.view.itemType == "Title") && lastItem.view.itemType != "Title"}
 								callback={(event) => handleClick(event, () => document.selection ? actions.removeSelection() : actions.removeItem(focused || lastItem))} />
@@ -95,7 +106,7 @@ const DocumentHeader : React.SFC<ComponentProps> = (props) => {
 }
 
 const mapStateToProps = (state : ApplicationState | { }) => ({
-	document: state == {} ? undefined : (state as ApplicationState).document.present
+	documentState: state == {} ? undefined : (state as ApplicationState).document
 });
 
 export default connect<StateProps, DispatchProps, AttrProps>(mapStateToProps, mapDispatchToProps)(DocumentHeader);

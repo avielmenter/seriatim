@@ -116,12 +116,16 @@ class Document extends React.Component<ComponentProps> {
 					break;
 
 				case '[':
-					if (focusedItem != undefined)
+					if (doc.selection)
+						actions.unindentSelection();
+					else if (focusedItem != undefined)
 						actions.unindentItem(focusedItem);
 				break;
 
 				case ']':
-					if (focusedItem != undefined)
+					if (doc.selection)
+						actions.indentSelection();
+					else if (focusedItem != undefined)
 						actions.indentItem(item);
 				break;
 

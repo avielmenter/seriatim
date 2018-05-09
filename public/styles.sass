@@ -2,6 +2,7 @@ $bg-color: #E7E7E7
 $documentFont: "Helvetica", "Arial", sans-serif
 $monoFont: "Consolas", "Courier New", monospace;
 $selectedBG: lightyellow
+$emptyTextColor: lightgray
 
 =Unselectable
 	user-select: none
@@ -39,6 +40,9 @@ main
 		margin-right: 0.25in
 		padding-top: 0.25em
 		padding-bottom: 0.25em
+
+	h1.empty
+		color: $emptyTextColor
 	
 	#documentMenu
 		padding-left: 0.25in
@@ -67,6 +71,9 @@ main
 				border-bottom-left-radius: 2px
 				border-bottom-right-radius: 2px
 
+				opacity: 0
+				transition: opacity 0.1s ease-in
+
 				#addChild .icon
 					color: #00F
 
@@ -84,6 +91,12 @@ main
 
 				#removeItem:hover
 					background: #FEE
+
+				#selectNext .icon, #selectPrev .icon
+					color: blue
+
+				#multiSelect .icon
+					color: gold
 
 				li
 					list-style: none
@@ -118,7 +131,7 @@ main
 					&:hover
 						background: transparent !important
 
-				.ddMenuItem:hover
+				li:hover
 					background: #EEE
 
 			&:hover
@@ -126,6 +139,7 @@ main
 				background: #EEE
 				ul
 					visibility: visible
+					opacity: 1
 
 #documentScrollContainer
 	height: 100%	
@@ -155,7 +169,6 @@ main
 	.buttons:hover ~ .itemContent
 		background: $itemContentHoverColor
 		
-
 =ItemContent
 	word-wrap: break-word
 	min-height: 24pt
@@ -165,8 +178,10 @@ main
 		margin-bottom: 0
 		margin-top: 0
 
-	h1.title
+	h1.title, h1.titleEmpty
 		font-size: 36pt
+	h1.titleEmpty
+		color: $emptyTextColor
 	
 	p
 		font-size: 14pt

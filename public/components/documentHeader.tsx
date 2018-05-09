@@ -37,7 +37,7 @@ const DocumentHeader : React.SFC<ComponentProps> = (props) => {
 	return (
 		<div id="documentHeader">
 			<div id="headerContents">
-				<h1>{document.title}</h1>
+				<h1 className={document.title.length == 0 ? "empty" : ""}>{document.title.length == 0 ? "Untitled Document..." : document.title}</h1>
 				<div id="documentMenu">
 					<div className="menuItem">
 						File
@@ -55,10 +55,10 @@ const DocumentHeader : React.SFC<ComponentProps> = (props) => {
 								callback={(event) => handleClick(event, addSibling)} />
 							<MenuItem text="Add Sub-Item" icon="▼" shortcut="Ctrl-⇧-⏎" ID="addChild"
 								callback={(event) => handleClick(event, () => actions.addItemToParent(focused || lastItem))} />
-							<MenuItem text="Indent" icon="»" shortcut="Ctrl-]" enabled={focused != undefined} ID="indentItem"
-								callback={(event) => handleClick(event, () => actions.indentItem(focused || lastItem))} />
-							<MenuItem text="Unindent" icon="«" shortcut="Ctrl-[" enabled={focused != undefined} ID="unindentItem"
-								callback={(event) => handleClick(event, () => actions.unindentItem(focused || lastItem))} />
+							<MenuItem text="Indent" icon="»" shortcut="Ctrl-]" enabled={focused != undefined || document.selection != undefined} ID="indentItem"
+								callback={(event) => handleClick(event, () => document.selection ? actions.indentSelection() : actions.indentItem(focused || lastItem))} />
+							<MenuItem text="Unindent" icon="«" shortcut="Ctrl-[" enabled={focused != undefined || document.selection != undefined} ID="unindentItem"
+								callback={(event) => handleClick(event, () => document.selection ? actions.unindentSelection() : actions.unindentItem(focused || lastItem))} />
 							<MenuItem text="Remove" icon="X" shortcut="Ctrl-⌫" ID="removeItem"
 								enabled={!(focused && focused.view.itemType == "Title") && lastItem.view.itemType != "Title"}
 								callback={(event) => handleClick(event, () => document.selection ? actions.removeSelection() : actions.removeItem(focused || lastItem))} />
@@ -82,7 +82,7 @@ const DocumentHeader : React.SFC<ComponentProps> = (props) => {
 								callback={(event) => handleClick(event, () => actions.incrementFocus(false))} />
 							<MenuItem text="Focus Previous Item" icon="←" shortcut="⇧-↹" ID="selectPrev"
 								callback={(event) => handleClick(event, () => actions.decrementFocus())} />
-							<MenuItem text="Select Item Range" shortcut="⇧-⏎" ID="multiSelect" enabled={focused != undefined}
+							<MenuItem text="Select Item Range" icon="☰" shortcut="⇧-⏎" ID="multiSelect" enabled={focused != undefined}
 								callback={(event) => handleClick(event, () => actions.multiSelect(focused))} />
 							<MenuItem text="Unselect All" shortcut="Esc" ID="unselect" enabled={focused != undefined || document.selection != undefined}
 								callback={(event) => handleClick(event, () => { actions.setFocus(undefined); actions.multiSelect(undefined); } )} />

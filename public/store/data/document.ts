@@ -44,18 +44,23 @@ export function getEmptyDocument() : Document {
 	}
 }
 
-export function getLastItem(document : Document, curr : Item = document.items[document.rootItemID]) : Item {
-	if (curr.children.length == 0)
+export function getParent(document : Document, curr : Item) : Item | undefined {
+	const parent = document.items[curr.parentID];
+	return !parent ? undefined : parent;
+}
+
+export function getLastItem(document : Document, curr : Item = document.items[document.rootItemID], skipInvisible : boolean = false) : Item {
+	if (curr.children.length == 0 || (skipInvisible && curr.view.collapsed))
 		return curr;
 
 	const lastChild = document.items[curr.children[curr.children.length - 1]];
 	if (!lastChild)
 		return curr;
-	return getLastItem(document, lastChild); 
+	return getLastItem(document, lastChild, skipInvisible); 
 }
 
-export function getNextItem(document : Document, curr : Item, prevIndex : number = -1) : Item | undefined {
-	if (curr.children.length > prevIndex + 1)
+export function getNextItem(document : Document, curr : Item, skipInvisible : boolean = false, prevIndex : number = -1) : Item | undefined {
+	if (curr.children.length > prevIndex + 1 && (!skipInvisible || !curr.view.collapsed))
 		return document.items[curr.children[prevIndex + 1]];
 
 	const currParent = document.items[curr.parentID];
@@ -63,16 +68,40 @@ export function getNextItem(document : Document, curr : Item, prevIndex : number
 		return undefined;
 
 	const currIndex = currParent.children.indexOf(curr.itemID);
-	return getNextItem(document, currParent, currIndex);
+	return getNextItem(document, currParent, skipInvisible, currIndex);
 }
 
-export function getPrevItem(document : Document, curr : Item) : Item | undefined {
+export function getPrevItem(document : Document, curr : Item, skipInvisible : boolean = false) : Item | undefined {
 	const parent = document.items[curr.parentID];
 	if (!parent)
 		return undefined;
 
 	const currIndex = parent.children.indexOf(curr.itemID);
-	return currIndex > 0 ? getLastItem(document, document.items[parent.children[currIndex - 1]]) : parent;
+	return currIndex > 0 ? getLastItem(document, document.items[parent.children[currIndex - 1]], skipInvisible) : parent;
+}
+
+export function getNextSibling(document : Document, curr : Item) : Item | undefined {
+	const parent = document.items[curr.parentID];
+	if (!parent)
+		return undefined;
+
+	const childIndex = parent.children.indexOf(curr.itemID);
+	if (childIndex < 0 || childIndex >= parent.children.length - 1)
+		return undefined;
+
+	return document.items[parent.children[childIndex + 1]];
+}
+
+export function getPrevSibling(document : Document, curr : Item) : Item | undefined {
+	const parent = document.items[curr.parentID];
+	if (!parent)
+		return undefined;
+
+	const childIndex = parent.children.indexOf(curr.itemID);
+	if (childIndex <= 0)
+		return undefined;
+
+	return document.items[parent.children[childIndex - 1]];
 }
 
 export function getFirstItem(document : Document) : Item {
@@ -104,12 +133,29 @@ export function removeItem(document : Document, item : Item, cascade : boolean =
 
 export function addItem(document : Document, parent : Item, at : number = 0, item : Item | undefined = undefined) : Item {
 	const childIndex = Math.min(Math.max(at, 0), parent.children.length);
-	const child = item != undefined ? { ...item, parentID: parent.itemID } : newItemFromParent(parent);
+	const child = item != undefined ? { ...copyItem(item), parentID: parent.itemID } : newItemFromParent(parent);
 
 	document.items[parent.itemID].children.splice(childIndex, 0, child.itemID);
 	document.items[child.itemID] = child;
 
 	return child;
+}
+
+export function moveItem(document : Document, newParent : Item, at : number = 0, item : Item) : Item {
+	const parent = document.items[item.parentID];
+	if (!parent)
+		return item;
+
+	const childIndex = Math.min(Math.max(at, 0), newParent.children.length);
+
+	const newItem = { ...copyItem(item), parentID: newParent.itemID };
+	const itemIndex = parent.children.indexOf(item.itemID);
+
+	document.items[newItem.parentID].children.splice(childIndex, 0, newItem.itemID);
+	document.items[item.parentID].children.splice(itemIndex, 1);
+	document.items[newItem.itemID] = newItem;
+
+	return newItem;
 }
 
 export function getItemIndex(document : Document, item : Item) : number {
@@ -162,8 +208,7 @@ export function indentItem(document : Document, item : Item) : Item {
 	if (!prevSibling)
 		return item;
 
-	const itemCopy = removeItem(document, item, false);
-	return addItem(document, prevSibling, prevSibling.children.length, itemCopy);
+	return moveItem(document, prevSibling, prevSibling.children.length, item);
 }
 
 export function unindentItem(document : Document, item : Item) : Item {
@@ -178,14 +223,13 @@ export function unindentItem(document : Document, item : Item) : Item {
 	const itemIndex = parent.children.indexOf(item.itemID);
 	const parentIndex = grandparent.children.indexOf(parent.itemID);
 
-	const unindentedSiblings = parent.children.splice(itemIndex);
+	const unindentedSiblings = parent.children.splice(itemIndex + 1);
 
-	unindentedSiblings.slice(1)
+	unindentedSiblings
 		.map(childID => document.items[childID])
-		.map(child => removeItem(document, child, false))
-		.map(child => addItem(document, item, item.children.length, child));
+		.map(child => moveItem(document, document.items[item.itemID], document.items[item.itemID].children.length, child));
 
-	return addItem(document, grandparent, parentIndex + 1, item);
+	return moveItem(document, grandparent, parentIndex + 1, document.items[item.itemID]);
 }
 
 export function updateItems(document : Document, ...items : Item[]) : Document {

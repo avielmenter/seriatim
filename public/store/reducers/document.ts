@@ -121,6 +121,16 @@ type RemoveSelection = {
 	data : { }
 }
 
+type IndentSelection = {
+	type: "IndentSelection",
+	data: { }
+}
+
+type UnindentSelection = {
+	type: "UnindentSelection",
+	data : { }
+}
+
 export type Action = 	AddItemToParent | 
 						AddItemAfterSibling | 
 						InitializeDocument | 
@@ -137,6 +147,8 @@ export type Action = 	AddItemToParent |
 						MakeSelectionItem | 
 						MakeSelectionHeader |
 						RemoveSelection |
+						IndentSelection |
+						UnindentSelection |
 						MultiSelect;
 
 // REDUCERS
@@ -249,7 +261,7 @@ function incrementFocus(document : Document | undefined, action : IncrementFocus
 	const focusedItem = document.items[document.focusedItemID];
 	const focusedParent = (focusedItem.itemID == document.rootItemID ? {...focusedItem} : document.items[focusedItem.parentID]);
 
-	const nextItem = Doc.getNextItem(document, focusedItem);
+	const nextItem = Doc.getNextItem(document, focusedItem, true);
 	if (nextItem != undefined) {
 		return setFocus(document, { type: "SetFocus", data: { item: nextItem } });
 	} else if (!createNewItem) {
@@ -265,13 +277,13 @@ function decrementFocus(document : Document | undefined, action : DecrementFocus
 	if (!document)
 		return Doc.getEmptyDocument();
 	if (!document.focusedItemID || !document.items[document.focusedItemID])
-		return setFocus(document, { type: "SetFocus", data: { item: Doc.getLastItem(document) } });
+		return setFocus(document, { type: "SetFocus", data: { item: Doc.getLastItem(document, document.items[document.rootItemID], true) } });
 
 	const focusedItem = document.items[document.focusedItemID];
 	if (focusedItem.itemID == document.rootItemID)
 		return setFocus(document, { type: "SetFocus", data: { item: undefined } });
 
-	const prevItem = Doc.getPrevItem(document, focusedItem);
+	const prevItem = Doc.getPrevItem(document, focusedItem, true);
 	return setFocus(document, { type: "SetFocus", data: { item: prevItem } });
 }
 
@@ -399,6 +411,80 @@ function removeSelection(document : Document | undefined, action : RemoveSelecti
 	return document;
 }
 
+function indentSelection(document : Document | undefined, action : IndentSelection) : Document {
+	if (!document)
+		return Doc.getEmptyDocument();
+
+	const selectionRange = Doc.getSelectionRange(document);
+	const selectedItems = Doc.getSelectedItems(document);
+
+	let itemsToIndent : Item.Item[] = [];
+
+	for (let curr : Item.Item | undefined = selectionRange[0]; curr != undefined && curr.itemID in selectedItems; ) {
+		itemsToIndent.push(curr);
+
+		let next = Doc.getNextSibling(document, curr);
+		
+		while (!next) {
+			const nextParent = Doc.getParent(document, curr);
+
+			if (!nextParent) {
+				curr = undefined;
+				break;
+			}
+
+			curr = nextParent;
+			next = Doc.getNextSibling(document, curr);
+		}
+
+		curr = next;
+	}
+
+	for (const item of itemsToIndent) {
+		const updatedItem = document.items[item.itemID];
+		const indentedItem = Doc.indentItem(document, updatedItem);
+	}
+
+	return document;
+}
+
+function unindentSelection(document : Document | undefined, action : UnindentSelection) : Document {
+	if (!document)
+		return Doc.getEmptyDocument();
+
+	const selectionRange = Doc.getSelectionRange(document);
+	const selectedItems = Doc.getSelectedItems(document);
+
+	let itemsToUnindent : Item.Item[] = [];
+
+	for (let curr : Item.Item | undefined = selectionRange[0]; curr != undefined && curr.itemID in selectedItems; ) {
+		itemsToUnindent.push(curr);
+
+		let next = Doc.getNextSibling(document, curr);
+		
+		while (!next) {
+			const nextParent = Doc.getParent(document, curr);
+
+			if (!nextParent) {
+				curr = undefined;
+				break;
+			}
+
+			curr = nextParent;
+			next = Doc.getNextSibling(document, curr);
+		}
+
+		curr = next;
+	}
+
+	itemsToUnindent.forEach(item => {
+		const updatedItem = document.items[item.itemID];
+		Doc.unindentItem(document, updatedItem);
+	});
+
+	return document;
+}
+
 function multiSelect(document : Document | undefined, action : MultiSelect) : Document {
 	if (!document)
 		return Doc.getEmptyDocument();
@@ -480,6 +566,10 @@ export function reducer(document : Document | undefined, anyAction : AnyAction) 
 			return makeSelectionHeader(doc, action);
 		case "RemoveSelection":
 			return removeSelection(doc, action);
+		case "IndentSelection":
+			return indentSelection(doc, action);
+		case "UnindentSelection":
+			return unindentSelection(doc, action);
 		default:
 			return doc || Doc.getEmptyDocument();
 	}
@@ -558,6 +648,14 @@ export const creators = (dispatch: Dispatch) => ({
 		type: "RemoveSelection",
 		data: { }
 	}),
+	indentSelection: () => dispatch({
+		type: "IndentSelection",
+		data: { }
+	}),
+	unindentSelection: () => dispatch({
+		type: "UnindentSelection",
+		data: { }
+	}),
 	undo: () => dispatch(ActionCreators.undo()),
 	redo: () => dispatch(ActionCreators.redo()),
 });
@@ -580,6 +678,8 @@ export type DispatchProps = {
 	makeSelectionItem: () => void,
 	makeSelectionHeader: () => void,
 	removeSelection: () => void,
+	indentSelection: () => void,
+	unindentSelection: () => void,
 	undo: () => void,
 	redo: () => void
 }

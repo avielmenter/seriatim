@@ -16,7 +16,7 @@ export type ApplicationState = {
 export const store = createStore(combineReducers({
     document: undoable(DocumentReducers.reducer, {
         ignoreInitialState: true,
-        filter: (action, curr, prev) => !curr ? true : !Document.equals(curr, prev._latestUnfiltered)
+        filter: (action, curr, prev) => !curr ? true : !DocumentReducers.skipHistoryFor.includes(action.type) && !Document.equals(curr, prev._latestUnfiltered)
     })
 }));
 

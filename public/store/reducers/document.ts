@@ -99,6 +99,13 @@ type MakeItem = {
 	}
 }
 
+type CopyItem = {
+	type : "CopyItem",
+	data : {
+		item : Item.Item
+	}
+}
+
 type MultiSelect = {
 	type : "MultiSelect",
 	data : {
@@ -122,14 +129,27 @@ type RemoveSelection = {
 }
 
 type IndentSelection = {
-	type: "IndentSelection",
-	data: { }
+	type : "IndentSelection",
+	data : { }
 }
 
 type UnindentSelection = {
-	type: "UnindentSelection",
+	type : "UnindentSelection",
 	data : { }
 }
+
+type CopySelection = {
+	type : "CopySelection",
+	data : { }
+}
+
+type Paste = {
+	type : "Paste",
+	data : {
+		item : Item.Item
+	}
+}
+
 
 export type Action = 	AddItemToParent | 
 						AddItemAfterSibling | 
@@ -144,11 +164,14 @@ export type Action = 	AddItemToParent |
 						UpdateItemText |
 						MakeHeader |
 						MakeItem |
+						CopyItem |
+						Paste |
 						MakeSelectionItem | 
 						MakeSelectionHeader |
 						RemoveSelection |
 						IndentSelection |
 						UnindentSelection |
+						CopySelection |
 						MultiSelect;
 
 // REDUCERS
@@ -380,6 +403,63 @@ function makeItem(document : Document | undefined, action : MakeItem) : Document
 	return Doc.updateItems(document, newItem);
 }
 
+function copyItem(document : Document | undefined, action : CopyItem) : Document {
+	if (!document)
+		return Doc.getEmptyDocument();
+
+	const item = action.data.item;
+
+	return {
+		...document,
+		clipboard: {
+			...document,
+			rootItemID: item.itemID,
+			selection: {
+				start: item.itemID,
+				end: item.itemID
+			},
+			items: {
+				[item.itemID]: Item.copyItem(item)
+			},
+			clipboard: undefined
+		}
+	};
+}
+
+function copySelection(document : Document | undefined, action : CopySelection) : Document {
+	if (!document)
+		return Doc.getEmptyDocument();
+	if (!document.selection) {
+		return {
+			...document,
+			clipboard: undefined
+		};
+	}
+
+	const selectedItems = Doc.getSelectedItems(document);
+
+	const selectionRoot = Doc.getSelectionParent(document);
+	if (!selectionRoot) {
+		return {
+			...document,
+			clipboard: undefined
+		};
+	}
+
+	const selectionSubtree = Doc.copySubtree(document, selectionRoot);
+
+	return {
+		...document,
+		clipboard:{
+			...document,
+			rootItemID: selectionRoot.itemID,
+			items: selectionSubtree,
+			selection: { ...document.selection },
+			clipboard: undefined
+		}
+	};
+}
+
 function makeSelectionItem(document : Document | undefined, action : MakeSelectionItem) : Document {
 	if (!document)
 		return Doc.getEmptyDocument();
@@ -408,7 +488,10 @@ function removeSelection(document : Document | undefined, action : RemoveSelecti
 			Doc.removeItem(document, selected);
 	}
 
-	return document;
+	return {
+		...document,
+		selection: undefined
+	}
 }
 
 function indentSelection(document : Document | undefined, action : IndentSelection) : Document {
@@ -481,6 +564,56 @@ function unindentSelection(document : Document | undefined, action : UnindentSel
 		const updatedItem = document.items[item.itemID];
 		Doc.unindentItem(document, updatedItem);
 	});
+
+	return document;
+}
+
+function paste(document : Document | undefined, action : Paste) : Document {
+	if (!document)
+		return Doc.getEmptyDocument();
+	if (!document.clipboard || !document.clipboard.selection)
+		return document;
+
+	let clipboard = Doc.regenerateIDs(document.clipboard);
+	let inSelection = false;
+
+	const selectedItems = Doc.getSelectedItems(clipboard);
+	const selection = clipboard.selection;
+
+	const item = Item.copyItem(action.data.item);
+
+	const addToParent = (item.children.length > 0 && !item.view.collapsed) || item.itemID == document.rootItemID;
+	const pasteBelow = !addToParent ? item : Doc.addItem(document, action.data.item);
+
+	let prevDoc : Item.Item | undefined = pasteBelow;
+	let prevSel : Item.Item | undefined = undefined;
+
+	for (let curr : Item.Item | undefined = clipboard.items[clipboard.rootItemID]; curr != undefined; curr = Doc.getNextItem(clipboard, curr)) {
+		if (!curr || !prevDoc || !selection)
+			break;
+
+		if (curr.itemID == selection.start || curr.itemID == selection.end)
+			inSelection = !inSelection;
+		if (!inSelection && curr.itemID != selection.start && curr.itemID != selection.end)
+			continue;
+
+		let newItem = curr;
+
+		if (!prevSel || prevSel.itemID != curr.parentID) {
+			const prevParent = document.items[prevDoc.parentID];
+			const prevIndex = prevParent.children.indexOf(prevDoc.itemID);
+
+			newItem = Doc.addItem(document, prevParent, prevIndex + 1, { ...curr, children: [] });
+		} else {
+			newItem = Doc.addItem(document, prevDoc, 0, { ...curr, children: [] });
+		} 
+
+		prevSel = curr;
+		prevDoc = newItem;
+	}
+	
+	if (addToParent)
+		Doc.removeItem(document, pasteBelow);
 
 	return document;
 }
@@ -558,6 +691,8 @@ export function reducer(document : Document | undefined, anyAction : AnyAction) 
 			return makeHeader(doc, action);
 		case "MakeItem":
 			return makeItem(doc, action);
+		case "CopyItem":
+			return copyItem(doc, action);
 		case "MultiSelect":
 			return multiSelect(doc, action);
 		case "MakeSelectionItem":
@@ -570,6 +705,10 @@ export function reducer(document : Document | undefined, anyAction : AnyAction) 
 			return indentSelection(doc, action);
 		case "UnindentSelection":
 			return unindentSelection(doc, action);
+		case "CopySelection":
+			return copySelection(doc, action);
+		case "Paste":
+			return paste(doc, action);
 		default:
 			return doc || Doc.getEmptyDocument();
 	}
@@ -632,6 +771,10 @@ export const creators = (dispatch: Dispatch) => ({
 		type: "MakeItem",
 		data: { item }
 	}),
+	copyItem: (item : Item.Item) => dispatch({
+		type: "CopyItem",
+		data: { item }
+	}),
 	multiSelect: (item: Item.Item | undefined) => dispatch({
 		type: "MultiSelect",
 		data: { item }
@@ -656,6 +799,14 @@ export const creators = (dispatch: Dispatch) => ({
 		type: "UnindentSelection",
 		data: { }
 	}),
+	copySelection: () => dispatch({
+		type: "CopySelection",
+		data: { }
+	}),
+	paste: (item: Item.Item) => dispatch({
+		type: "Paste",
+		data: { item }
+	}),
 	undo: () => dispatch(ActionCreators.undo()),
 	redo: () => dispatch(ActionCreators.redo()),
 });
@@ -674,12 +825,17 @@ export type DispatchProps = {
 	unindentItem: (item : Item.Item) => void,
 	makeHeader: (item : Item.Item) => void,
 	makeItem: (item : Item.Item) => void,
+	copyItem: (item : Item.Item) => void,
 	multiSelect: (item : Item.Item | undefined) => void,
 	makeSelectionItem: () => void,
 	makeSelectionHeader: () => void,
 	removeSelection: () => void,
 	indentSelection: () => void,
 	unindentSelection: () => void,
+	copySelection: () => void,
+	paste: (item: Item.Item) => void,
 	undo: () => void,
 	redo: () => void
 }
+
+export const skipHistoryFor : string[] = ["CopyItem", "CopySelection", "SetFocus", "IncrementFocus", "DecrementFocus", "SetFocus"];

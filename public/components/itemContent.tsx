@@ -2,6 +2,8 @@ import * as React from 'react';
 import { connect } from 'react-redux';
 import * as ReactMarkdown from 'react-markdown';
 
+import * as classNames from 'classnames';
+
 import { DispatchProps, mapDispatchToProps, handleClick } from '../store';
 
 import { ItemTree } from '../store/data/item';
@@ -66,10 +68,15 @@ class ItemContent extends React.Component<ComponentProps> {
 		const item = this.props.node.item;
 		const actions = this.props.actions.document;
 
-		const textWithoutHeader = item.text.replace(/(^#+\s+)?/, '')
+		const textWithoutHeader = item.text.replace(/(^#+\s+)?/, '');
+
+		const classes = classNames({
+			"itemContent": true,
+			"selectedItem": node.selected
+		})
 
 		return (
-			<div className="itemContent" id={this.getContentDivId()} onClick={(event) => this.handleContentClick(event)}>
+			<div className={classes} id={this.getContentDivId()} onClick={(event) => this.handleContentClick(event)}>
 				{item.view.itemType != "Title" ? 
 					<ReactMarkdown 
 						source={textWithoutHeader.length == 0 ? "New Item" : item.text}

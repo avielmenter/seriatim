@@ -97,6 +97,17 @@ class Document extends React.Component<ComponentProps> {
 					actions.redo();
 					break;
 
+				case 'c':
+					if (doc.selection)
+						actions.copySelection();
+					else if (focusedItem != undefined)
+						actions.copyItem(focusedItem);
+					break;
+
+				case 'v':
+					actions.paste(focusedItem || lastItem);
+					break;
+
 				case 'h':
 					if (event.shiftKey && !doc.selection)
 						actions.makeHeader(item);

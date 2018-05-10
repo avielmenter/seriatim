@@ -27,8 +27,7 @@ const Item : React.SFC<ComponentProps> = (props) => {
 
 	const classes = classNames({
 		'Header': itemType == 'Title' || itemType == 'Header',
-		'Item': itemType == 'Item',
-		'selectedItem': node.selected
+		'Item': itemType == 'Item'
 	});
 
 	return (

@@ -12,11 +12,59 @@ export default interface Document {
 	rootItemID : ItemID,
 	focusedItemID : ItemID | undefined,
 	selection : SelectionRange | undefined,
-	items : ItemDictionary
+	items : ItemDictionary,
+	clipboard : Document | undefined
+}
+
+export function copyItems(i : ItemDictionary) : ItemDictionary {
+	return JSON.parse(JSON.stringify(i));
 }
 
 export function copyDocument(d : Document) : Document {
 	return JSON.parse(JSON.stringify(d));
+}
+
+export function copySubtree(d : Document, root : Item) : ItemDictionary {	
+	const childSubtrees = root.children.map(childID => copySubtree(d, d.items[childID]));
+	const rootCopy = copyItem(root);
+
+	let subtree = {
+		[rootCopy.itemID]: rootCopy
+	};
+
+	for (const childSubtree of childSubtrees) {
+		Object.keys(childSubtree).forEach(itemID => subtree[itemID] = childSubtree[itemID]);
+	}
+
+	return subtree;
+}
+
+export function regenerateIDs(d : Document, curr : Item = d.items[d.rootItemID], parent : Item | undefined = undefined) : Document {
+	let newItem = {
+		...copyItem(curr, true),
+		parentID: parent ? parent.itemID : ""
+	};
+
+	if (d.selection && curr.itemID == d.selection.start)
+		d.selection.start = newItem.itemID;
+	if (d.selection && curr.itemID == d.selection.end)
+		d.selection.end = newItem.itemID;
+	if (d.focusedItemID && curr.itemID == d.focusedItemID)
+		d.focusedItemID = newItem.itemID;
+	if (d.rootItemID == curr.itemID)
+		d.rootItemID = newItem.itemID;
+
+	if (parent) {
+		const itemIndex = parent.children.indexOf(curr.itemID);
+		d.items[parent.itemID].children[itemIndex] = newItem.itemID;
+	}
+
+	delete d.items[curr.itemID];
+	d.items[newItem.itemID] = newItem;
+
+	newItem.children.forEach(childID => regenerateIDs(d, d.items[childID], newItem));
+
+	return d;
 }
 
 export function equals(lhs : any, rhs : any) : boolean {
@@ -40,7 +88,8 @@ export function getEmptyDocument() : Document {
 					collapsed: false
 				}
 			}
-		}
+		},
+		clipboard: undefined
 	};
 
 	addItem(document, document.items[document.rootItemID]);
@@ -177,7 +226,7 @@ export function getSelectionRange(document : Document) : Item[] {
 	let inRange = false;
 	let items : Item[] = [];
 
-	while (curr = getNextItem(document, curr)) {
+	do {
 		const isStart = curr.itemID == document.selection.start;
 		const isEnd = curr.itemID == document.selection.end;
 
@@ -185,7 +234,7 @@ export function getSelectionRange(document : Document) : Item[] {
 			items.push(curr);
 
 		inRange = (!inRange && (isStart || isEnd) && !(isStart && isEnd)) || (inRange && !isStart && !isEnd);
-	}
+	} while (curr = getNextItem(document, curr));
 
 	return items;
 }
@@ -199,6 +248,26 @@ export function getSelectedItems(document : Document) : ItemDictionary {
 	}
 
 	return selectionDict;
+}
+
+// returns the common parent of all selected items. This parent may also have non-selected children
+export function getSelectionParent(document : Document, curr : Item = document.items[document.rootItemID], selectedItems : ItemDictionary = getSelectedItems(document)) : Item | undefined { 
+	if (curr.itemID in selectedItems)
+		return curr;
+	else if (curr.children.length == 0)
+		return undefined;
+
+	const children = curr.children
+						.map(childID => document.items[childID])
+						.map(child => getSelectionParent(document, child, selectedItems));
+
+	const childInSelectionTree : number = children.reduce((prev, curr) => prev + (!curr ? 0 : 1), 0);
+	if (childInSelectionTree == 0)
+		return undefined;
+	else if (childInSelectionTree > 1)
+		return curr;
+
+	return getSelectionParent(document, children.filter(child => child != undefined)[0], selectedItems);
 }
 
 export function indentItem(document : Document, item : Item) : Item {

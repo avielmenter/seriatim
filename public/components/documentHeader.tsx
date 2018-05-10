@@ -66,6 +66,21 @@ const DocumentHeader : React.SFC<ComponentProps> = (props) => {
 								callback={(event) => handleClick(event, () => document.selection ? actions.indentSelection() : actions.indentItem(focused || lastItem))} />
 							<MenuItem text="Unindent" icon="«" shortcut="Ctrl-[" enabled={focused != undefined || document.selection != undefined} ID="unindentItem"
 								callback={(event) => handleClick(event, () => document.selection ? actions.unindentSelection() : actions.unindentItem(focused || lastItem))} />
+							<MenuItem text="Copy" icon="⎘" shortcut="Ctrl-C" enabled={focused != undefined || document.selection != undefined} ID="copy"
+								callback={(event) => handleClick(event, () => document.selection ? actions.copySelection() : actions.copyItem(focused || lastItem))} />
+							<MenuItem text="Cut" icon="✂" shortcut="Ctrl-X" enabled={(focused != undefined && focused.view.itemType != "Title") || document.selection != undefined} 
+								ID="cut"
+								callback={(event) => handleClick(event, () => {
+									if (document.selection) {
+										actions.copySelection();
+										actions.removeSelection();
+									} else if (focused) {
+										actions.copyItem(focused);
+										actions.removeItem(focused);
+									}
+								})} />
+							<MenuItem text="Paste" icon="⎗" shortcut="Ctrl-V" ID="paste" enabled={document.clipboard != undefined}
+								callback={(event) => handleClick(event, () => actions.paste(focused || lastItem))} />
 							<MenuItem text="Undo" icon="⟲" shortcut="Ctrl-Z" ID="undo" enabled={props.documentState.past.length > 0}
 								callback={(event) => handleClick(event, () => actions.undo())} />
 							<MenuItem text="Redo" icon="⟳" shortcut="Ctrl-⇧-Z" ID="redo" enabled={props.documentState.future.length > 0}

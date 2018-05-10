@@ -599,59 +599,15 @@ function paste(document : Document | undefined, action : Paste) : Document {
 
 		let newItem = curr;
 
-		if (!prevSel) {
+		if (!prevSel || prevSel.itemID != curr.parentID) {
 			const prevParent = document.items[prevDoc.parentID];
 			const prevIndex = prevParent.children.indexOf(prevDoc.itemID);
 
 			newItem = Doc.addItem(document, prevParent, prevIndex + 1, { ...curr, children: [] });
-		} else if (prevSel.itemID == curr.parentID) {
-			newItem = Doc.addItem(document, prevDoc, 0, { ...curr, children: [] });
-			break;
 		} else {
-			const commonParent = Doc.getSelectionParent(
-				clipboard,
-				clipboard.items[clipboard.rootItemID], {
-					[prevDoc.itemID]: prevDoc,
-					[curr.itemID]: curr
-				}
-			);
+			newItem = Doc.addItem(document, prevDoc, 0, { ...curr, children: [] });
+		} 
 
-			let docParent = document.items[document.rootItemID];
-			let currIndex = docParent.children.length;
-
-			function walkToParent(d : Document, i : Item.Item, steps : number, prevIndex = -1) : void {
-				if (d.rootItemID == i.itemID) {
-					docParent = d.items[d.rootItemID];
-					currIndex = (prevIndex == -1 ? d.items[d.rootItemID].children.length : prevIndex + 1);
-				} else if (steps == 0) {
-					docParent = i;
-					currIndex = (prevIndex == -1 ? i.children.length : prevIndex + 1);
-				} else {
-					const iParent = d.items[i.parentID];
-					const iIndex = iParent.children.indexOf(i.itemID);
-
-					walkToParent(d, iParent, steps - 1, iIndex);
-				}
-			}
-
-			if (commonParent) {
-				function stepsToParent(d : Document, p : Item.Item, i : Item.Item, steps : number = 0) : number {
-					if (i.itemID == p.itemID)
-						return steps;
-
-					const iParent = d.items[i.parentID];
-					return stepsToParent(d, p, iParent, steps + 1);
-				}
-
-				const unindentLevels = stepsToParent(clipboard, commonParent, prevSel);
-				walkToParent(document, prevDoc, unindentLevels);
-			} else {
-				walkToParent(document, prevDoc, -1);
-			}
-
-			newItem = Doc.addItem(document, docParent, currIndex, { ...curr, children: [] });
-		}
-		
 		prevSel = curr;
 		prevDoc = newItem;
 	}
@@ -881,3 +837,5 @@ export type DispatchProps = {
 	undo: () => void,
 	redo: () => void
 }
+
+export const skipHistoryFor : string[] = ["CopyItem", "CopySelection", "SetFocus", "IncrementFocus", "DecrementFocus", "SetFocus"];

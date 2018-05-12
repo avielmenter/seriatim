@@ -255,11 +255,19 @@ function removeItem(document : Document | undefined, action : RemoveItem) : Docu
 		return document;
 
 	const item = action.data.item;
-	const prevItem = Doc.getPrevItem(document, item);
+	const nextItem = Doc.getNextItem(document, item);
+	const prevSibling = Doc.getPrevSibling(document, item);
+
+	const children = item.children.map(childID => document.items[childID]);	
 	
-	Doc.removeItem(document, item);
+	if (prevSibling) {
+		children.forEach(c => Doc.moveItem(document, prevSibling, Infinity, c));
+	} else {
+		children.reverse().forEach(c => Doc.unindentItem(document, c));
+	}
 	
-	return (document.focusedItemID == item.itemID) ? setFocus(document, { type: "SetFocus", data: { item: prevItem } }) : document;
+	Doc.removeItem(document, item, false);
+	return (document.focusedItemID == item.itemID) ? setFocus(document, { type: "SetFocus", data: { item: nextItem } }) : document;
 }
 
 function setFocus(document : Document | undefined, action : SetFocus) : Document {
@@ -485,7 +493,7 @@ function removeSelection(document : Document | undefined, action : RemoveSelecti
 	const selectionRange = Doc.getSelectionRange(document);
 	for (const selected of selectionRange) {
 		if (selected.itemID in document.items)
-			Doc.removeItem(document, selected);
+			document = removeItem(document, { type: "RemoveItem", data: { item: document.items[selected.itemID] } });
 	}
 
 	return {

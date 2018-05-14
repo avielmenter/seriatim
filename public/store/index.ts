@@ -7,8 +7,6 @@ import undoable, { StateWithHistory } from 'redux-undo';
 
 import * as Document from './data/document';
 
-export type Store = Store<any, AnyAction>;
-
 export type ApplicationState = {
     document: StateWithHistory<Document.default | undefined>
 };

@@ -1,5 +1,6 @@
 import { ActionCreator, AnyAction } from 'redux';
 import undoable, { ActionCreators } from 'redux-undo';
+import { List, Map } from 'immutable';
 
 import * as Item from '../data/item';
 import Document, * as Doc from '../data/document';
@@ -197,11 +198,12 @@ function addItemAfterSibling(document : Document | undefined, action : AddItemAf
 	if (indexOfSibling == -1)
 		return document;
 
-	const item = Doc.addItem(document, parent, indexOfSibling + 1);
+	const item = Item.newItemFromParent(parent);
+	const newDocument = Doc.addItem(document, parent, indexOfSibling + 1, item);
 	
 	return focusOnNew ? 
-			setFocus(document, { type: "SetFocus", data: { item } }) :
-			document;
+			setFocus(newDocument, { type: "SetFocus", data: { item } }) :
+			newDocument;
 }
 
 function toggleItemCollapse(document : Document | undefined, action : ToggleItemCollapse) : Document {
@@ -209,7 +211,7 @@ function toggleItemCollapse(document : Document | undefined, action : ToggleItem
 		return Doc.getEmptyDocument();
 
 	const item = action.data.item;
-	if (item.children.length <= 0)
+	if (item.children.count() <= 0)
 		return document;
 
 	return Doc.updateItems(document, {
@@ -266,8 +268,8 @@ function removeItem(document : Document | undefined, action : RemoveItem) : Docu
 		children.reverse().forEach(c => Doc.unindentItem(document, c));
 	}
 	
-	Doc.removeItem(document, item, false);
-	return (document.focusedItemID == item.itemID) ? setFocus(document, { type: "SetFocus", data: { item: nextItem } }) : document;
+	const newDocument = Doc.removeItem(document, item, false);
+	return (newDocument.focusedItemID == item.itemID) ? setFocus(newDocument, { type: "SetFocus", data: { item: nextItem } }) : newDocument;
 }
 
 function setFocus(document : Document | undefined, action : SetFocus) : Document {
@@ -299,8 +301,11 @@ function incrementFocus(document : Document | undefined, action : IncrementFocus
 		return setFocus(document, { type: "SetFocus", data: { item: undefined } });
 	}
 
-	return setFocus(document, { type: "SetFocus", data: { 
-		item: Doc.addItem(document, focusedParent, focusedParent.children.length) 
+	const newItem = Item.newItemFromParent(focusedParent);
+	const newDocument = Doc.addItem(document, focusedParent, focusedParent.children.count(), newItem);
+
+	return setFocus(newDocument, { type: "SetFocus", data: { 
+		item: newItem
 	} });	
 }
 
@@ -426,9 +431,9 @@ function copyItem(document : Document | undefined, action : CopyItem) : Document
 				start: item.itemID,
 				end: item.itemID
 			},
-			items: {
-				[item.itemID]: Item.copyItem(item)
-			},
+			items: Map<Item.ItemID, Item.Item>({
+				[item.itemID]: item
+			}),
 			clipboard: undefined
 		}
 	};

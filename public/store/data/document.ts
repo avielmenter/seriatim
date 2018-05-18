@@ -26,30 +26,34 @@ export function copyDocument(d : Document) : Document {
 }
 
 export function copySubtree(d : Document, root : Item) : ItemDictionary {	
-	const childSubtrees = root.children.map(childID => copySubtree(d, d.items.get(childID))).toList();
-	
-	const rootCopy = copyItem(root);
+	const childSubtrees = root.children
+								.map(childID => d.items.get(childID as ItemID))
+								.filter(child => child != undefined)
+								.map(child => copySubtree(d, child as Item));
 
 	const subtree = Map<ItemID, Item>({
-		[rootCopy.itemID]: rootCopy
+		[root.itemID]: root
 	});
 
 	return subtree.merge(...childSubtrees.toArray());
 }
 
-export function regenerateIDs(d : Document, curr : Item = d.items.get(d.rootItemID), parent : Item | undefined = undefined) : Document {
+export function regenerateIDs(d : Document, curr : Item | undefined = d.items.get(d.rootItemID), parent : Item | undefined = undefined) : Document {
+	if (!curr)
+		return d;
+	
 	let newItem = {
 		...copyItem(curr, true),
 		parentID: parent ? parent.itemID : ""
 	};
 
-	let newSelection = { ...d.selection };
+	let newSelection = d.selection ? { start: d.selection.start, end: d.selection.end } : undefined;
 	let newFocus = d.focusedItemID;
 	let newRoot = d.rootItemID;
 
-	if (d.selection && curr.itemID == d.selection.start)
+	if (d.selection && newSelection && curr.itemID == d.selection.start)
 		newSelection.start = newItem.itemID;
-	if (d.selection && curr.itemID == d.selection.end)
+	if (d.selection && newSelection &&  curr.itemID == d.selection.end)
 		newSelection.end = newItem.itemID;
 	if (d.focusedItemID && curr.itemID == d.focusedItemID)
 		newFocus = newItem.itemID;
@@ -58,7 +62,7 @@ export function regenerateIDs(d : Document, curr : Item = d.items.get(d.rootItem
 
 	let newParent = parent;
 
-	if (parent) {
+	if (parent && newParent) {
 		const itemIndex = parent.children.indexOf(curr.itemID);
 		newParent = {
 			...newParent,
@@ -67,7 +71,7 @@ export function regenerateIDs(d : Document, curr : Item = d.items.get(d.rootItem
 	}
 
 	let newItems = d.items.remove(curr.itemID).set(newItem.itemID, newItem);
-	if (parent)
+	if (newParent && newItem)
 		newItems = newItems.set(newItem.parentID, newParent);
 
 	const newDoc = {
@@ -78,7 +82,11 @@ export function regenerateIDs(d : Document, curr : Item = d.items.get(d.rootItem
 		items: newItems
 	}
 
-	return newItem.children.reduce((prev, curr) => regenerateIDs(prev, prev.items.get(curr), newItem), newDoc);
+	return newItem.children.reduce((prev : Document | undefined, curr : ItemID | undefined) => {
+		if (!prev || !curr)
+			return undefined;
+		return regenerateIDs(prev, prev.items.get(curr), newItem)
+	}, newDoc) || newDoc;
 }
 
 export function equals(lhs : any, rhs : any) : boolean {
@@ -188,13 +196,18 @@ export function removeItem(document : Document, item : Item, cascade : boolean =
 
 	if (cascade) {
 		newItems = newItems.merge(
-			item.children
-				.map(childID => document.items.get(childID))
+			(item.children
+				.map(childID => !childID ? undefined : document.items.get(childID))
 				.filter(child => child != undefined)
-				.reduce((prev : Document, curr : Item) => ({
-					...prev,
-					items: prev.items.merge(removeItem(prev, curr, cascade).items)
-				}), document)
+				.reduce((prev, curr) => {
+					if (!prev || !curr)
+						return document;
+
+					return {
+						...prev,
+						items: prev.items.merge(removeItem(prev, curr, cascade).items)
+					}
+				}, document) || document)
 			.items
 		);
 	}
@@ -241,10 +254,10 @@ export function addItem(document : Document, parent : Item, at : number = 0, ite
 	}
 }
 
-export function moveItem(document : Document, newParent : Item, at : number = 0, item : Item) : Document {
+export function moveItem(document : Document, newParent : Item, at : number = 0, item : Item) : {document: Document, moved : Item} {
 	const parent = document.items.get(item.parentID);
 	if (!parent)
-		return document;
+		return {document, moved: item};
 
 	const childIndex = Math.min(Math.max(at, 0), newParent.children.count());
 
@@ -263,8 +276,11 @@ export function moveItem(document : Document, newParent : Item, at : number = 0,
 		.set(newItem.itemID, newItem)
 
 	return {
-		...document,
-		items: newItems
+		document: {
+			...document,
+			items: newItems
+		},
+		moved: newItem
 	}
 }
 
@@ -327,27 +343,27 @@ export function getSelectionParent(document : Document, curr : Item = document.i
 	return getSelectionParent(document, children.filter(child => child != undefined)[0], selectedItems);
 }
 
-export function indentItem(document : Document, item : Item) : Document {
+export function indentItem(document : Document, item : Item) : { document : Document, moved : Item } {
 	const parent = document.items.get(item.parentID);
 	if (!parent || parent.children.indexOf(item.itemID) <= 0)
-		return document;
+		return {document, moved: item};
 
 	const itemIndex = parent.children.indexOf(item.itemID);
 	const prevSibling = document.items.get(parent.children.get(itemIndex - 1));
 	if (!prevSibling)
-		return document;
+		return {document, moved: item};
 
 	return moveItem(document, prevSibling, prevSibling.children.count(), item);
 }
 
-export function unindentItem(document : Document, item : Item) : Document {
+export function unindentItem(document : Document, item : Item) : { document : Document, moved : Item } {
 	const parent = document.items.get(item.parentID);
 	if (!parent)
-		return document;
+		return {document, moved: item};
 
 	const grandparent = document.items.get(parent.parentID);
 	if (!grandparent)
-		return document;
+		return {document, moved: item};
 
 	const itemIndex = parent.children.indexOf(item.itemID);
 	const parentIndex = grandparent.children.indexOf(parent.itemID);
@@ -359,7 +375,7 @@ export function unindentItem(document : Document, item : Item) : Document {
 		.map(childID => document.items.get(childID))
 		.reduce((prev, curr) => ({
 			...prev,
-			items: moveItem(prev, prev.items.get(item.itemID), document.items.get(item.itemID).children.count(), curr).items
+			items: moveItem(prev, prev.items.get(item.itemID), document.items.get(item.itemID).children.count(), curr).document.items
 		}), document);
 
 	newDocument = {

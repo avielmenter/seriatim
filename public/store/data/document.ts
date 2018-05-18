@@ -1,4 +1,4 @@
-import { Item, ItemID, newItemFromParent, copyItem } from './item';
+import { Item, ItemID, newItemFromParent, regenerateID } from './item';
 import { Map, List } from 'immutable';
 
 export type ItemDictionary = Map<ItemID, Item>;
@@ -17,19 +17,11 @@ export default interface Document {
 	readonly clipboard : Document | undefined
 }
 
-export function copyItems(i : ItemDictionary) : ItemDictionary {
-	return JSON.parse(JSON.stringify(i));
-}
-
-export function copyDocument(d : Document) : Document {
-	return JSON.parse(JSON.stringify(d));
-}
-
 export function copySubtree(d : Document, root : Item) : ItemDictionary {	
 	const childSubtrees = root.children
-								.map(childID => d.items.get(childID as ItemID))
+								.map(childID => d.items.get(childID))
 								.filter(child => child != undefined)
-								.map(child => copySubtree(d, child as Item));
+								.map(child => copySubtree(d, child));
 
 	const subtree = Map<ItemID, Item>({
 		[root.itemID]: root
@@ -42,10 +34,7 @@ export function regenerateIDs(d : Document, curr : Item | undefined = d.items.ge
 	if (!curr)
 		return d;
 	
-	let newItem = {
-		...copyItem(curr, true),
-		parentID: parent ? parent.itemID : ""
-	};
+	let newItem = regenerateID(curr);
 
 	let newSelection = d.selection ? { start: d.selection.start, end: d.selection.end } : undefined;
 	let newFocus = d.focusedItemID;
@@ -82,11 +71,7 @@ export function regenerateIDs(d : Document, curr : Item | undefined = d.items.ge
 		items: newItems
 	}
 
-	return newItem.children.reduce((prev : Document | undefined, curr : ItemID | undefined) => {
-		if (!prev || !curr)
-			return undefined;
-		return regenerateIDs(prev, prev.items.get(curr), newItem)
-	}, newDoc) || newDoc;
+	return newItem.children.reduce((prev, curr) => regenerateIDs(prev, prev.items.get(curr), prev.items.get(newItem.itemID)), newDoc);
 }
 
 export function equals(lhs : any, rhs : any) : boolean {
@@ -104,7 +89,7 @@ export function getEmptyDocument() : Document {
 				itemID: "root",
 				text: "Untitled Document",
 				parentID: "",
-				children: List<ItemID>([]),
+				children: List<ItemID>(),
 				view: {
 					itemType: "Title",
 					collapsed: false
@@ -114,8 +99,7 @@ export function getEmptyDocument() : Document {
 		clipboard: undefined
 	};
 
-	addItem(document, document.items.get(document.rootItemID));
-	return document;
+	return addItem(document, document.items.get(document.rootItemID));
 }
 
 export function getParent(document : Document, curr : Item) : Item | undefined {
@@ -196,18 +180,13 @@ export function removeItem(document : Document, item : Item, cascade : boolean =
 
 	if (cascade) {
 		newItems = newItems.merge(
-			(item.children
-				.map(childID => !childID ? undefined : document.items.get(childID))
+			item.children
+				.map(childID => document.items.get(childID))
 				.filter(child => child != undefined)
-				.reduce((prev, curr) => {
-					if (!prev || !curr)
-						return document;
-
-					return {
+				.reduce((prev, curr) => ({
 						...prev,
 						items: prev.items.merge(removeItem(prev, curr, cascade).items)
-					}
-				}, document) || document)
+					}), document)
 			.items
 		);
 	}
@@ -216,27 +195,6 @@ export function removeItem(document : Document, item : Item, cascade : boolean =
 		...document,
 		items: newItems.remove(item.itemID)
 	};
-
-	/*
-	if (parent) {
-		const itemIndex = parent.children.indexOf(item.itemID);
-		document.items.get(item.parentID).children.splice(itemIndex, 1);
-	}
-
-	if (cascade) {
-		item.children
-			.map(childID => document.items.get(childID))
-			.filter(child => child != undefined)
-			.map(child => removeItem(document, child));
-	}
-
-	const itemCopy = {
-		...item,
-		view: { ...item.view }
-	}
-
-	delete document.items.get(item.itemID);
-	return itemCopy;*/
 }
 
 export function addItem(document : Document, parent : Item, at : number = 0, item : Item | undefined = undefined) : Document {
@@ -315,32 +273,34 @@ export function getSelectionRange(document : Document) : List<Item> {
 
 export function getSelectedItems(document : Document) : ItemDictionary {
 	const selectionRange = getSelectionRange(document);
+
 	return Map<ItemID, Item>(
-		selectionRange.map(item => ({
-			key: item.itemID,
-			value: item
-		})
+		selectionRange.map(item => [
+			!item ? '' : item.itemID,
+			item
+		]
 	));
 }
 
 // returns the common parent of all selected items. This parent may also have non-selected children
 export function getSelectionParent(document : Document, curr : Item = document.items.get(document.rootItemID), selectedItems : ItemDictionary = getSelectedItems(document)) : Item | undefined { 
-	if (curr.itemID in selectedItems)
+	if (selectedItems.has(curr.itemID))
 		return curr;
 	else if (curr.children.count() == 0)
 		return undefined;
 
 	const children = curr.children
-						.map(childID => document.items.get(childID))
-						.map(child => getSelectionParent(document, child, selectedItems));
+						.map(childID => getSelectionParent(document, document.items.get(childID), selectedItems))
+						.filter(child => child != undefined);
 
-	const childInSelectionTree : number = children.reduce((prev, curr) => prev + (!curr ? 0 : 1), 0);
+	const childInSelectionTree : number = children.reduce((prev, curr) => prev + 1, 0);
+
 	if (childInSelectionTree == 0)
 		return undefined;
 	else if (childInSelectionTree > 1)
 		return curr;
 
-	return getSelectionParent(document, children.filter(child => child != undefined)[0], selectedItems);
+	return getSelectionParent(document, children.get(0), selectedItems);
 }
 
 export function indentItem(document : Document, item : Item) : { document : Document, moved : Item } {
@@ -373,10 +333,11 @@ export function unindentItem(document : Document, item : Item) : { document : Do
 
 	let newDocument : Document = unindentedSiblings
 		.map(childID => document.items.get(childID))
-		.reduce((prev, curr) => ({
-			...prev,
-			items: moveItem(prev, prev.items.get(item.itemID), document.items.get(item.itemID).children.count(), curr).document.items
-		}), document);
+		.filter(child => child != undefined)
+		.reduce((prev : Document, curr : Item) => ({
+				...prev,
+				items: moveItem(prev, prev.items.get(item.itemID), document.items.get(item.itemID).children.count(), curr).document.items
+			}), document);
 
 	newDocument = {
 		...newDocument,

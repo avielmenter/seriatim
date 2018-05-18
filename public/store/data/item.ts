@@ -45,12 +45,9 @@ export function newItemFromParent(parent : Item) : Item {
 	}
 }
 
-export function copyItem(item : Item, replaceID : boolean = false) : Item {
+export function regenerateID(item : Item) : Item {
 	return {
 		...item,
-		itemID: replaceID ? generateItemID() : item.itemID,
-		view: {
-			...item.view
-		}
+		itemID: generateItemID()
 	}
 }

@@ -36,7 +36,7 @@ const Item : React.SFC<ComponentProps> = (props) => {
 				{node.focused && <div className="showFocused">
 					&ndash;
 				</div>}
-				{item.children.length > 0 && <button className={item.view.collapsed ? "expandButton" : "collapseButton"}
+				{item.children.count() > 0 && <button className={item.view.collapsed ? "expandButton" : "collapseButton"}
 						onClick={(event) => handleClick(event, () => actions.toggleItemCollapse(item))}>
 					{item.view.collapsed ? "▶" : "▼"}
 				</button>}

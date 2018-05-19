@@ -28,21 +28,21 @@ const DocumentHeader : React.SFC<ComponentProps> = (props) => {
 		return (<div />);
 
 	const actions = props.actions.document;
-	const focused = !document.focusedItemID ? undefined : document.items[document.focusedItemID];
-	const lastItem = getLastItem(document, document.items[document.rootItemID]);
+	const focused = !document.focusedItemID ? undefined : document.items.get(document.focusedItemID);
+	const lastItem = getLastItem(document, document.items.get(document.rootItemID));
 
 	const addSibling = (focused || lastItem).view.itemType == "Title" ? 
 							() => actions.addItemToParent(focused || lastItem) :
 							() => actions.addItemAfterSibling(focused || lastItem, false);
 
-	const collapsable = focused != undefined && focused.children.length > 0;
+	const collapsable = focused != undefined && focused.children.count() > 0;
 	const expandable = focused != undefined && collapsable && focused.view.collapsed;
 	
 	return (
 		<div id="documentHeader">
 			<div id="headerContents">
 				<h1 className={document.title.length == 0 ? "empty" : ""}
-					onClick={(event) => handleClick(event, () => actions.setFocus(document.items[document.rootItemID]))}>
+					onClick={(event) => handleClick(event, () => actions.setFocus(document.items.get(document.rootItemID)))}>
 					{document.title.length == 0 ? "Untitled Document..." : document.title}
 				</h1>
 				<div id="documentMenu">
@@ -51,7 +51,7 @@ const DocumentHeader : React.SFC<ComponentProps> = (props) => {
 						<ul>
 							<MenuItem enabled={false} text="Save" shortcut="Ctrl-S" callback={() => {}} />
 							<MenuItem text="Rename" shortcut="Esc, ↹" 
-								callback={(event) => handleClick(event, () => actions.setFocus(document.items[document.rootItemID]))} />
+								callback={(event) => handleClick(event, () => actions.setFocus(document.items.get(document.rootItemID)))} />
 							<MenuItem enabled={false} text="Exit" callback={() => {}} />
 						</ul>
 					</div>

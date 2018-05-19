@@ -2,6 +2,8 @@ import * as React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 
+import { List, Map } from 'immutable';
+
 import { default as DocumentData, getLastItem, ItemDictionary, getSelectionRange, getSelectedItems } from '../store/data/document';
 import { ItemTree, ItemID, Item as ItemData } from '../store/data/item';
 
@@ -31,15 +33,15 @@ class Document extends React.Component<ComponentProps> {
 	}
 
 	getDocumentTree(doc : DocumentData, selectedItems : ItemDictionary, nodeID : ItemID) : ItemTree {
-		const rootItem = doc.items[nodeID];
+		const rootItem = doc.items.get(nodeID);
 
 		const nodeChildren = rootItem.children.map(child => this.getDocumentTree(doc, selectedItems, child));
 	
 		return {
 			item: rootItem,
 			focused: doc.focusedItemID == nodeID,
-			selected: nodeID in selectedItems,
-			children: nodeChildren
+			selected: selectedItems.has(nodeID),
+			children: nodeChildren.toList()
 		};
 	}
 
@@ -51,8 +53,8 @@ class Document extends React.Component<ComponentProps> {
 		if (!doc)
 			return;
 
-		const focusedItem = doc.focusedItemID ?doc.items[doc.focusedItemID] : undefined;
-		const lastItem = getLastItem(doc, doc.items[doc.rootItemID]);
+		const focusedItem = doc.focusedItemID ? doc.items.get(doc.focusedItemID) : undefined;
+		const lastItem = getLastItem(doc, doc.items.get(doc.rootItemID));
 
 		const item = focusedItem || lastItem;
 
@@ -151,7 +153,7 @@ class Document extends React.Component<ComponentProps> {
 				break;
 
 				case ' ':
-					if (item.children.length > 0 || item.view.collapsed)
+					if (item.children.count() > 0 || item.view.collapsed)
 						actions.toggleItemCollapse(item);
 					break;
 				

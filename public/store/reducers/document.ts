@@ -1,5 +1,6 @@
 import { ActionCreator, AnyAction } from 'redux';
 import undoable, { ActionCreators } from 'redux-undo';
+import { List, Map } from 'immutable';
 
 import * as Item from '../data/item';
 import Document, * as Doc from '../data/document';
@@ -180,8 +181,7 @@ function addItemToParent(document : Document | undefined, action : AddItemToPare
 	if (!document)
 		return Doc.getEmptyDocument();
 
-	Doc.addItem(document, action.data.parent);
-	return document;
+	return Doc.addItem(document, action.data.parent);
 }
 
 function addItemAfterSibling(document : Document | undefined, action : AddItemAfterSibling) : Document {
@@ -189,7 +189,7 @@ function addItemAfterSibling(document : Document | undefined, action : AddItemAf
 		return Doc.getEmptyDocument();
 
 	const { sibling, focusOnNew } = action.data;
-	const parent = document.items[sibling.parentID];
+	const parent = document.items.get(sibling.parentID);
 	if (!parent)
 		return document;
 
@@ -197,11 +197,12 @@ function addItemAfterSibling(document : Document | undefined, action : AddItemAf
 	if (indexOfSibling == -1)
 		return document;
 
-	const item = Doc.addItem(document, parent, indexOfSibling + 1);
+	const item = Item.newItemFromParent(parent);
+	const newDocument = Doc.addItem(document, parent, indexOfSibling + 1, item);
 	
 	return focusOnNew ? 
-			setFocus(document, { type: "SetFocus", data: { item } }) :
-			document;
+			setFocus(newDocument, { type: "SetFocus", data: { item } }) :
+			newDocument;
 }
 
 function toggleItemCollapse(document : Document | undefined, action : ToggleItemCollapse) : Document {
@@ -209,7 +210,7 @@ function toggleItemCollapse(document : Document | undefined, action : ToggleItem
 		return Doc.getEmptyDocument();
 
 	const item = action.data.item;
-	if (item.children.length <= 0)
+	if (item.children.count() <= 0)
 		return document;
 
 	return Doc.updateItems(document, {
@@ -224,7 +225,7 @@ function toggleItemCollapse(document : Document | undefined, action : ToggleItem
 function updateItemText(document : Document | undefined, action : UpdateItemText) : Document {
 	if (!document)
 		return Doc.getEmptyDocument();
-	else if (!document.items[action.data.item.itemID])
+	else if (!document.items.get(action.data.item.itemID))
 		return document;
 
 	const { item, newText } = action.data;
@@ -251,23 +252,28 @@ function updateItemText(document : Document | undefined, action : UpdateItemText
 function removeItem(document : Document | undefined, action : RemoveItem) : Document {
 	if (!document)
 		return Doc.getEmptyDocument();
-	else if (!document.items[action.data.item.itemID] || action.data.item.itemID == document.rootItemID)
+	else if (!document.items.get(action.data.item.itemID) || action.data.item.itemID == document.rootItemID)
 		return document;
 
 	const item = action.data.item;
 	const nextItem = Doc.getNextItem(document, item);
 	const prevSibling = Doc.getPrevSibling(document, item);
 
-	const children = item.children.map(childID => document.items[childID]);	
+	const children = item.children.map(childID => document.items.get(childID));	
+
+	let newDocument = document;
 	
 	if (prevSibling) {
-		children.forEach(c => Doc.moveItem(document, prevSibling, Infinity, c));
+		newDocument = children.reduce((prev, curr) => {
+			const newParent = prev.items.get(prevSibling.itemID);
+			return Doc.moveItem(prev, newParent, Infinity, curr).document
+		}, newDocument);
 	} else {
-		children.reverse().forEach(c => Doc.unindentItem(document, c));
+		newDocument = children.reverse().reduce((prev, curr) => Doc.unindentItem(prev, curr).document, newDocument);
 	}
 	
-	Doc.removeItem(document, item, false);
-	return (document.focusedItemID == item.itemID) ? setFocus(document, { type: "SetFocus", data: { item: nextItem } }) : document;
+	newDocument = Doc.removeItem(newDocument, item, false);
+	return (newDocument.focusedItemID == item.itemID) ? setFocus(newDocument, { type: "SetFocus", data: { item: nextItem } }) : newDocument;
 }
 
 function setFocus(document : Document | undefined, action : SetFocus) : Document {
@@ -285,12 +291,12 @@ function setFocus(document : Document | undefined, action : SetFocus) : Document
 function incrementFocus(document : Document | undefined, action : IncrementFocus) : Document {
 	if (!document)
 		return Doc.getEmptyDocument();
-	if (!document.focusedItemID || !document.items[document.focusedItemID])
-		return setFocus(document, { type: "SetFocus", data: { item: document.items[document.rootItemID] } });
+	if (!document.focusedItemID || !document.items.get(document.focusedItemID))
+		return setFocus(document, { type: "SetFocus", data: { item: document.items.get(document.rootItemID) } });
 
 	const { createNewItem } = action.data;
-	const focusedItem = document.items[document.focusedItemID];
-	const focusedParent = (focusedItem.itemID == document.rootItemID ? {...focusedItem} : document.items[focusedItem.parentID]);
+	const focusedItem = document.items.get(document.focusedItemID);
+	const focusedParent = (focusedItem.itemID == document.rootItemID ? {...focusedItem} : document.items.get(focusedItem.parentID));
 
 	const nextItem = Doc.getNextItem(document, focusedItem, true);
 	if (nextItem != undefined) {
@@ -299,18 +305,21 @@ function incrementFocus(document : Document | undefined, action : IncrementFocus
 		return setFocus(document, { type: "SetFocus", data: { item: undefined } });
 	}
 
-	return setFocus(document, { type: "SetFocus", data: { 
-		item: Doc.addItem(document, focusedParent, focusedParent.children.length) 
+	const newItem = Item.newItemFromParent(focusedParent);
+	const newDocument = Doc.addItem(document, focusedParent, focusedParent.children.count(), newItem);
+
+	return setFocus(newDocument, { type: "SetFocus", data: { 
+		item: newItem
 	} });	
 }
 
 function decrementFocus(document : Document | undefined, action : DecrementFocus) : Document {
 	if (!document)
 		return Doc.getEmptyDocument();
-	if (!document.focusedItemID || !document.items[document.focusedItemID])
-		return setFocus(document, { type: "SetFocus", data: { item: Doc.getLastItem(document, document.items[document.rootItemID], true) } });
+	if (!document.focusedItemID || !document.items.get(document.focusedItemID))
+		return setFocus(document, { type: "SetFocus", data: { item: Doc.getLastItem(document, document.items.get(document.rootItemID), true) } });
 
-	const focusedItem = document.items[document.focusedItemID];
+	const focusedItem = document.items.get(document.focusedItemID);
 	if (focusedItem.itemID == document.rootItemID)
 		return setFocus(document, { type: "SetFocus", data: { item: undefined } });
 
@@ -323,14 +332,17 @@ function indentItem(document : Document | undefined, action : IndentItem) : Docu
 		return Doc.getEmptyDocument();
 
 	const item = action.data.item;
-	const parent = document.items[item.parentID];
+	const parent = document.items.get(item.parentID);
 	if (!parent)
 		return document;
 
-	const indented = Doc.indentItem(document, item);
+	const indentation = Doc.indentItem(document, item);
+	let newDocument = indentation.document;
+	const indented = indentation.moved;
+
 	if (indented.parentID == item.parentID)
-		return indentItem(document, { type: "IndentItem", data: { item: document.items[item.parentID] } });
-	return document;
+		return indentItem(newDocument, { type: "IndentItem", data: { item: newDocument.items.get(item.parentID) } });
+	return newDocument;
 }
 
 function unindentItem(document : Document | undefined, action : UnindentItem) : Document {
@@ -341,14 +353,17 @@ function unindentItem(document : Document | undefined, action : UnindentItem) : 
 	if (!item)
 		return document;
 
-	const indented = Doc.unindentItem(document, item);
+	const indentation = Doc.unindentItem(document, item);
+	let newDocument = indentation.document;
+	const indented = indentation.moved;
+
 	if (indented.parentID == item.parentID) {
 		const nextItem = Doc.getNextItem(document, indented);
 		if (nextItem)
-			return unindentItem(document, { type: "UnindentItem", data: { item: nextItem } });
+			return unindentItem(newDocument, { type: "UnindentItem", data: { item: nextItem } });
 	}
 
-	return document;
+	return newDocument;
 }
 
 function makeHeader(document : Document | undefined, action : MakeHeader) : Document {
@@ -366,13 +381,13 @@ function makeHeader(document : Document | undefined, action : MakeHeader) : Docu
 
 		const hashes = curr.text.match(/(#+)\s+.*/);
 		if (!hashes || hashes.length < 2)
-			return getPreviousHeaderLevel(doc, doc.items[curr.parentID]);
+			return getPreviousHeaderLevel(doc, doc.items.get(curr.parentID));
 
 		return hashes[1].length;
 	}
 
 	let hashes = '';
-	const numHashes = getPreviousHeaderLevel(document, document.items[item.parentID]) + 1;
+	const numHashes = getPreviousHeaderLevel(document, document.items.get(item.parentID)) + 1;
 
 	for (let i = 0; i < numHashes && i < 6; i++) {
 		hashes += '#';
@@ -426,9 +441,9 @@ function copyItem(document : Document | undefined, action : CopyItem) : Document
 				start: item.itemID,
 				end: item.itemID
 			},
-			items: {
-				[item.itemID]: Item.copyItem(item)
-			},
+			items: Map<Item.ItemID, Item.Item>({
+				[item.itemID]: item
+			}),
 			clipboard: undefined
 		}
 	};
@@ -458,7 +473,7 @@ function copySelection(document : Document | undefined, action : CopySelection) 
 
 	return {
 		...document,
-		clipboard:{
+		clipboard: {
 			...document,
 			rootItemID: selectionRoot.itemID,
 			items: selectionSubtree,
@@ -473,8 +488,7 @@ function makeSelectionItem(document : Document | undefined, action : MakeSelecti
 		return Doc.getEmptyDocument();
 
 	return Doc.getSelectionRange(document)
-		.map(selected => makeItem(document, { type: "MakeItem", data : { item: selected } }))
-		.reduce((prev, curr) => curr, document);
+		.reduce((prev, selected) => makeItem(prev, { type: "MakeItem", data : { item: selected } }), document)
 }
 
 function makeSelectionHeader(document : Document | undefined, action : MakeSelectionHeader) : Document {
@@ -482,8 +496,7 @@ function makeSelectionHeader(document : Document | undefined, action : MakeSelec
 		return Doc.getEmptyDocument();
 
 	return Doc.getSelectionRange(document)
-			.map(selected => makeHeader(document, { type: "MakeHeader", data : { item: selected } }))
-			.reduce((prev, curr) => curr, document);
+		.reduce((prev, selected) => makeHeader(prev, { type: "MakeHeader", data : { item: selected } }), document)
 }
 
 function removeSelection(document : Document | undefined, action : RemoveSelection) : Document {
@@ -491,13 +504,15 @@ function removeSelection(document : Document | undefined, action : RemoveSelecti
 		return Doc.getEmptyDocument();
 
 	const selectionRange = Doc.getSelectionRange(document);
-	for (const selected of selectionRange) {
-		if (selected.itemID in document.items)
-			document = removeItem(document, { type: "RemoveItem", data: { item: document.items[selected.itemID] } });
-	}
+	const newDocument = selectionRange.reduce((prev, selected) => {
+		if (prev.items.has(selected.itemID))
+			return removeItem(prev, { type: "RemoveItem", data: { item: prev.items.get(selected.itemID) } });
+		else
+			return prev;
+	}, document);
 
 	return {
-		...document,
+		...newDocument,
 		selection: undefined
 	}
 }
@@ -509,10 +524,10 @@ function indentSelection(document : Document | undefined, action : IndentSelecti
 	const selectionRange = Doc.getSelectionRange(document);
 	const selectedItems = Doc.getSelectedItems(document);
 
-	let itemsToIndent : Item.Item[] = [];
+	let itemsToIndent = List<Item.Item>();
 
-	for (let curr : Item.Item | undefined = selectionRange[0]; curr != undefined && curr.itemID in selectedItems; ) {
-		itemsToIndent.push(curr);
+	for (let curr : Item.Item | undefined = selectionRange.get(0); curr != undefined && selectedItems.has(curr.itemID); ) {
+		itemsToIndent = itemsToIndent.push(curr);
 
 		let next = Doc.getNextSibling(document, curr);
 		
@@ -531,12 +546,7 @@ function indentSelection(document : Document | undefined, action : IndentSelecti
 		curr = next;
 	}
 
-	for (const item of itemsToIndent) {
-		const updatedItem = document.items[item.itemID];
-		const indentedItem = Doc.indentItem(document, updatedItem);
-	}
-
-	return document;
+	return itemsToIndent.reduce((prev, curr) => Doc.indentItem(prev, prev.items.get(curr.itemID)).document, document);
 }
 
 function unindentSelection(document : Document | undefined, action : UnindentSelection) : Document {
@@ -546,10 +556,10 @@ function unindentSelection(document : Document | undefined, action : UnindentSel
 	const selectionRange = Doc.getSelectionRange(document);
 	const selectedItems = Doc.getSelectedItems(document);
 
-	let itemsToUnindent : Item.Item[] = [];
+	let itemsToUnindent = List<Item.Item>();
 
-	for (let curr : Item.Item | undefined = selectionRange[0]; curr != undefined && curr.itemID in selectedItems; ) {
-		itemsToUnindent.push(curr);
+	for (let curr : Item.Item | undefined = selectionRange.get(0); curr != undefined && selectedItems.has(curr.itemID); ) {
+		itemsToUnindent = itemsToUnindent.push(curr);
 
 		let next = Doc.getNextSibling(document, curr);
 		
@@ -568,12 +578,7 @@ function unindentSelection(document : Document | undefined, action : UnindentSel
 		curr = next;
 	}
 
-	itemsToUnindent.forEach(item => {
-		const updatedItem = document.items[item.itemID];
-		Doc.unindentItem(document, updatedItem);
-	});
-
-	return document;
+	return itemsToUnindent.reduce((prev, curr) => Doc.unindentItem(prev, prev.items.get(curr.itemID)).document, document);
 }
 
 function paste(document : Document | undefined, action : Paste) : Document {
@@ -582,21 +587,25 @@ function paste(document : Document | undefined, action : Paste) : Document {
 	if (!document.clipboard || !document.clipboard.selection)
 		return document;
 
+	let newDocument = document;
+
 	let clipboard = Doc.regenerateIDs(document.clipboard);
 	let inSelection = false;
 
 	const selectedItems = Doc.getSelectedItems(clipboard);
 	const selection = clipboard.selection;
 
-	const item = Item.copyItem(action.data.item);
+	const item = action.data.item;
 
-	const addToParent = (item.children.length > 0 && !item.view.collapsed) || item.itemID == document.rootItemID;
-	const pasteBelow = !addToParent ? item : Doc.addItem(document, action.data.item);
+	const addToParent = (item.children.count() > 0 && !item.view.collapsed) || item.itemID == document.rootItemID;
+	const pasteBelow = !addToParent ? item : Item.newItemFromParent(item);
+	if (addToParent)
+		newDocument = Doc.addItem(newDocument, item, 0, pasteBelow);
 
 	let prevDoc : Item.Item | undefined = pasteBelow;
 	let prevSel : Item.Item | undefined = undefined;
 
-	for (let curr : Item.Item | undefined = clipboard.items[clipboard.rootItemID]; curr != undefined; curr = Doc.getNextItem(clipboard, curr)) {
+	for (let curr : Item.Item | undefined = clipboard.items.get(clipboard.rootItemID); curr != undefined; curr = Doc.getNextItem(clipboard, curr)) {
 		if (!curr || !prevDoc || !selection)
 			break;
 
@@ -608,12 +617,14 @@ function paste(document : Document | undefined, action : Paste) : Document {
 		let newItem = curr;
 
 		if (!prevSel || prevSel.itemID != curr.parentID) {
-			const prevParent = document.items[prevDoc.parentID];
+			const prevParent = newDocument.items.get(prevDoc.parentID);
 			const prevIndex = prevParent.children.indexOf(prevDoc.itemID);
 
-			newItem = Doc.addItem(document, prevParent, prevIndex + 1, { ...curr, children: [] });
+			newItem = { ...curr, parentID: prevParent.itemID, children: List<Item.ItemID>() };
+			newDocument = Doc.addItem(newDocument, prevParent, prevIndex + 1, newItem);
 		} else {
-			newItem = Doc.addItem(document, prevDoc, 0, { ...curr, children: [] });
+			newItem = { ...curr, parentID: prevDoc.itemID, children: List<Item.ItemID>() };
+			newDocument = Doc.addItem(newDocument, prevDoc, 0, newItem);
 		} 
 
 		prevSel = curr;
@@ -621,9 +632,9 @@ function paste(document : Document | undefined, action : Paste) : Document {
 	}
 	
 	if (addToParent)
-		Doc.removeItem(document, pasteBelow);
+		newDocument = Doc.removeItem(document, pasteBelow);
 
-	return document;
+	return newDocument;
 }
 
 function multiSelect(document : Document | undefined, action : MultiSelect) : Document {
@@ -668,9 +679,8 @@ function initializeDocument(document : Document | undefined, action : Initialize
 	return Doc.getEmptyDocument();
 }
 
-export function reducer(document : Document | undefined, anyAction : AnyAction) : Document {
+export function reducer(doc : Document | undefined, anyAction : AnyAction) : Document {
 	const action = anyAction as Action;
-	let doc = !document ? undefined : Doc.copyDocument(document);
 
 	switch (action.type) {
 		case "AddItemToParent":

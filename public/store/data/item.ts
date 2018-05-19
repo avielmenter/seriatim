@@ -1,22 +1,25 @@
+import { List } from 'immutable';
+
 export type ItemID = string;
 export type ItemType = "Header" | "Item" | "Title";
 
-export interface Item {
-	itemID : ItemID,
-	parentID : ItemID,
-	text : string,
-	children : ItemID[],
-	view: {
-		itemType : ItemType,
-		collapsed : boolean
+export type Item = {
+	readonly itemID : ItemID,
+	readonly parentID : ItemID,
+	readonly text : string,
+	readonly children : List<ItemID>,
+	readonly view: {
+		readonly itemType : ItemType,
+		readonly collapsed : boolean
 	}
 }
 
+
 export interface ItemTree {
-	item : Item,
-	focused : boolean,
-	selected : boolean,
-	children : ItemTree[]
+	readonly item : Item,
+	readonly focused : boolean,
+	readonly selected : boolean,
+	readonly children : List<ItemTree>
 }
 
 function generateItemID() : ItemID { 	// copied from https://stackoverflow.com/a/105074 
@@ -34,7 +37,7 @@ export function newItemFromParent(parent : Item) : Item {
 		itemID: generateItemID(),
 		parentID: parent.itemID,
 		text: "",
-		children: [],
+		children: List<ItemID>([]),
 		view: {
 			itemType: "Item",
 			collapsed: false
@@ -42,12 +45,9 @@ export function newItemFromParent(parent : Item) : Item {
 	}
 }
 
-export function copyItem(item : Item, replaceID : boolean = false) : Item {
+export function regenerateID(item : Item) : Item {
 	return {
 		...item,
-		itemID: replaceID ? generateItemID() : item.itemID,
-		view: {
-			...item.view
-		}
+		itemID: generateItemID()
 	}
 }

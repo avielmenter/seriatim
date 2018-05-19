@@ -8,7 +8,7 @@ import undoable, { StateWithHistory } from 'redux-undo';
 import * as Document from './data/document';
 
 export type ApplicationState = {
-    document: StateWithHistory<Document.default | undefined>
+    document: StateWithHistory<Document.Document | undefined>
 };
 
 export const store = createStore(combineReducers({

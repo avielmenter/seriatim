@@ -4,7 +4,7 @@ import { bindActionCreators } from 'redux';
 
 import { List, Map } from 'immutable';
 
-import { default as DocumentData, getLastItem, ItemDictionary, getSelectionRange, getSelectedItems } from '../store/data/document';
+import { Document as DocumentData, getLastItem, ItemDictionary, getSelectionRange, getSelectedItems } from '../store/data/document';
 import { ItemTree, ItemID, Item as ItemData } from '../store/data/item';
 
 import Item from './item';
@@ -69,12 +69,11 @@ class Document extends React.Component<ComponentProps> {
 
 				case 'esc':
 				case 'escape':
-					if (doc.focusedItemID != undefined)
-						actions.setFocus(undefined);
-					else
+					if (doc.selection)
 						actions.multiSelect(undefined);
-					break
-
+					else
+						actions.setFocus(undefined);
+					break;
 				case 'enter':
 					if (event.shiftKey)
 						actions.multiSelect(focusedItem);

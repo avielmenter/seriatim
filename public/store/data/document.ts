@@ -1,4 +1,4 @@
-import { Item, ItemID, newItemFromParent, regenerateID } from './item';
+import { Item, ItemID, ItemTree, newItemFromParent, regenerateID } from './item';
 import { Map, List } from 'immutable';
 
 export type ItemDictionary = Map<ItemID, Item>;
@@ -8,7 +8,7 @@ type SelectionRange = {
 	readonly end : ItemID
 }
 
-export default interface Document {
+export interface Document {
 	readonly title : string,
 	readonly rootItemID : ItemID,
 	readonly focusedItemID : ItemID | undefined,
@@ -362,4 +362,17 @@ export function updateItems(document : Document, ...items : Item[]) : Document {
 		...document,
 		items: newItems
 	}
+}
+
+export function toItemTree(document : Document, selectedItems : ItemDictionary = getSelectedItems(document), nodeID : ItemID = document.rootItemID) : ItemTree {
+	const rootItem = document.items.get(nodeID);
+
+	const nodeChildren = rootItem.children.map(child => toItemTree(document, selectedItems, child));
+
+	return {
+		item: rootItem,
+		focused: document.focusedItemID == nodeID,
+		selected: selectedItems.has(nodeID),
+		children: nodeChildren.toList()
+	};
 }

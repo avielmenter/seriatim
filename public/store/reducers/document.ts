@@ -103,7 +103,7 @@ type MakeItem = {
 type CopyItem = {
 	type : "CopyItem",
 	data : {
-		item : Item.Item
+		item : Item.Item | undefined
 	}
 }
 
@@ -427,6 +427,13 @@ function copyItem(document : Document.Document | undefined, action : CopyItem) :
 		return Document.getEmptyDocument();
 
 	const item = action.data.item;
+
+	if (!item) {
+		return {
+			...document,
+			clipboard: undefined
+		}
+	}
 
 	return {
 		...document,
@@ -785,7 +792,7 @@ export const creators = (dispatch: Dispatch) => ({
 		type: "MakeItem",
 		data: { item }
 	}),
-	copyItem: (item : Item.Item) => dispatch({
+	copyItem: (item : Item.Item | undefined) => dispatch({
 		type: "CopyItem",
 		data: { item }
 	}),
@@ -839,7 +846,7 @@ export type DispatchProps = {
 	unindentItem: (item : Item.Item) => void,
 	makeHeader: (item : Item.Item) => void,
 	makeItem: (item : Item.Item) => void,
-	copyItem: (item : Item.Item) => void,
+	copyItem: (item : Item.Item | undefined) => void,
 	multiSelect: (item : Item.Item | undefined) => void,
 	makeSelectionItem: () => void,
 	makeSelectionHeader: () => void,

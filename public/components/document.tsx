@@ -45,6 +45,22 @@ class Document extends React.Component<ComponentProps> {
 		};
 	}
 
+	getTextAreaSelection() : string | undefined {
+		const activeEl = document.activeElement;
+		if (!activeEl || activeEl.tagName.toLowerCase() != 'textarea')
+			return undefined;
+
+		const activeTextArea = activeEl as HTMLTextAreaElement;
+		if (activeTextArea.selectionStart == activeTextArea.selectionEnd)
+			return undefined;
+
+		const selectedText = activeTextArea.textContent == null ? 
+								undefined : 
+								activeTextArea.textContent.slice(activeTextArea.selectionStart, activeTextArea.selectionEnd);
+								
+		return selectedText;
+	}
+
 	handleKeyDown = (event: KeyboardEvent) : void => {
 		const actions = this.props.actions.document;
 		let preventDefault = true;
@@ -99,10 +115,15 @@ class Document extends React.Component<ComponentProps> {
 					break;
 
 				case 'c':
-					if (doc.selection)
-						actions.copySelection();
-					else if (focusedItem != undefined)
-						actions.copyItem(focusedItem);
+					if (this.getTextAreaSelection()) {
+						actions.copyItem(undefined);
+						preventDefault = false;
+					} else {
+						if (doc.selection)
+							actions.copySelection();
+						else if (focusedItem != undefined)
+							actions.copyItem(focusedItem);
+					}
 					break;
 
 				case 'x':
@@ -116,7 +137,11 @@ class Document extends React.Component<ComponentProps> {
 					break;
 
 				case 'v':
-					actions.paste(focusedItem || lastItem);
+					if (focusedItem && !doc.clipboard)
+						preventDefault = false;
+					else
+						actions.paste(focusedItem || lastItem);
+
 					break;
 
 				case 'h':

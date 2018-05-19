@@ -1,4 +1,4 @@
-import { List } from 'immutable';
+import { List, Set } from 'immutable';
 
 export type ItemID = string;
 export type ItemType = "Header" | "Item" | "Title";
@@ -14,7 +14,6 @@ export type Item = {
 	}
 }
 
-
 export interface ItemTree {
 	readonly item : Item,
 	readonly focused : boolean,
@@ -22,7 +21,10 @@ export interface ItemTree {
 	readonly children : List<ItemTree>
 }
 
-function generateItemID() : ItemID { 	// copied from https://stackoverflow.com/a/105074 
+const ID_POOL_SIZE = 1000;
+let ID_POOL = Set<ItemID>();
+
+function __generateItemID() : ItemID { 	// copied from https://stackoverflow.com/a/105074 
 	function s4() : string {			// NOT GUARANTEED TO BE GLOBALLY UNIQUE
 		return Math.floor((1 + Math.random()) * 0x10000)
 		.toString(16)
@@ -30,6 +32,23 @@ function generateItemID() : ItemID { 	// copied from https://stackoverflow.com/a
 	}
 
 	return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
+}
+
+function refreshIDPool() : void {
+	if (ID_POOL.count() > ID_POOL_SIZE / 2)
+		return;
+
+	while (ID_POOL.count() < ID_POOL_SIZE)
+		ID_POOL = ID_POOL.add(__generateItemID());
+}
+
+function generateItemID() : ItemID {
+	refreshIDPool();
+	
+	const newID = ID_POOL.first();
+	ID_POOL = ID_POOL.remove(newID);
+
+	return newID;
 }
 
 export function newItemFromParent(parent : Item) : Item {

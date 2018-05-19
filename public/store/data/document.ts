@@ -59,19 +59,21 @@ export function regenerateIDs(d : Document, curr : Item | undefined = d.items.ge
 		}
 	}
 
-	let newItems = d.items.remove(curr.itemID).set(newItem.itemID, newItem);
-	if (newParent && newItem)
+	let newItems = d.items.set(newItem.itemID, newItem).remove(curr.itemID);
+	newItems = newItem.children.reduce((prev, i) => prev.set(i, { ...prev.get(i), parentID: newItem.itemID}), newItems);
+	if (newParent)
 		newItems = newItems.set(newItem.parentID, newParent);
 
-	const newDoc = {
-		...d,
+	const newDoc : Document = {
 		selection: newSelection,
 		focusedItemID: newFocus,
 		rootItemID: newRoot,
-		items: newItems
+		items: newItems,
+		title: d.title,
+		clipboard: d.clipboard
 	}
 
-	return newItem.children.reduce((prev, curr) => regenerateIDs(prev, prev.items.get(curr), prev.items.get(newItem.itemID)), newDoc);
+	return newItem.children.reduce((prev, i) => regenerateIDs(prev, prev.items.get(i), prev.items.get(newItem.itemID)), newDoc);
 }
 
 export function equals(lhs : any, rhs : any) : boolean {
@@ -252,13 +254,12 @@ export function getItemIndex(document : Document, item : Item) : number {
 
 export function getSelectionRange(document : Document) : List<Item> {
 	if (!document.selection)
-		return List<Item>([]);
+		return List<Item>();
 
-	let curr : Item | undefined = document.items.get(document.rootItemID);
 	let inRange = false;
-	let items = List<Item>([]);
+	let items = List<Item>();
 
-	do {
+	for (let curr : Item | undefined = document.items.get(document.rootItemID); curr != undefined; curr = getNextItem(document, curr)) {
 		const isStart = curr.itemID == document.selection.start;
 		const isEnd = curr.itemID == document.selection.end;
 
@@ -266,7 +267,7 @@ export function getSelectionRange(document : Document) : List<Item> {
 			items = items.push(curr);
 
 		inRange = (!inRange && (isStart || isEnd) && !(isStart && isEnd)) || (inRange && !isStart && !isEnd);
-	} while (curr = getNextItem(document, curr));
+	}
 
 	return items;
 }

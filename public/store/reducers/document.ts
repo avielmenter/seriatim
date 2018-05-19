@@ -624,7 +624,7 @@ function paste(document : Document | undefined, action : Paste) : Document {
 			newDocument = Doc.addItem(newDocument, prevParent, prevIndex + 1, newItem);
 		} else {
 			newItem = { ...curr, parentID: prevDoc.itemID, children: List<Item.ItemID>() };
-			newDocument = Doc.addItem(document, prevDoc, 0, newItem);
+			newDocument = Doc.addItem(newDocument, prevDoc, 0, newItem);
 		} 
 
 		prevSel = curr;

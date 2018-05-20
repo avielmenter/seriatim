@@ -9,8 +9,12 @@ import * as favicon from 'serve-favicon';
 dotenv.config();
 const app = express();
 
-app.use(favicon(path.join(__dirname, '../public', 'favicon.ico')));
+app.use(favicon(path.join(__dirname, '../dist', 'favicon.ico')));	
 app.use(express.static(path.join(__dirname, '../dist')));
+
+app.get('*', (req : express.Request, res : express.Response) => {
+	res.sendFile(path.join(__dirname, '../dist', 'index.html'));
+});
 
 app.use(logger('dev'));
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -37,6 +41,6 @@ app.use((err : Error, req : express.Request, res : express.Response, next : expr
 		res.send('HTTP 500 -- The Server Could Not Complete Your Request');
 });
 
-app.listen(process.env.PORT || 3000, () => console.log('Outliner listening on port ' + (process.env.PORT || 3000) + '.'));
+app.listen(process.env.PORT || 3000, () => console.log('Seriatim listening on port ' + (process.env.PORT || 3000) + '.'));
 
 export default app;

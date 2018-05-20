@@ -5,6 +5,19 @@ const path = require('path');
 
 module.exports = {
     entry: './public/index.tsx',
+    optimization: {
+        splitChunks: {
+            cacheGroups: {
+                vendor: {
+                    test: /node_modules/,
+                    chunks: 'initial',
+                    name: 'vendor',
+                    priority: 10,
+                    enforce: true
+                }
+            }
+        }
+    },
     module: {
         rules: [
             {
@@ -42,7 +55,8 @@ module.exports = {
     plugins: [
         new HtmlWebPackPlugin({
             template: './public/index.html',
-            filename: './index.html'
+            filename: './index.html',
+            favicon: './public/favicon.ico'
         }),
         new MiniCssExtractPlugin({
             filename: '[name].css',

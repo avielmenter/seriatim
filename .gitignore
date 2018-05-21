@@ -1,6 +1,4 @@
-elm-stuff
-repl-temp-*
 .vscode
 dist
-build
+dist_dev
 node_modules

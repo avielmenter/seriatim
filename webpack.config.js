@@ -3,8 +3,14 @@ const HtmlWebPackPlugin = require('html-webpack-plugin');
 
 const path = require('path');
 
-module.exports = {
-    entry: './public/index.tsx',
+module.exports = (env, argv) => ({
+    entry: './src/index.tsx',
+    output: {
+        path: path.join(__dirname, argv.mode === 'production' ? 'dist' : 'dist_dev')
+    },
+    devServer: {
+        contentBase: argv.mode === 'production' ? './dist' : './dist_dev'
+    },
     optimization: {
         splitChunks: {
             cacheGroups: {
@@ -24,10 +30,7 @@ module.exports = {
                 test: /\.tsx?$/,
                 exclude: /node_modules/,
                 use: {
-                    loader: 'awesome-typescript-loader',
-                    options: {
-                        configFileName: 'tsconfig.react.json'
-                    }
+                    loader: 'awesome-typescript-loader'
                 }
             },
             {
@@ -54,13 +57,13 @@ module.exports = {
     },
     plugins: [
         new HtmlWebPackPlugin({
-            template: './public/index.html',
+            template: './src/index.html',
             filename: './index.html',
-            favicon: './public/favicon.ico'
+            favicon: './src/favicon.ico'
         }),
         new MiniCssExtractPlugin({
             filename: '[name].css',
             chunkFilename: '[id].css'
         })
     ]
-}
+});

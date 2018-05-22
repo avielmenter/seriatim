@@ -1,7 +1,7 @@
 {
   "name": "seriatim",
-  "version": "1.0.0",
-  "description": "Software for creating law school outlines",
+  "version": "0.1.0",
+  "description": "A web application for creating outlines",
   "repository": {
     "type": "git",
     "url": "https://github.com/avielmenter/seriatim.git"

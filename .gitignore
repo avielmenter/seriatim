@@ -2,3 +2,5 @@
 dist
 dist_dev
 node_modules
+elm-stuff
+.env

@@ -9,19 +9,19 @@ import { DispatchProps, mapDispatchToProps, handleClick } from '../store';
 import { ItemTree } from '../store/data/item';
 
 type StateProps = {
-	
+
 }
 
-type AttrProps = { 
-	node : ItemTree
+type AttrProps = {
+	node: ItemTree
 }
 
 type ComponentProps = StateProps & AttrProps & DispatchProps;
 
 class ItemContent extends React.Component<ComponentProps> {
-	editArea : React.RefObject<HTMLTextAreaElement>;
+	editArea: React.RefObject<HTMLTextAreaElement>;
 
-	constructor(props : ComponentProps) {
+	constructor(props: ComponentProps) {
 		super(props);
 		this.editArea = React.createRef<HTMLTextAreaElement>();
 	}
@@ -34,7 +34,7 @@ class ItemContent extends React.Component<ComponentProps> {
 		return '__edit__' + this.props.node.item.itemID;
 	}
 
-	setSelectionRange = () : void => {
+	setSelectionRange = (): void => {
 		const item = this.props.node.item;
 
 		if (this.editArea.current) {
@@ -46,11 +46,11 @@ class ItemContent extends React.Component<ComponentProps> {
 	}
 
 	focusOnTextArea() {
-		if (this.props.node.focused && this.editArea.current) 
+		if (this.props.node.focused && this.editArea.current)
 			this.editArea.current.focus();
 	}
 
-	handleContentClick(event : React.MouseEvent<HTMLDivElement>) : void {
+	handleContentClick(event: React.MouseEvent<HTMLDivElement>): void {
 		event.stopPropagation();
 		event.preventDefault();
 
@@ -77,14 +77,14 @@ class ItemContent extends React.Component<ComponentProps> {
 
 		return (
 			<div className={classes} id={this.getContentDivId()} onClick={(event) => this.handleContentClick(event)}>
-				{item.view.itemType != "Title" ? 
-					<ReactMarkdown 
+				{item.view.itemType != "Title" ?
+					<ReactMarkdown
 						source={textWithoutHeader.length == 0 ? "New Item" : item.text}
 						className={textWithoutHeader.length == 0 ? "itemContentRenderedEmpty" : "itemContentRendered"}
 					/> :
 					<h1 className={item.text.length == 0 ? "titleEmpty" : "title"}>{item.text.length == 0 ? "Untitled Document..." : item.text}</h1>
 				}
-				{node.focused && 
+				{node.focused &&
 					<textarea id={this.getTextAreaId()} className="editArea"
 						onChange={(event) => actions.updateItemText(item, event.target.value)}
 						onFocus={this.setSelectionRange}
@@ -95,7 +95,7 @@ class ItemContent extends React.Component<ComponentProps> {
 			</div>
 		);
 	}
-	
+
 	componentDidMount() {
 		this.focusOnTextArea();
 	}
@@ -105,5 +105,5 @@ class ItemContent extends React.Component<ComponentProps> {
 	}
 }
 
-const mapStateToProps = (state : any) => ({});
+const mapStateToProps = (state: any) => ({});
 export default connect<StateProps, DispatchProps, AttrProps>(mapStateToProps, mapDispatchToProps)(ItemContent);

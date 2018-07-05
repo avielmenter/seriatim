@@ -8,7 +8,7 @@ import { ItemTree, ItemID, ItemType, Item as ItemData } from '../store/data/item
 import ItemContent from './itemContent';
 
 type AttrProps = {
-	node : ItemTree
+	node: ItemTree
 }
 
 type StateProps = {
@@ -17,7 +17,7 @@ type StateProps = {
 
 type ComponentProps = StateProps & AttrProps & DispatchProps;
 
-const Item : React.SFC<ComponentProps> = (props) => {
+const Item: React.SFC<ComponentProps> = (props) => {
 	const node = props.node;
 	const { item, children } = props.node;
 	const { text } = item;
@@ -37,7 +37,7 @@ const Item : React.SFC<ComponentProps> = (props) => {
 					&ndash;
 				</div>}
 				{item.children.count() > 0 && <button className={item.view.collapsed ? "expandButton" : "collapseButton"}
-						onClick={(event) => handleClick(event, () => actions.toggleItemCollapse(item))}>
+					onClick={(event) => handleClick(event, () => actions.toggleItemCollapse(item))}>
 					{item.view.collapsed ? "▶" : "▼"}
 				</button>}
 			</div>
@@ -49,6 +49,6 @@ const Item : React.SFC<ComponentProps> = (props) => {
 	);
 };
 
-const mapStateToProps = (state : any) => ({ })
+const mapStateToProps = (state: any) => ({})
 
 export default connect<StateProps, DispatchProps, AttrProps>(mapStateToProps, mapDispatchToProps)(Item);

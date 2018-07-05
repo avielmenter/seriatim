@@ -1,19 +1,19 @@
 import * as React from 'react';
 import { connect } from 'react-redux';
-import { bindActionCreators } from 'redux';
+import { Map, List } from 'immutable';
 
-import { List, Map } from 'immutable';
-
-import { Document as DocumentData, getLastItem, ItemDictionary, getSelectionRange, getSelectedItems } from '../store/data/document';
-import { ItemTree, ItemID, Item as ItemData } from '../store/data/item';
+import { Document as DocumentData, getLastItem, ItemDictionary, getSelectedItems } from '../store/data/document';
+import { Item as ItemData, ItemTree, ItemID } from '../store/data/item';
 
 import Item from './item';
 import DocumentHeader from './documentHeader';
 
 import { DispatchProps, mapDispatchToProps, ApplicationState } from '../store';
 
+import * as Server from '../network/server';
+
 type StateProps = {
-	document : DocumentData | undefined
+	document: DocumentData | undefined
 }
 
 type AttrProps = {
@@ -23,20 +23,20 @@ type AttrProps = {
 type ComponentProps = StateProps & AttrProps & DispatchProps;
 
 class Document extends React.Component<ComponentProps> {
-	documentDiv : React.RefObject<HTMLDivElement>;
+	documentDiv: React.RefObject<HTMLDivElement>;
 
-	constructor(props : ComponentProps) {
+	constructor(props: ComponentProps) {
 		super(props);
-		props.actions.document.initializeDocument(undefined);
-
 		this.documentDiv = React.createRef<HTMLDivElement>();
 	}
 
-	getDocumentTree(doc : DocumentData, selectedItems : ItemDictionary, nodeID : ItemID) : ItemTree {
+	getDocumentTree(doc: DocumentData, selectedItems: ItemDictionary, nodeID: ItemID): ItemTree {
 		const rootItem = doc.items.get(nodeID);
+		if (!rootItem)
+			console.log("ITEM DOES NOT EXIST: " + nodeID);
 
 		const nodeChildren = rootItem.children.map(child => this.getDocumentTree(doc, selectedItems, child));
-	
+
 		return {
 			item: rootItem,
 			focused: doc.focusedItemID == nodeID,
@@ -45,7 +45,7 @@ class Document extends React.Component<ComponentProps> {
 		};
 	}
 
-	getTextAreaSelection() : string | undefined {
+	getTextAreaSelection(): string | undefined {
 		const activeEl = document.activeElement;
 		if (!activeEl || activeEl.tagName.toLowerCase() != 'textarea')
 			return undefined;
@@ -54,14 +54,14 @@ class Document extends React.Component<ComponentProps> {
 		if (activeTextArea.selectionStart == activeTextArea.selectionEnd)
 			return undefined;
 
-		const selectedText = activeTextArea.textContent == null ? 
-								undefined : 
-								activeTextArea.textContent.slice(activeTextArea.selectionStart, activeTextArea.selectionEnd);
-								
+		const selectedText = activeTextArea.textContent == null ?
+			undefined :
+			activeTextArea.textContent.slice(activeTextArea.selectionStart, activeTextArea.selectionEnd);
+
 		return selectedText;
 	}
 
-	handleKeyDown = (event: KeyboardEvent) : void => {
+	handleKeyDown = (event: KeyboardEvent): void => {
 		const actions = this.props.actions.document;
 		let preventDefault = true;
 
@@ -103,6 +103,17 @@ class Document extends React.Component<ComponentProps> {
 			}
 		} else {
 			switch (event.key.toLowerCase()) {
+				case 's':
+					const document_id = window.location.search.substring(1); // skip initial ? symbol
+					Server.saveDocument(document_id, doc)
+						.then(response => {
+							if (response.status == 'success') {
+								actions.updateItemIDs(response.data);
+								console.log("UPDATED ITEM IDS: " + JSON.stringify(response.data));
+							}
+						});
+					break;
+
 				case 'z':
 					if (event.shiftKey)
 						actions.redo();
@@ -167,20 +178,20 @@ class Document extends React.Component<ComponentProps> {
 						actions.unindentSelection();
 					else if (focusedItem != undefined)
 						actions.unindentItem(focusedItem);
-				break;
+					break;
 
 				case ']':
 					if (doc.selection)
 						actions.indentSelection();
 					else if (focusedItem != undefined)
 						actions.indentItem(item);
-				break;
+					break;
 
 				case ' ':
 					if (item.children.count() > 0 || item.view.collapsed)
 						actions.toggleItemCollapse(item);
 					break;
-				
+
 				case 'return':
 				case 'enter':
 					if (event.shiftKey || lastItem.itemID == doc.rootItemID) {
@@ -215,7 +226,7 @@ class Document extends React.Component<ComponentProps> {
 			event.preventDefault();
 	}
 
-	handleMainClick(event : React.MouseEvent<HTMLMainElement>) {
+	handleMainClick(event: React.MouseEvent<HTMLMainElement>) {
 		const actions = this.props.actions.document;
 		const doc = this.props.document;
 
@@ -226,21 +237,30 @@ class Document extends React.Component<ComponentProps> {
 	}
 
 	componentWillMount() {
+		const actions = this.props.actions.document;
+
 		document.addEventListener('keydown', this.handleKeyDown);
+
+		const document_id = window.location.search.substring(1); // skip initial ? symbol
+		Server.fetchDocument(document_id)
+			.then(response => {
+				if (response.status == "success")
+					actions.loadDocument(response.data)
+			});
 	}
 
 	render() {
 		const doc = this.props.document;
 
 		if (!doc)
-			return <h1>NODOC</h1>;
+			return <h1>Loading...</h1>;
 
 		const tree = this.getDocumentTree(doc, getSelectedItems(doc), doc.rootItemID);
 
 		document.title = doc.title + " | Seriatim";
 
 		return (
-			<main onClick={(event) => this.handleMainClick(event) }>
+			<main onClick={(event) => this.handleMainClick(event)}>
 				<DocumentHeader />
 				<div id="documentScrollContainer">
 					<div id="document" tabIndex={0} ref={this.documentDiv}>
@@ -252,7 +272,7 @@ class Document extends React.Component<ComponentProps> {
 	}
 
 	componentDidMount() {
-		if (this.documentDiv.current) 
+		if (this.documentDiv.current)
 			this.documentDiv.current.focus();
 	}
 
@@ -261,8 +281,8 @@ class Document extends React.Component<ComponentProps> {
 	}
 }
 
-const mapStateToProps = (state : ApplicationState | { }) => ({ 
-	document: state == {} ? undefined : (state as ApplicationState).document.present 
+const mapStateToProps = (state: ApplicationState | {}) => ({
+	document: state == {} ? undefined : (state as ApplicationState).document.present
 });
 
 export default connect<StateProps, DispatchProps, AttrProps>(mapStateToProps, mapDispatchToProps)(Document);

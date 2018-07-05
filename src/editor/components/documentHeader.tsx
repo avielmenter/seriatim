@@ -9,8 +9,10 @@ import { DispatchProps, mapDispatchToProps, ApplicationState, handleClick } from
 
 import MenuItem from './menuItem';
 
+import * as Server from '../network/server';
+
 type StateProps = {
-	documentState : StateWithHistory<Document | undefined> | undefined
+	documentState: StateWithHistory<Document | undefined> | undefined
 }
 
 type AttrProps = {
@@ -19,7 +21,7 @@ type AttrProps = {
 
 type ComponentProps = StateProps & AttrProps & DispatchProps;
 
-const DocumentHeader : React.SFC<ComponentProps> = (props) => {
+const DocumentHeader: React.SFC<ComponentProps> = (props) => {
 	if (!props.documentState)
 		return (<div />);
 
@@ -31,13 +33,13 @@ const DocumentHeader : React.SFC<ComponentProps> = (props) => {
 	const focused = !document.focusedItemID ? undefined : document.items.get(document.focusedItemID);
 	const lastItem = getLastItem(document, document.items.get(document.rootItemID));
 
-	const addSibling = (focused || lastItem).view.itemType == "Title" ? 
-							() => actions.addItemToParent(focused || lastItem) :
-							() => actions.addItemAfterSibling(focused || lastItem, false);
+	const addSibling = (focused || lastItem).view.itemType == "Title" ?
+		() => actions.addItemToParent(focused || lastItem) :
+		() => actions.addItemAfterSibling(focused || lastItem, false);
 
 	const collapsable = focused != undefined && focused.children.count() > 0;
 	const expandable = focused != undefined && collapsable && focused.view.collapsed;
-	
+
 	return (
 		<div id="documentHeader">
 			<div id="headerContents">
@@ -49,10 +51,19 @@ const DocumentHeader : React.SFC<ComponentProps> = (props) => {
 					<div className="menuItem">
 						File
 						<ul>
-							<MenuItem enabled={false} text="Save" shortcut="Ctrl-S" callback={() => {}} />
-							<MenuItem text="Rename" shortcut="Esc, ↹" 
+							<MenuItem text="Save" shortcut="Ctrl-S" callback={() => {
+								const document_id = window.location.search.substring(1); // skip initial ? symbol
+								Server.saveDocument(document_id, document)
+									.then(response => {
+										if (response.status == 'success') {
+											actions.updateItemIDs(response.data);
+											console.log("UPDATED ITEM IDS: " + JSON.stringify(response.data));
+										}
+									});
+							}} />
+							<MenuItem text="Rename" shortcut="Esc, ↹"
 								callback={(event) => handleClick(event, () => actions.setFocus(document.items.get(document.rootItemID)))} />
-							<MenuItem enabled={false} text="Exit" callback={() => {}} />
+							<MenuItem text="Exit" callback={() => { window.close() }} />
 						</ul>
 					</div>
 					<div className="menuItem">
@@ -68,7 +79,7 @@ const DocumentHeader : React.SFC<ComponentProps> = (props) => {
 								callback={(event) => handleClick(event, () => document.selection ? actions.unindentSelection() : actions.unindentItem(focused || lastItem))} />
 							<MenuItem text="Copy" icon="⎘" shortcut="Ctrl-C" enabled={focused != undefined || document.selection != undefined} ID="copy"
 								callback={(event) => handleClick(event, () => document.selection ? actions.copySelection() : actions.copyItem(focused || lastItem))} />
-							<MenuItem text="Cut" icon="✂" shortcut="Ctrl-X" enabled={(focused != undefined && focused.view.itemType != "Title") || document.selection != undefined} 
+							<MenuItem text="Cut" icon="✂" shortcut="Ctrl-X" enabled={(focused != undefined && focused.view.itemType != "Title") || document.selection != undefined}
 								ID="cut"
 								callback={(event) => handleClick(event, () => {
 									if (document.selection) {
@@ -111,7 +122,7 @@ const DocumentHeader : React.SFC<ComponentProps> = (props) => {
 							<MenuItem text="Select Item Range" icon="☰" shortcut="⇧-⏎" ID="multiSelect" enabled={focused != undefined}
 								callback={(event) => handleClick(event, () => actions.multiSelect(focused))} />
 							<MenuItem text="Unselect All" shortcut="Esc" ID="unselect" enabled={focused != undefined || document.selection != undefined}
-								callback={(event) => handleClick(event, () => { actions.setFocus(undefined); actions.multiSelect(undefined); } )} />
+								callback={(event) => handleClick(event, () => { actions.setFocus(undefined); actions.multiSelect(undefined); })} />
 						</ul>
 					</div>
 				</div>
@@ -120,7 +131,7 @@ const DocumentHeader : React.SFC<ComponentProps> = (props) => {
 	);
 }
 
-const mapStateToProps = (state : ApplicationState | { }) => ({
+const mapStateToProps = (state: ApplicationState | {}) => ({
 	documentState: state == {} ? undefined : (state as ApplicationState).document
 });
 

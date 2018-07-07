@@ -32,8 +32,6 @@ class Document extends React.Component<ComponentProps> {
 
 	getDocumentTree(doc: DocumentData, selectedItems: ItemDictionary, nodeID: ItemID): ItemTree {
 		const rootItem = doc.items.get(nodeID);
-		if (!rootItem)
-			console.log("ITEM DOES NOT EXIST: " + nodeID);
 
 		const nodeChildren = rootItem.children.map(child => this.getDocumentTree(doc, selectedItems, child));
 
@@ -107,10 +105,8 @@ class Document extends React.Component<ComponentProps> {
 					const document_id = window.location.search.substring(1); // skip initial ? symbol
 					Server.saveDocument(document_id, doc)
 						.then(response => {
-							if (response.status == 'success') {
+							if (response.status == 'success')
 								actions.updateItemIDs(response.data);
-								console.log("UPDATED ITEM IDS: " + JSON.stringify(response.data));
-							}
 						});
 					break;
 

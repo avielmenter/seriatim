@@ -103,8 +103,6 @@ function httpGet(url: string): Promise<Response> {
 }
 
 function httpPost(url: string, body: any): Promise<Response> {
-	console.log("SENDING TO " + url + ": " + JSON.stringify(body, null, '\t'));
-
 	return fetch(SERIATIM_SERVER_URL + url, {
 		credentials: 'include',
 		method: 'POST',
@@ -118,7 +116,6 @@ function httpPost(url: string, body: any): Promise<Response> {
 
 async function parseHttpResponse<TParsed, TRaw>(response: Response, parse: (raw: TRaw) => TParsed): Promise<SeriatimResponse<TParsed>> {
 	let responseJson = await response.json() as SeriatimResponse<TRaw>;
-	console.log("RECEIVED FROM SERVER: " + JSON.stringify(responseJson, null, '\t'));
 
 	if (responseJson.status == "error")
 		return responseJson as SeriatimError;

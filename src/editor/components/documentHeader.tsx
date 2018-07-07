@@ -55,10 +55,8 @@ const DocumentHeader: React.SFC<ComponentProps> = (props) => {
 								const document_id = window.location.search.substring(1); // skip initial ? symbol
 								Server.saveDocument(document_id, document)
 									.then(response => {
-										if (response.status == 'success') {
+										if (response.status == 'success')
 											actions.updateItemIDs(response.data);
-											console.log("UPDATED ITEM IDS: " + JSON.stringify(response.data));
-										}
 									});
 							}} />
 							<MenuItem text="Rename" shortcut="Esc, ↹"

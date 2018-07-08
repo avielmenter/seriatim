@@ -10,6 +10,7 @@ import DocumentList.Views.Actions as ActionsView
 import DocumentList.Views.DocumentList as DLView
 import DocumentList.Views.DocumentTableHeader as TableHeader
 import DocumentList.Views.LoadingRow as LoadingRow
+import DocumentList.Views.ErrorMessage as ErrorMessage
 import DocumentList.Message exposing (..)
 import DocumentList.HttpRequests exposing (..)
 import SeriatimHttp exposing (HttpResult)
@@ -54,21 +55,17 @@ view model =
     div [ id "dlContent" ]
         [ ActionsView.view { documentSelected = isSomething model.selected }
         , div [ id "documentList" ]
-            ((case model.error of
-                Just msg ->
-                    [ div [ id "error" ] [ text msg ] ]
-
-                Nothing ->
-                    []
-             )
-                ++ [ Html.h3 [] <|
-                        [ text "Documents"
-                        , Html.span [ onClick Refresh, id "refresh" ] []
-                        ]
-                   ]
+            ([ Html.h3 [] <|
+                [ text "Documents"
+                , Html.span [ onClick Refresh, id "refresh" ] []
+                ]
+             ]
                 ++ case model.status of
                     Displaying ->
-                        [ DLView.view { focused = model.focused, selected = model.selected, documents = model.documents } ]
+                        (Maybe.map (\err -> [ ErrorMessage.view <| "ERROR: " ++ err ]) model.error
+                            |> Maybe.withDefault []
+                        )
+                            ++ [ DLView.view { focused = model.focused, selected = model.selected, documents = model.documents } ]
 
                     Loading ->
                         [ Html.table [ id "documents" ]
@@ -79,8 +76,8 @@ view model =
                         ]
 
                     Error ->
-                        [ Html.table [ id "documents" ] [ TableHeader.view ]
-                        , text <| "ERROR: " ++ Maybe.withDefault "An unknown error has occurred" model.error
+                        [ ErrorMessage.view <| "ERROR: " ++ Maybe.withDefault "An unknown error has occurred" model.error
+                        , Html.table [ id "documents" ] [ TableHeader.view ]
                         ]
             )
         ]
@@ -90,7 +87,7 @@ updateFromHttp : PageStatus -> (a -> Model) -> Model -> HttpResult a -> ( Model,
 updateFromHttp status updateModel model r =
     case r of
         Err _ ->
-            ( { model | error = Just "HTTP Error", status = status }, Cmd.none )
+            ( { model | error = Just "Could not contact the server. Please try again in a few minutes.", status = status }, Cmd.none )
 
         Ok responseData ->
             case responseData of
@@ -234,8 +231,11 @@ update msg model =
                 Nothing ->
                     ( model, Cmd.none )
 
+        ClearError ->
+            ( { model | error = Nothing, status = Displaying }, Cmd.none )
+
         Refresh ->
-            ( model, Http.send LoadDocuments (loadDocumentsRequest model.config.seriatim_server_url) )
+            ( { model | status = Loading }, Http.send LoadDocuments (loadDocumentsRequest model.config.seriatim_server_url) )
 
         MouseEvent position ->
             if isSomething model.selected then

@@ -24,6 +24,7 @@ type Msg
     | Unselect
     | FocusSelected
     | DeleteSelected
+    | ClearError
     | MouseEvent Mouse.Position
     | KeyboardEvent Keyboard.KeyCode
     | Refresh

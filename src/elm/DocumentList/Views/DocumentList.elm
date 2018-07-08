@@ -2,6 +2,7 @@ module DocumentList.Views.DocumentList exposing (view)
 
 import Data.Document as Data
 import DocumentList.Views.Document as Document
+import DocumentList.Views.DocumentTableHeader as TableHeader
 import Html exposing (Html, text)
 import Html.Attributes exposing (id)
 import DocumentList.Message exposing (..)
@@ -42,12 +43,6 @@ view model =
                 Document.view { focusedText = focusedText, selected = selected, doc = doc }
     in
         Html.table [ id "documents" ]
-            ([ Html.tr []
-                [ Html.td [] [ Html.span [] [ text "Title" ] ]
-                , Html.td [] [ Html.span [] [ text "Created" ] ]
-                , Html.td [] [ Html.span [] [ text "Last Modified" ] ]
-                , Html.td [] [ Html.span [] [ text "" ] ]
-                ]
-             ]
+            ([ TableHeader.view ]
                 ++ (List.map viewDocument model.documents)
             )

@@ -1,4 +1,4 @@
-import '../styles.sass';
+import '../styles/main.sass';
 
 var Elm = require('../elm/DocumentList/Main.elm');
 var mountNode = document.getElementsByTagName('main')[0];

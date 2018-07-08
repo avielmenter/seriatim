@@ -46,6 +46,14 @@ module.exports = (env, argv) => ({
                 ]
             },
             {
+                test: /\.css$/,
+                use: [
+                    MiniCssExtractPlugin.loader, {
+                        loader: 'css-loader'
+                    }
+                ]
+            },
+            {
                 test: /\.elm$/,
                 use: {
                     loader: 'elm-webpack-loader?verbose=true&warn=true'

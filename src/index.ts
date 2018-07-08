@@ -1,4 +1,5 @@
-import './styles.sass';
+import './styles/main.sass';
+import './styles/spinner.css';
 
 var Elm = require('./elm/LoginWidget/Main.elm');
 var mountNode = document.getElementById('login');

@@ -38,7 +38,7 @@ header
 			display: inline-block
 			vertical-align: center
 
-		padding-top: 0.25em
+		padding-top: 0.3em
 		padding-bottom: 0.5em
  	
 		a
@@ -207,11 +207,32 @@ main
 				width: 100%
 				border-spacing: 0
 
+				#loadingRow
+					color: transparent
+
+					span
+						background: $spanishgray
+
+						opacity: 0.25
+						animation: pulseAnimation 2s infinite
+
+					@keyframes pulseAnimation
+						0%
+							opacity: 0.25
+						50%
+							opacity: 0.1
+						100%
+							opacity: 0.25
+
+					#loading1 span
+						margin-left: 2ch
+
 				tr:first-child td
 					font-weight: bold
 
 				tr td
 					border-bottom: 1px solid $spanishgray
+					width: 23%
 
 					.remove
 						font-weight: bold
@@ -221,10 +242,15 @@ main
 
 					span, input
 						display: inline-block
+
+					span
+						margin-top: 0.5em
+						margin-bottom: 0.5em
+						
+					input
 						padding-top: 0.5em
 						padding-bottom: 0.5em
 
-					input
 						font-size: 12pt
 						padding-left: 1em
 						padding-right: 1em
@@ -238,8 +264,12 @@ main
 							text-decoration: underline
 
 				td:first-child
+					width: 50%
 					span
 						padding-left: 1em
+
+				td:last-child
+					width: 4%
 				
 				tr.selected td
 					background-color: #FFFFFF55

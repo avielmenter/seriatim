@@ -2,7 +2,7 @@ import * as React from 'react';
 import { connect } from 'react-redux';
 import { StateWithHistory } from 'redux-undo';
 
-import { Document, getLastItem } from '../store/data/document';
+import { Document, getLastItem, getEmptyDocument } from '../store/data/document';
 import { Item } from '../store/data/item';
 
 import { DispatchProps, mapDispatchToProps, ApplicationState, handleClick } from '../store';
@@ -25,12 +25,11 @@ const DocumentHeader: React.SFC<ComponentProps> = (props) => {
 	if (!props.documentState)
 		return (<div />);
 
-	const document = props.documentState.present;
-	if (!document)
-		return (<div />);
+	const isLoading = !props.documentState.present;
+	const document = props.documentState.present || getEmptyDocument();
 
 	const actions = props.actions.document;
-	const focused = !document.focusedItemID ? undefined : document.items.get(document.focusedItemID);
+	const focused = !document || !document.focusedItemID ? undefined : document.items.get(document.focusedItemID);
 	const lastItem = getLastItem(document, document.items.get(document.rootItemID));
 
 	const addSibling = (focused || lastItem).view.itemType == "Title" ?
@@ -43,17 +42,20 @@ const DocumentHeader: React.SFC<ComponentProps> = (props) => {
 	return (
 		<div id="documentHeader">
 			<div id="headerContents">
-				<h1 className={document.title.length == 0 ? "empty" : ""}
+				<h1 className={isLoading || document.title.length == 0 ? "empty" : ""}
 					onClick={(event) => handleClick(event, () => actions.setFocus(document.items.get(document.rootItemID)))}>
-					{document.title.length == 0 ? "Untitled Document..." : document.title}
+					{isLoading ? "Loading..." : document.title.length == 0 ? "Untitled Document..." : document.title}
 				</h1>
 				<div id="documentMenu">
 					<div className="menuItem">
 						File
 						<ul>
-							<MenuItem text="Save" shortcut="Ctrl-S" callback={() => {
+							<MenuItem text="Save" enabled={!isLoading} shortcut="Ctrl-S" callback={() => {
 								const document_id = window.location.search.substring(1); // skip initial ? symbol
-								Server.saveDocument(document_id, document)
+								if (!props.documentState || !props.documentState.present)
+									return;
+
+								Server.saveDocument(document_id, props.documentState.present)
 									.then(response => {
 										if (response.status == 'success')
 											actions.updateItemIDs(response.data);

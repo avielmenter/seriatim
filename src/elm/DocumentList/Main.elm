@@ -8,6 +8,8 @@ import Data.Document as Data
 import DocumentList.Views.Document as Document
 import DocumentList.Views.Actions as ActionsView
 import DocumentList.Views.DocumentList as DLView
+import DocumentList.Views.DocumentTableHeader as TableHeader
+import DocumentList.Views.LoadingRow as LoadingRow
 import DocumentList.Message exposing (..)
 import DocumentList.HttpRequests exposing (..)
 import SeriatimHttp exposing (HttpResult)
@@ -51,34 +53,36 @@ view : Model -> Html Msg
 view model =
     div [ id "dlContent" ]
         [ ActionsView.view { documentSelected = isSomething model.selected }
-        , case model.status of
-            Loading ->
-                text "Loading..."
+        , div [ id "documentList" ]
+            ((case model.error of
+                Just msg ->
+                    [ div [ id "error" ] [ text msg ] ]
 
-            Error ->
-                case model.error of
-                    Just msg ->
-                        text ("ERROR: " ++ msg)
+                Nothing ->
+                    []
+             )
+                ++ [ Html.h3 [] <|
+                        [ text "Documents"
+                        , Html.span [ onClick Refresh, id "refresh" ] []
+                        ]
+                   ]
+                ++ case model.status of
+                    Displaying ->
+                        [ DLView.view { focused = model.focused, selected = model.selected, documents = model.documents } ]
 
-                    Nothing ->
-                        text ("An unknown error has occurred")
+                    Loading ->
+                        [ Html.table [ id "documents" ]
+                            ([ TableHeader.view
+                             ]
+                                ++ (List.range 0 2 |> List.map (\_ -> LoadingRow.view))
+                            )
+                        ]
 
-            Displaying ->
-                div [ id "documentList" ]
-                    ((case model.error of
-                        Just msg ->
-                            [ div [ id "error" ] [ text msg ] ]
-
-                        Nothing ->
-                            []
-                     )
-                        ++ [ Html.h3 []
-                                [ text "Documents"
-                                , Html.span [ onClick Refresh, id "refresh" ] []
-                                ]
-                           , DLView.view { focused = model.focused, selected = model.selected, documents = model.documents }
-                           ]
-                    )
+                    Error ->
+                        [ Html.table [ id "documents" ] [ TableHeader.view ]
+                        , text <| "ERROR: " ++ Maybe.withDefault "An unknown error has occurred" model.error
+                        ]
+            )
         ]
 
 

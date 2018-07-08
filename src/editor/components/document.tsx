@@ -7,6 +7,7 @@ import { Item as ItemData, ItemTree, ItemID } from '../store/data/item';
 
 import Item from './item';
 import DocumentHeader from './documentHeader';
+import LoadingSpinner from './loadingSpinner';
 
 import { DispatchProps, mapDispatchToProps, ApplicationState } from '../store';
 
@@ -248,19 +249,16 @@ class Document extends React.Component<ComponentProps> {
 	render() {
 		const doc = this.props.document;
 
-		if (!doc)
-			return <h1>Loading...</h1>;
+		const tree = !doc ? undefined : this.getDocumentTree(doc, getSelectedItems(doc), doc.rootItemID);
 
-		const tree = this.getDocumentTree(doc, getSelectedItems(doc), doc.rootItemID);
-
-		document.title = doc.title + " | Seriatim";
+		document.title = !doc ? "..." : doc.title + " | Seriatim";
 
 		return (
 			<main onClick={(event) => this.handleMainClick(event)}>
 				<DocumentHeader />
 				<div id="documentScrollContainer">
 					<div id="document" tabIndex={0} ref={this.documentDiv}>
-						<Item node={tree} key={tree.item.itemID} />
+						{doc ? <Item node={tree as ItemTree} key={(tree as ItemTree).item.itemID} /> : <LoadingSpinner />}
 					</div>
 				</div>
 			</main>

@@ -82,7 +82,13 @@ view model =
                 ]
 
         _ ->
-            div [] []
+            div
+                [ class "spinner"
+                ]
+                [ div [ class "bounce1" ] []
+                , div [ class "bounce2" ] []
+                , div [ class "bounce3" ] []
+                ]
 
 
 subscriptions : Model -> Sub Msg

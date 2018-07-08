@@ -50,6 +50,12 @@ module.exports = (env, argv) => ({
                 use: {
                     loader: 'elm-webpack-loader?verbose=true&warn=true'
                 }
+            },
+            {
+                test: /\.(png|svg|jpg|gif)$/,
+                use: {
+                    loader: 'file-loader'
+                }
             }
         ]
     },

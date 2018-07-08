@@ -1,15 +1,11 @@
 module DocumentList.Message exposing (..)
 
 import Http
-import SeriatimHttp exposing (SeriatimResult)
+import SeriatimHttp exposing (SeriatimResult, HttpResult)
 import Data.Document exposing (Document, DocumentID)
 import Dom
 import Mouse
 import Keyboard
-
-
-type alias HttpResult a =
-    Result Http.Error (SeriatimResult a)
 
 
 type Msg

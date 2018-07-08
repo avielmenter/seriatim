@@ -4,11 +4,16 @@ import Http
 import Json.Decode exposing (..)
 import Json.Decode.Pipeline exposing (decode, required, optional, custom)
 import Data.Document exposing (Document, DocumentID)
+import Data.User exposing (User, UserID)
 import Date exposing (Date)
 
 
 type alias SeriatimResult a =
     Result String a
+
+
+type alias HttpResult a =
+    Result Http.Error (SeriatimResult a)
 
 
 type Method
@@ -53,6 +58,11 @@ decodeDocumentID =
     string |> andThen (\docID -> Data.Document.DocumentID docID |> succeed)
 
 
+decodeUserID : Decoder UserID
+decodeUserID =
+    string |> andThen (\userID -> Data.User.UserID userID |> succeed)
+
+
 decodeDocument : Decoder Document
 decodeDocument =
     decode Document
@@ -61,6 +71,14 @@ decodeDocument =
         |> optional "title" string "Untitled Document"
         |> required "created_at" decodeRocketDate
         |> optional "modified_at" (Json.Decode.map Just decodeRocketDate) Nothing
+
+
+decodeUser : Decoder User
+decodeUser =
+    decode User
+        |> required "user_id" decodeUserID
+        |> required "twitter_name" string
+        |> required "twitter_screen_name" string
 
 
 decodeSeriatimResponse : Decoder a -> Decoder (SeriatimResult a)

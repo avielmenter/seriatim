@@ -10,6 +10,7 @@ import DocumentList.Views.Actions as ActionsView
 import DocumentList.Views.DocumentList as DLView
 import DocumentList.Message exposing (..)
 import DocumentList.HttpRequests exposing (..)
+import SeriatimHttp exposing (HttpResult)
 import Dom exposing (focus)
 import Task
 import Mouse
@@ -270,12 +271,6 @@ subscriptions model =
         [ Mouse.clicks MouseEvent
         , Keyboard.downs KeyboardEvent
         ]
-
-
-type alias Flags =
-    { seriatim_client_url : String
-    , seriatim_server_url : String
-    }
 
 
 main : Program Flags Model Msg

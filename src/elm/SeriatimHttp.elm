@@ -60,6 +60,7 @@ decodeDocument =
         |> required "root_item_id" string
         |> optional "title" string "Untitled Document"
         |> required "created_at" decodeRocketDate
+        |> optional "modified_at" (Json.Decode.map Just decodeRocketDate) Nothing
 
 
 decodeSeriatimResponse : Decoder a -> Decoder (SeriatimResult a)

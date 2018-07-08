@@ -1,5 +1,8 @@
 module Util exposing (..)
 
+import Date exposing (Date)
+import Date.Format exposing (format)
+
 
 isNothing : Maybe a -> Bool
 isNothing m =
@@ -14,3 +17,8 @@ isNothing m =
 isSomething : Maybe a -> Bool
 isSomething m =
     not <| isNothing m
+
+
+seriatimDateString : Date -> String
+seriatimDateString d =
+    format "%b %e, %Y %l:%M:%S %p" d

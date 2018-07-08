@@ -102,18 +102,14 @@ updateFromHttp status updateModel model r =
 
 unfocusAndRename : Msg -> Model -> ( Model, Cmd Msg )
 unfocusAndRename msg model =
-    let
-        ( docID, docTitle ) =
-            case model.focused of
-                Just ( id, title ) ->
-                    ( id, title )
+    case model.focused of
+        Just ( docID, docTitle ) ->
+            ( { model | focused = Nothing }
+            , Http.send DocumentRenamed (renameDocumentRequest model.config.seriatim_server_url docID docTitle)
+            )
 
-                Nothing ->
-                    ( Data.DocumentID "", "" )
-    in
-        ( { model | focused = Nothing }
-        , Http.send DocumentRenamed (renameDocumentRequest model.config.seriatim_server_url docID docTitle)
-        )
+        Nothing ->
+            ( model, Cmd.none )
 
 
 focusOnDocument : Model -> Data.Document -> ( Model, Cmd Msg )
@@ -125,22 +121,14 @@ focusOnDocument model doc =
 
 getSelectedDocument : Model -> Maybe Data.Document
 getSelectedDocument model =
-    case model.selected of
-        Just selectedID ->
-            Data.getDocumentByID selectedID model.documents
-
-        Nothing ->
-            Nothing
+    Maybe.map (\docID -> Data.getDocumentByID docID model.documents) model.selected
+        |> Maybe.withDefault Nothing
 
 
 getFocusedDocument : Model -> Maybe Data.Document
 getFocusedDocument model =
-    case model.focused of
-        Just ( focusedID, _ ) ->
-            Data.getDocumentByID focusedID model.documents
-
-        Nothing ->
-            Nothing
+    Maybe.map (\( docID, _ ) -> Data.getDocumentByID docID model.documents) model.focused
+        |> Maybe.withDefault Nothing
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -210,12 +198,11 @@ update msg model =
                 r
 
         TitleInputChange newTitle ->
-            case model.focused of
-                Nothing ->
-                    ( model, Cmd.none )
-
-                Just ( docID, docTitle ) ->
-                    ( { model | focused = Just ( docID, newTitle ) }, Cmd.none )
+            ( { model
+                | focused = Maybe.map (\( docID, _ ) -> ( docID, newTitle )) model.focused
+              }
+            , Cmd.none
+            )
 
         UnfocusTitle ->
             unfocusAndRename msg model

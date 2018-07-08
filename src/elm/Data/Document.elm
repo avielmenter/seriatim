@@ -12,6 +12,7 @@ type alias Document =
     , root_item_id : String
     , title : String
     , created_at : Date
+    , modified_at : Maybe Date
     }
 
 

@@ -3,10 +3,10 @@ module DocumentList.Views.Document exposing (view, inputID, rowID, Model)
 import Html exposing (Html, text, div)
 import Html.Events exposing (onClick, on)
 import Html.Attributes exposing (class)
-import Date.Format exposing (format)
 import Json.Decode
 import DocumentList.Message exposing (..)
 import Data.Document exposing (Document, DocumentID)
+import Util exposing (seriatimDateString)
 
 
 onEnter : Msg -> Html.Attribute Msg
@@ -91,8 +91,8 @@ view model =
                             ]
                             []
                 ]
-            , Html.td [] [ text (format "%b %e, %Y %l:%M:%S %p" doc.created_at) ]
-            , Html.td [] [ text "never" ]
+            , Html.td [] [ text <| seriatimDateString doc.created_at ]
+            , Html.td [] [ text <| Maybe.withDefault "never" <| Maybe.map seriatimDateString doc.modified_at ]
             , Html.td []
                 [ Html.span
                     [ onClick (DeleteDocument doc.document_id)

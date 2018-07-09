@@ -17,6 +17,16 @@ $emptyTextColor: lightgray
 	outline: 0
 	vertical-align: baseline
 
+.mainContentWidth
+	max-width: 11in
+	margin-left: auto
+	margin-right: auto
+
+.docContentWidth
+	max-width: 8.5in
+	margin-left: auto
+	margin-right: auto
+
 html, body, #root, main
 	height: 100%
 
@@ -28,6 +38,22 @@ main
 	width: 100%
 	display: flex
 	flex-direction: column
+
+.errorMessage
+	width: calc(100%)
+	background: #FF000044
+	padding: 0.25em 0.5em 0.25em
+	border-top: 1px solid darkred
+	border-bottom: 1px solid darkred
+	font-weight: bold
+	color: white
+
+	.removeError
+		float: right
+		color: #E7E7E7
+		&:hover
+			color: white
+			cursor: pointer
 
 #documentHeader
 	background: #FAFAFA

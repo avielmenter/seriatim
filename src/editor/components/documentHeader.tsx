@@ -10,9 +10,10 @@ import { DispatchProps, mapDispatchToProps, ApplicationState, handleClick } from
 import MenuItem from './menuItem';
 
 import * as Server from '../network/server';
+import SavingSpinner from './savingSpinner';
 
 type StateProps = {
-	documentState: StateWithHistory<Document | undefined> | undefined
+	documentState: StateWithHistory<Document | null> | undefined
 }
 
 type AttrProps = {
@@ -45,6 +46,7 @@ const DocumentHeader: React.SFC<ComponentProps> = (props) => {
 				<h1 className={isLoading || document.title.length == 0 ? "empty" : ""}
 					onClick={(event) => handleClick(event, () => actions.setFocus(document.items.get(document.rootItemID)))}>
 					{isLoading ? "Loading..." : document.title.length == 0 ? "Untitled Document..." : document.title}
+					{document.saving && <SavingSpinner />}
 				</h1>
 				<div id="documentMenu">
 					<div className="menuItem">
@@ -59,7 +61,12 @@ const DocumentHeader: React.SFC<ComponentProps> = (props) => {
 									.then(response => {
 										if (response.status == 'success')
 											actions.updateItemIDs(response.data);
-									});
+										else
+											props.actions.errors.addError(response.error);
+									})
+									.finally(() => props.actions.document.stopSaving());
+
+								actions.startSaving();
 							}} />
 							<MenuItem text="Rename" shortcut="Esc, ↹"
 								callback={(event) => handleClick(event, () => actions.setFocus(document.items.get(document.rootItemID)))} />

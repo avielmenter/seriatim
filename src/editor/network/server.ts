@@ -20,52 +20,81 @@ type ServerDate = {
 }
 
 type ServerItem = {
-	item_id: string,
-	document_id: string,
-	parent_id: string,
-	text: string,
-	collapsed: boolean,
-	child_order: number
+	item_id?: string,
+	document_id?: string,
+	parent_id?: string,
+	text?: string,
+	collapsed?: boolean,
+	child_order?: number
 }
 
 type ServerDocument = {
-	document_id: string,
-	title: string,
-	parent_id: string,
-	root_item_id: string,
-	created_at: ServerDate,
+	document_id?: string,
+	title?: string,
+	parent_id?: string,
+	root_item_id?: string,
+	created_at?: ServerDate,
 	modified_at?: ServerDate,
 	items?: { [item_id: string]: ServerItem }
 }
 
-function parseServerItem(sItem: ServerItem, root_id: string): Item {
+function parseServerItem(sItem: ServerItem, root_id: string): Item | undefined {
+	if (!sItem.item_id || sItem.parent_id === undefined || (sItem.text === undefined) || (sItem.child_order === undefined))
+		return undefined;
+
+	const itemID = sItem.item_id;
+	const parentID = sItem.parent_id;
+	const text = sItem.text;
+	const itemType = sItem.item_id == root_id ? "Title" : (
+		sItem.text && sItem.text.match(/^#+\s+/i) ? "Header" : "Item"
+	);
+	const collapsed = sItem.collapsed || false;
+
+	if (itemID === undefined)
+		return undefined;
+
 	return {
-		itemID: sItem.item_id,
-		parentID: sItem.parent_id,
-		text: sItem.text,
+		itemID,
+		parentID,
+		text,
 		view: {
-			itemType: sItem.item_id == root_id ? "Title" : (
-				sItem.text.match(/^#+\s+/i) ? "Header" : "Item"
-			),
-			collapsed: sItem.collapsed
+			itemType,
+			collapsed
 		},
 		children: List<ItemID>()
 	}
 }
 
-function parseServerDocument(sDoc: ServerDocument): Document {
+function parseServerDocument(sDoc: ServerDocument): Document | undefined {
 	let serverItems = sDoc.items || {};
+
+	const rootItemID = sDoc.root_item_id;
+	const title = sDoc.title || "";
+
+	if (!rootItemID)
+		return undefined;
+
 	let items = Object.keys(serverItems)
 		.map(itemID => ({
 			key: itemID,
 			value: serverItems[itemID]
 		}))
-		.reduce((prev, curr) => prev.set(curr.key, parseServerItem(curr.value, sDoc.root_item_id)),
+		.reduce((prev, curr) => {
+			const item = parseServerItem(curr.value, rootItemID);
+
+			if (!item)
+				return prev;
+			else
+				return prev.set(curr.key, item);
+		},
 			Map<ItemID, Item>()
 		);
 
 	Object.keys(serverItems).forEach(k => {	// set up children arrays
 		const curr = serverItems[k];
+		if (curr.child_order === undefined || !curr.item_id)
+			return;
+
 		if (curr.parent_id && items.get(curr.parent_id)) {
 			const parent = items.get(curr.parent_id);
 
@@ -85,11 +114,12 @@ function parseServerDocument(sDoc: ServerDocument): Document {
 	});
 
 	return {
+		saving: false,
 		clipboard: undefined,
 		selection: undefined,
-		focusedItemID: sDoc.root_item_id,
-		rootItemID: sDoc.root_item_id,
-		title: sDoc.title,
+		focusedItemID: rootItemID,
+		rootItemID,
+		title,
 		items
 	}
 }
@@ -114,21 +144,31 @@ function httpPost(url: string, body: any): Promise<Response> {
 	});
 }
 
-async function parseHttpResponse<TParsed, TRaw>(response: Response, parse: (raw: TRaw) => TParsed): Promise<SeriatimResponse<TParsed>> {
-	let responseJson = await response.json() as SeriatimResponse<TRaw>;
+async function parseHttpResponse<TParsed, TRaw>(response: Response, parse: (raw: TRaw) => TParsed | undefined): Promise<SeriatimResponse<TParsed>> {
+	const responseJson = await response.json() as SeriatimResponse<TRaw>;
 
 	if (responseJson.status == "error")
 		return responseJson as SeriatimError;
 
+	const parsed = parse(responseJson.data);
+	if (!parsed) {
+		return {
+			status: "error",
+			error: "Could not parse response from server."
+		}
+	}
+
 	return {
 		status: "success",
-		data: parse(responseJson.data)
+		data: parsed
 	}
 }
 
 export async function fetchDocument(documentID: string): Promise<SeriatimResponse<Document>> {
-	let response = await httpGet('document/' + documentID);
-	return parseHttpResponse(response, parseServerDocument);
+	const response = await httpGet('document/' + documentID);
+	const parsed = await parseHttpResponse(response, parseServerDocument);
+
+	return parsed;
 }
 
 type EditItem = {
@@ -174,7 +214,7 @@ async function saveDocumentStructure(documentID: string, currDoc: Document): Pro
 	);
 }
 
-async function saveDocumentText(documentID: string, currDoc: Document, ): Promise<SeriatimResponse<any>> {
+async function saveDocumentText(documentID: string, currDoc: Document): Promise<SeriatimResponse<any>> {
 	const textChanges = currDoc.items.valueSeq()
 		.map(item => [item.itemID, item.text])
 		.reduce((prev, curr) => prev.set(curr[0], curr[1]), Map<ItemID, string>())
@@ -184,18 +224,11 @@ async function saveDocumentText(documentID: string, currDoc: Document, ): Promis
 	return await parseHttpResponse(response, (raw: any) => ({}));
 }
 
-export async function saveDocument(documentID: string, state: Document):
-	Promise<SeriatimResponse<Map<ItemID, ItemID>>> {
+export async function saveDocument(documentID: string, state: Document): Promise<SeriatimResponse<Map<ItemID, ItemID>>> {
 	const structureResponse = await saveDocumentStructure(documentID, state);
+
 	if (structureResponse.status == "error")
 		return structureResponse;
-
-	/*
-const updatedState = updateItemIDs(state, structureResponse.data);
-
-const textResponse = await saveDocumentText(documentID, updatedState);
-if (textResponse.status == "error")
-	return textResponse;*/
 
 	return structureResponse;
 }

@@ -1,26 +1,29 @@
 import * as React from 'react';
+import { StateWithHistory } from 'redux-undo';
 
 import { Store, createStore, combineReducers, AnyAction } from 'redux';
 
+import { List } from 'immutable';
+
 import * as DocumentReducers from './reducers/document';
-import undoable, { groupByActionTypes, StateWithHistory } from 'redux-undo';
+import * as ErrorReducers from './reducers/errors';
 
 import * as Document from './data/document';
 
 export type ApplicationState = {
-    document: StateWithHistory<Document.Document | undefined>
+    errors: List<string>,
+    saving: boolean,
+    document: StateWithHistory<Document.Document | null>
 };
 
 export const store = createStore(combineReducers({
-    document: undoable(DocumentReducers.reducer, {
-        groupBy: groupByActionTypes("UpdateItemText"),
-        ignoreInitialState: true,
-        filter: (action, curr, prev) => !curr ? true : !DocumentReducers.skipHistoryFor.includes(action.type) && !Document.equals(curr, prev._latestUnfiltered)
-    })
+    errors: ErrorReducers.reducer,
+    document: DocumentReducers.reducer
 }));
 
 export type DispatchProps = {
     actions: {
+        errors: ErrorReducers.DispatchProps,
         document: DocumentReducers.DispatchProps
     }
 }
@@ -28,6 +31,7 @@ export type DispatchProps = {
 export type Dispatch = (action: AnyAction) => void;
 export const mapDispatchToProps = (dispatch: Dispatch) => ({
     actions: {
+        errors: ErrorReducers.creators(dispatch),
         document: DocumentReducers.creators(dispatch)
     }
 });

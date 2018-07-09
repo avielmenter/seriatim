@@ -1,5 +1,6 @@
-import { ActionCreator, AnyAction } from 'redux';
-import undoable, { ActionCreators } from 'redux-undo';
+import { ActionCreator, AnyAction, combineReducers } from 'redux';
+import undoable, { ActionCreators, groupByActionTypes, StateWithHistory } from 'redux-undo';
+
 import { List, Map, Range } from 'immutable';
 
 import * as Item from '../data/item';
@@ -27,7 +28,7 @@ type AddItemAfterSibling = {
 type InitializeDocument = {
 	type: "InitializeDocument",
 	data: {
-		document: Document.Document | undefined
+		document: Document.Document | null
 	}
 }
 
@@ -158,6 +159,16 @@ type LoadDocument = {
 	}
 }
 
+type StartSaving = {
+	type: "StartSaving",
+	data: {}
+}
+
+type StopSaving = {
+	type: "StopSaving",
+	data: {}
+}
+
 type UpdateItemIDs = {
 	type: "UpdateItemIDs",
 	data: {
@@ -188,20 +199,22 @@ export type Action = AddItemToParent |
 	CopySelection |
 	MultiSelect |
 	LoadDocument |
+	StartSaving |
+	StopSaving |
 	UpdateItemIDs;
 
 // REDUCERS
 
-function addItemToParent(document: Document.Document | undefined, action: AddItemToParent): Document.Document | undefined {
+function addItemToParent(document: Document.Document | null, action: AddItemToParent): Document.Document | null {
 	if (!document)
-		return undefined;
+		return null;
 
 	return Document.addItem(document, action.data.parent);
 }
 
-function addItemAfterSibling(document: Document.Document | undefined, action: AddItemAfterSibling): Document.Document | undefined {
+function addItemAfterSibling(document: Document.Document | null, action: AddItemAfterSibling): Document.Document | null {
 	if (!document)
-		return undefined;
+		return null;
 
 	const { sibling, focusOnNew } = action.data;
 	const parent = document.items.get(sibling.parentID);
@@ -220,9 +233,9 @@ function addItemAfterSibling(document: Document.Document | undefined, action: Ad
 		newDocument;
 }
 
-function toggleItemCollapse(document: Document.Document | undefined, action: ToggleItemCollapse): Document.Document | undefined {
+function toggleItemCollapse(document: Document.Document | null, action: ToggleItemCollapse): Document.Document | null {
 	if (!document)
-		return undefined;
+		return null;
 
 	const item = action.data.item;
 	if (item.children.count() <= 0)
@@ -237,9 +250,9 @@ function toggleItemCollapse(document: Document.Document | undefined, action: Tog
 	});
 }
 
-function updateItemText(document: Document.Document | undefined, action: UpdateItemText): Document.Document | undefined {
+function updateItemText(document: Document.Document | null, action: UpdateItemText): Document.Document | null {
 	if (!document)
-		return undefined;
+		return null;
 	else if (!document.items.get(action.data.item.itemID))
 		return document;
 
@@ -264,9 +277,9 @@ function updateItemText(document: Document.Document | undefined, action: UpdateI
 	}, newItem);
 }
 
-function removeItem(document: Document.Document | undefined, action: RemoveItem): Document.Document | undefined {
+function removeItem(document: Document.Document | null, action: RemoveItem): Document.Document | null {
 	if (!document)
-		return undefined;
+		return null;
 	else if (!document.items.get(action.data.item.itemID) || action.data.item.itemID == document.rootItemID)
 		return document;
 
@@ -291,9 +304,9 @@ function removeItem(document: Document.Document | undefined, action: RemoveItem)
 	return (newDocument.focusedItemID == item.itemID) ? setFocus(newDocument, { type: "SetFocus", data: { item: nextItem } }) : newDocument;
 }
 
-function setFocus(document: Document.Document | undefined, action: SetFocus): Document.Document | undefined {
+function setFocus(document: Document.Document | null, action: SetFocus): Document.Document | null {
 	if (!document)
-		return undefined;
+		return null;
 
 	const item = action.data.item;
 
@@ -303,9 +316,9 @@ function setFocus(document: Document.Document | undefined, action: SetFocus): Do
 	};
 }
 
-function incrementFocus(document: Document.Document | undefined, action: IncrementFocus): Document.Document | undefined {
+function incrementFocus(document: Document.Document | null, action: IncrementFocus): Document.Document | null {
 	if (!document)
-		return undefined;
+		return null;
 	if (!document.focusedItemID || !document.items.get(document.focusedItemID))
 		return setFocus(document, { type: "SetFocus", data: { item: document.items.get(document.rootItemID) } });
 
@@ -330,9 +343,9 @@ function incrementFocus(document: Document.Document | undefined, action: Increme
 	});
 }
 
-function decrementFocus(document: Document.Document | undefined, action: DecrementFocus): Document.Document | undefined {
+function decrementFocus(document: Document.Document | null, action: DecrementFocus): Document.Document | null {
 	if (!document)
-		return undefined;
+		return null;
 	if (!document.focusedItemID || !document.items.get(document.focusedItemID))
 		return setFocus(document, { type: "SetFocus", data: { item: Document.getLastItem(document, document.items.get(document.rootItemID), true) } });
 
@@ -344,9 +357,9 @@ function decrementFocus(document: Document.Document | undefined, action: Decreme
 	return setFocus(document, { type: "SetFocus", data: { item: prevItem } });
 }
 
-function indentItem(document: Document.Document | undefined, action: IndentItem): Document.Document | undefined {
+function indentItem(document: Document.Document | null, action: IndentItem): Document.Document | null {
 	if (!document)
-		return undefined;
+		return null;
 
 	const item = action.data.item;
 	const parent = document.items.get(item.parentID);
@@ -362,9 +375,9 @@ function indentItem(document: Document.Document | undefined, action: IndentItem)
 	return newDocument;
 }
 
-function unindentItem(document: Document.Document | undefined, action: UnindentItem): Document.Document | undefined {
+function unindentItem(document: Document.Document | null, action: UnindentItem): Document.Document | null {
 	if (!document)
-		return undefined;
+		return null;
 
 	const item = action.data.item;
 	if (!item)
@@ -383,9 +396,9 @@ function unindentItem(document: Document.Document | undefined, action: UnindentI
 	return newDocument;
 }
 
-function makeHeader(document: Document.Document | undefined, action: MakeHeader): Document.Document | undefined {
+function makeHeader(document: Document.Document | null, action: MakeHeader): Document.Document | null {
 	if (!document)
-		return undefined;
+		return null;
 
 	const item = action.data.item;
 
@@ -418,9 +431,9 @@ function makeHeader(document: Document.Document | undefined, action: MakeHeader)
 	return Document.updateItems(document, newItem);
 }
 
-function makeItem(document: Document.Document | undefined, action: MakeItem): Document.Document | undefined {
+function makeItem(document: Document.Document | null, action: MakeItem): Document.Document | null {
 	if (!document)
-		return undefined;
+		return null;
 
 	const item = action.data.item;
 
@@ -439,9 +452,9 @@ function makeItem(document: Document.Document | undefined, action: MakeItem): Do
 	return Document.updateItems(document, newItem);
 }
 
-function copyItem(document: Document.Document | undefined, action: CopyItem): Document.Document | undefined {
+function copyItem(document: Document.Document | null, action: CopyItem): Document.Document | null {
 	if (!document)
-		return undefined;
+		return null;
 
 	const item = action.data.item;
 
@@ -469,9 +482,9 @@ function copyItem(document: Document.Document | undefined, action: CopyItem): Do
 	};
 }
 
-function copySelection(document: Document.Document | undefined, action: CopySelection): Document.Document | undefined {
+function copySelection(document: Document.Document | null, action: CopySelection): Document.Document | null {
 	if (!document)
-		return undefined;
+		return null;
 	if (!document.selection) {
 		return {
 			...document,
@@ -503,45 +516,45 @@ function copySelection(document: Document.Document | undefined, action: CopySele
 	};
 }
 
-function makeSelectionItem(document: Document.Document | undefined, action: MakeSelectionItem): Document.Document | undefined {
+function makeSelectionItem(document: Document.Document | null, action: MakeSelectionItem): Document.Document | null {
 	if (!document)
-		return undefined;
+		return null;
 
 	return Document.getSelectionRange(document)
-		.reduce((prev: Document.Document | undefined, selected) => makeItem(prev, { type: "MakeItem", data: { item: selected } }), document)
+		.reduce((prev: Document.Document | null, selected) => makeItem(prev, { type: "MakeItem", data: { item: selected } }), document)
 }
 
-function makeSelectionHeader(document: Document.Document | undefined, action: MakeSelectionHeader): Document.Document | undefined {
+function makeSelectionHeader(document: Document.Document | null, action: MakeSelectionHeader): Document.Document | null {
 	if (!document)
-		return undefined;
+		return null;
 
 	return Document.getSelectionRange(document)
-		.reduce((prev: Document.Document | undefined, selected) => makeHeader(prev, { type: "MakeHeader", data: { item: selected } }), document)
+		.reduce((prev: Document.Document | null, selected) => makeHeader(prev, { type: "MakeHeader", data: { item: selected } }), document)
 }
 
-function removeSelection(document: Document.Document | undefined, action: RemoveSelection): Document.Document | undefined {
+function removeSelection(document: Document.Document | null, action: RemoveSelection): Document.Document | null {
 	if (!document)
-		return undefined;
+		return null;
 
 	const selectionRange = Document.getSelectionRange(document);
-	const newDocument = selectionRange.reduce((prev: Document.Document | undefined, selected) => {
+	const newDocument = selectionRange.reduce((prev: Document.Document | null, selected) => {
 		if (!prev)
-			return undefined;
+			return null;
 		else if (prev.items.has(selected.itemID))
 			return removeItem(prev, { type: "RemoveItem", data: { item: prev.items.get(selected.itemID) } });
 		else
 			return prev;
 	}, document);
 
-	return !newDocument ? undefined : {
+	return !newDocument ? null : {
 		...newDocument,
 		selection: undefined
 	}
 }
 
-function indentSelection(document: Document.Document | undefined, action: IndentSelection): Document.Document | undefined {
+function indentSelection(document: Document.Document | null, action: IndentSelection): Document.Document | null {
 	if (!document)
-		return undefined;
+		return null;
 
 	const selectionRange = Document.getSelectionRange(document);
 	const selectedItems = Document.getSelectedItems(document);
@@ -571,9 +584,9 @@ function indentSelection(document: Document.Document | undefined, action: Indent
 	return itemsToIndent.reduce((prev, curr) => Document.indentItem(prev, prev.items.get(curr.itemID)).document, document);
 }
 
-function unindentSelection(document: Document.Document | undefined, action: UnindentSelection): Document.Document | undefined {
+function unindentSelection(document: Document.Document | null, action: UnindentSelection): Document.Document | null {
 	if (!document)
-		return undefined;
+		return null;
 
 	const selectionRange = Document.getSelectionRange(document);
 	const selectedItems = Document.getSelectedItems(document);
@@ -603,9 +616,9 @@ function unindentSelection(document: Document.Document | undefined, action: Unin
 	return itemsToUnindent.reduce((prev, curr) => Document.unindentItem(prev, prev.items.get(curr.itemID)).document, document);
 }
 
-function paste(document: Document.Document | undefined, action: Paste): Document.Document | undefined {
+function paste(document: Document.Document | null, action: Paste): Document.Document | null {
 	if (!document)
-		return undefined;
+		return null;
 	if (!document.clipboard || !document.clipboard.selection)
 		return document;
 
@@ -659,9 +672,9 @@ function paste(document: Document.Document | undefined, action: Paste): Document
 	return newDocument;
 }
 
-function multiSelect(document: Document.Document | undefined, action: MultiSelect): Document.Document | undefined {
+function multiSelect(document: Document.Document | null, action: MultiSelect): Document.Document | null {
 	if (!document)
-		return undefined;
+		return null;
 
 	const item = action.data.item;
 	if (item == undefined)
@@ -695,25 +708,46 @@ function multiSelect(document: Document.Document | undefined, action: MultiSelec
 	};
 }
 
-function initializeDocument(document: Document.Document | undefined, action: InitializeDocument): Document.Document | undefined {
+function initializeDocument(document: Document.Document | null, action: InitializeDocument): Document.Document | null {
 	if (action.data.document)
 		return action.data.document;
 	return Document.getEmptyDocument();
 }
 
-function loadDocument(document: Document.Document | undefined, action: LoadDocument): Document.Document | undefined {
+function loadDocument(document: Document.Document | null, action: LoadDocument): Document.Document | null {
 	return action.data.document;
 }
 
-function updateItemIDs(document: Document.Document | undefined, action: UpdateItemIDs): Document.Document | undefined {
+function startSaving(document: Document.Document | null, action: StartSaving): Document.Document | null {
+	if (!document)
+		return document;
+
+	return {
+		...document,
+		saving: true
+	}
+}
+
+function stopSaving(document: Document.Document | null, action: StopSaving): Document.Document | null {
+	if (!document)
+		return document;
+
+	return {
+		...document,
+		saving: false
+	}
+}
+
+function updateItemIDs(document: Document.Document | null, action: UpdateItemIDs): Document.Document | null {
 	if (!document)
 		return document;
 
 	return Document.updateItemIDs(document, action.data.newIDs);
 }
 
-export function reducer(doc: Document.Document | undefined, anyAction: AnyAction): Document.Document | undefined {
+function undoableReducer(document: Document.Document | undefined | null, anyAction: AnyAction): Document.Document | null {
 	const action = anyAction as Action;
+	const doc = document || null;
 
 	switch (action.type) {
 		case "AddItemToParent":
@@ -762,12 +796,24 @@ export function reducer(doc: Document.Document | undefined, anyAction: AnyAction
 			return paste(doc, action);
 		case "LoadDocument":
 			return loadDocument(doc, action);
+		case "StartSaving":
+			return startSaving(doc, action);
+		case "StopSaving":
+			return stopSaving(doc, action);
 		case "UpdateItemIDs":
 			return updateItemIDs(doc, action);
 		default:
 			return doc;
 	}
 }
+
+const skipHistoryFor: string[] = ["CopyItem", "CopySelection", "SetFocus", "IncrementFocus", "DecrementFocus", "SetFocus", "LoadDocument", "InitializeDocument", "UpdateItemIDs", "StartSaving", "StopSaving"];
+
+export const reducer = undoable(undoableReducer, {
+	groupBy: groupByActionTypes("UpdateItemText"),
+	ignoreInitialState: true,
+	filter: (action, curr, prev) => !curr ? true : !skipHistoryFor.includes(action.type) && !Document.equals(curr, prev._latestUnfiltered)
+});
 
 // DISPATCH PROPERTIES
 
@@ -786,7 +832,7 @@ export const creators = (dispatch: Dispatch) => ({
 		type: "ToggleItemCollapse",
 		data: { item }
 	}),
-	initializeDocument: (document: Document.Document | undefined) => dispatch({
+	initializeDocument: (document: Document.Document | null) => dispatch({
 		type: "InitializeDocument",
 		data: { document }
 	}),
@@ -866,6 +912,14 @@ export const creators = (dispatch: Dispatch) => ({
 		type: "LoadDocument",
 		data: { document }
 	}),
+	startSaving: () => dispatch({
+		type: "StartSaving",
+		data: {}
+	}),
+	stopSaving: () => dispatch({
+		type: "StopSaving",
+		data: {}
+	}),
 	updateItemIDs: (newIDs: Map<Item.ItemID, Item.ItemID>) => dispatch({
 		type: "UpdateItemIDs",
 		data: { newIDs }
@@ -878,7 +932,7 @@ export type DispatchProps = {
 	addItemToParent: (parent: Item.Item) => void,
 	addItemAfterSibling: (parent: Item.Item, focusOnNew: boolean) => void,
 	toggleItemCollapse: (item: Item.Item) => void,
-	initializeDocument: (document: Document.Document | undefined) => void,
+	initializeDocument: (document: Document.Document | null) => void,
 	updateItemText: (item: Item.Item, newText: string) => void,
 	removeItem: (item: Item.Item) => void,
 	setFocus: (item: Item.Item | undefined) => void,
@@ -898,9 +952,9 @@ export type DispatchProps = {
 	copySelection: () => void,
 	paste: (item: Item.Item) => void,
 	loadDocument: (document: Document.Document) => void,
+	startSaving: () => void,
+	stopSaving: () => void,
 	updateItemIDs: (newIDs: Map<Item.ItemID, Item.ItemID>) => void,
 	undo: () => void,
 	redo: () => void
 }
-
-export const skipHistoryFor: string[] = ["CopyItem", "CopySelection", "SetFocus", "IncrementFocus", "DecrementFocus", "SetFocus", "LoadDocument", "InitializeDocument", "UpdateItemIDs"];

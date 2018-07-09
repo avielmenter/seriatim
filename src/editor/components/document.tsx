@@ -2,19 +2,22 @@ import * as React from 'react';
 import { connect } from 'react-redux';
 import { Map, List } from 'immutable';
 
+import { Error } from '../store/data/error';
 import { Document as DocumentData, getLastItem, ItemDictionary, getSelectedItems } from '../store/data/document';
 import { Item as ItemData, ItemTree, ItemID } from '../store/data/item';
 
 import Item from './item';
 import DocumentHeader from './documentHeader';
 import LoadingSpinner from './loadingSpinner';
+import ErrorMessage from './errorMessage';
 
 import { DispatchProps, mapDispatchToProps, ApplicationState } from '../store';
 
 import * as Server from '../network/server';
 
 type StateProps = {
-	document: DocumentData | undefined
+	errors: List<Error>,
+	document: DocumentData | null
 }
 
 type AttrProps = {
@@ -108,7 +111,12 @@ class Document extends React.Component<ComponentProps> {
 						.then(response => {
 							if (response.status == 'success')
 								actions.updateItemIDs(response.data);
-						});
+							else
+								this.props.actions.errors.addError(response.error);
+						})
+						.finally(() => actions.stopSaving());
+
+					actions.startSaving();
 					break;
 
 				case 'z':
@@ -235,14 +243,21 @@ class Document extends React.Component<ComponentProps> {
 
 	componentWillMount() {
 		const actions = this.props.actions.document;
+		const errors = this.props.actions.errors;
 
 		document.addEventListener('keydown', this.handleKeyDown);
 
 		const document_id = window.location.search.substring(1); // skip initial ? symbol
+
 		Server.fetchDocument(document_id)
 			.then(response => {
 				if (response.status == "success")
 					actions.loadDocument(response.data)
+				else
+					errors.addError(response.error);
+			})
+			.catch(response => {
+				errors.addError("There was an error contacting the server.");
 			});
 	}
 
@@ -256,6 +271,7 @@ class Document extends React.Component<ComponentProps> {
 		return (
 			<main onClick={(event) => this.handleMainClick(event)}>
 				<DocumentHeader />
+				{this.props.errors.map((error, index) => <ErrorMessage error={error} index={index} key={index} />)}
 				<div id="documentScrollContainer">
 					<div id="document" tabIndex={0} ref={this.documentDiv}>
 						{doc ? <Item node={tree as ItemTree} key={(tree as ItemTree).item.itemID} /> : <LoadingSpinner />}
@@ -276,7 +292,8 @@ class Document extends React.Component<ComponentProps> {
 }
 
 const mapStateToProps = (state: ApplicationState | {}) => ({
-	document: state == {} ? undefined : (state as ApplicationState).document.present
-});
+	errors: state == {} ? List<Error>() : (state as ApplicationState).errors,
+	document: state == {} || !(state as ApplicationState).document.present ? null : (state as ApplicationState).document.present
+})
 
 export default connect<StateProps, DispatchProps, AttrProps>(mapStateToProps, mapDispatchToProps)(Document);

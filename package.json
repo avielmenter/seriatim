@@ -9,8 +9,8 @@
   "main": "index.html",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "webpack-dev-server --open --mode production",
-    "start:dev": "webpack-dev-server --open --mode development",
+    "start": "webpack-dev-server --open --https --mode production",
+    "start:dev": "webpack-dev-server --open --https --mode development",
     "build": "webpack --mode production",
     "build:dev": "webpack --mode development",
     "postinstall": "webpack --mode production"

@@ -11,7 +11,8 @@ module.exports = (env, argv) => ({
     entry: {
         'main': './src/index.ts',
         'documents/documents': './src/documents/index.ts',
-        'editor/editor': './src/editor/index.tsx'
+        'editor/editor': './src/editor/index.tsx',
+        'privacy/privacy': './src/privacy/index.ts',
     },
     output: {
         path: path.join(__dirname, argv.mode === 'production' ? 'dist' : 'dist_dev')
@@ -93,6 +94,13 @@ module.exports = (env, argv) => ({
             favicon: './src/favicon.ico',
             inject: true,
             chunks: ['documents/documents']
+        }),
+        new HtmlWebPackPlugin({
+            template: './src/privacy/index.html',
+            filename: './privacy/index.html',
+            favicon: './src/favicon.ico',
+            inject: true,
+            chunks: ['privacy/privacy']
         }),
         new HtmlWebPackPlugin({
             template: './src/editor/index.html',

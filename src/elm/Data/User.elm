@@ -10,4 +10,5 @@ type alias User =
     , display_name : String
     , google_id : Maybe String
     , twitter_screen_name : Maybe String
+    , facebook_id : Maybe String
     }

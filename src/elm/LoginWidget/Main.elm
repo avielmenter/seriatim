@@ -72,6 +72,12 @@ view model =
                     , class "login"
                     ]
                     [ text "Login via Google" ]
+                , a
+                    [ href <| loginCallback model.flags "facebook"
+                    , id "loginFacebook"
+                    , class "login"
+                    ]
+                    [ text "Login via Facebook" ]
                 ]
 
         LoggedInAs u ->

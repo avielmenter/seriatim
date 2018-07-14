@@ -80,6 +80,7 @@ decodeUser =
         |> required "display_name" string
         |> optional "twitter_screen_name" (Json.Decode.map Just string) Nothing
         |> optional "google_id" (Json.Decode.map Just string) Nothing
+        |> optional "facebook_id" (Json.Decode.map Just string) Nothing
 
 
 decodeSeriatimResponse : Decoder a -> Decoder (SeriatimResult a)

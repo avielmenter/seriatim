@@ -1,6 +1,5 @@
 module DocumentList.Message exposing (..)
 
-import Http
 import SeriatimHttp exposing (SeriatimResult, HttpResult)
 import Data.Document exposing (Document, DocumentID)
 import Dom

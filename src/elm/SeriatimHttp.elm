@@ -77,8 +77,9 @@ decodeUser : Decoder User
 decodeUser =
     decode User
         |> required "user_id" decodeUserID
-        |> required "twitter_name" string
-        |> required "twitter_screen_name" string
+        |> required "display_name" string
+        |> optional "twitter_screen_name" (Json.Decode.map Just string) Nothing
+        |> optional "google_id" (Json.Decode.map Just string) Nothing
 
 
 decodeSeriatimResponse : Decoder a -> Decoder (SeriatimResult a)

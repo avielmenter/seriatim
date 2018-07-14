@@ -7,6 +7,7 @@ type UserID
 
 type alias User =
     { user_id : UserID
-    , twitter_name : String
-    , twitter_screen_name : String
+    , display_name : String
+    , google_id : Maybe String
+    , twitter_screen_name : Maybe String
     }

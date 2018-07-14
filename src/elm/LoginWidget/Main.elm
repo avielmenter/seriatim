@@ -35,6 +35,15 @@ type Msg
     = Load (HttpResult User)
 
 
+loginCallback : Flags -> String -> String
+loginCallback flags method =
+    flags.seriatim_server_url
+        ++ "login/"
+        ++ method
+        ++ "?url="
+        ++ (Http.encodeUri <| flags.seriatim_client_url ++ "documents")
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -52,19 +61,22 @@ view model =
             div []
                 [ p [] [ text "Access Seriatim using your preferred social media account:" ]
                 , a
-                    [ href <|
-                        model.flags.seriatim_server_url
-                            ++ "login/twitter?url="
-                            ++ (Http.encodeUri <| model.flags.seriatim_client_url ++ "documents")
+                    [ href <| loginCallback model.flags "twitter"
                     , id "loginTwitter"
                     , class "login"
                     ]
                     [ text "Login via Twitter" ]
+                , a
+                    [ href <| loginCallback model.flags "google"
+                    , id "loginGoogle"
+                    , class "login"
+                    ]
+                    [ text "Login via Google" ]
                 ]
 
         LoggedInAs u ->
             div []
-                [ p [] [ text <| "Welcome, " ++ u.twitter_name ++ "!" ]
+                [ p [] [ text <| "Welcome, " ++ u.display_name ++ "!" ]
                 , a [ href "/documents", id "viewDocuments", class "login" ]
                     [ text "View Your Documents" ]
                 , p [ id "logoutMessage" ]

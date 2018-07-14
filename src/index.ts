@@ -13,8 +13,9 @@ if (!SERIATIM_CLIENT_URL.includes("localhost")) {	// because we don't have https
 	let style = document.createElement("style") as HTMLStyleElement;
 	style.appendChild(document.createTextNode(""));
 
+	document.head.appendChild(style);
+
 	if (style.sheet)
 		(style.sheet as CSSStyleSheet).insertRule("#loginFacebook { visibility: hidden }");
 
-	document.head.appendChild(style);
 }

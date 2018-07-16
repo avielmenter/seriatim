@@ -62,7 +62,7 @@ const DocumentHeader: React.SFC<ComponentProps> = (props) => {
 										if (response.status == 'success')
 											actions.updateItemIDs(response.data);
 										else
-											props.actions.errors.addError(response.error);
+											props.actions.errors.addError(response);
 									})
 									.finally(() => props.actions.document.stopSaving());
 

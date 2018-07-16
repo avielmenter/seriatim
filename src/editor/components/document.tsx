@@ -112,7 +112,7 @@ class Document extends React.Component<ComponentProps> {
 							if (response.status == 'success')
 								actions.updateItemIDs(response.data);
 							else
-								this.props.actions.errors.addError(response.error);
+								this.props.actions.errors.addError(response);
 						})
 						.finally(() => actions.stopSaving());
 
@@ -254,10 +254,14 @@ class Document extends React.Component<ComponentProps> {
 				if (response.status == "success")
 					actions.loadDocument(response.data)
 				else
-					errors.addError(response.error);
+					errors.addError(response);
 			})
 			.catch(response => {
-				errors.addError("There was an error contacting the server.");
+				errors.addError({
+					status: "error",
+					code: "OTHER_ERROR",
+					error: "There was an error contacting the server."
+				});
 			});
 	}
 

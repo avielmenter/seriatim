@@ -8,8 +8,11 @@ export type SeriatimSuccess<T> = {
 	data: T
 }
 
+export type SeriatimErrorCode = "INSUFFICIENT_PERMISSIONS" | "NOT_LOGGED_IN" | "TOO_FEW_LOGIN_METHODS" | "NOT_FOUND" | "DATABASE_ERROR" | "OTHER_ERROR";
+
 export type SeriatimError = {
 	status: "error",
+	code: SeriatimErrorCode,
 	error: string
 }
 
@@ -154,6 +157,7 @@ async function parseHttpResponse<TParsed, TRaw>(response: Response, parse: (raw:
 	if (!parsed) {
 		return {
 			status: "error",
+			code: "OTHER_ERROR",
 			error: "Could not parse response from server."
 		}
 	}

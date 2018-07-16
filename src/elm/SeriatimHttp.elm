@@ -8,8 +8,23 @@ import Data.User exposing (User, UserID)
 import Date exposing (Date)
 
 
+type SeriatimErrorCode
+    = InsufficientPermissions
+    | NotLoggedIn
+    | TooFewLoginMethods
+    | NotFound
+    | DatabaseError
+    | OtherError
+
+
+type alias SeriatimError =
+    { error : String
+    , code : SeriatimErrorCode
+    }
+
+
 type alias SeriatimResult a =
-    Result String a
+    Result SeriatimError a
 
 
 type alias HttpResult a =
@@ -83,6 +98,32 @@ decodeUser =
         |> optional "facebook_id" (Json.Decode.map Just string) Nothing
 
 
+decodeErrorCode : Decoder SeriatimErrorCode
+decodeErrorCode =
+    string
+        |> andThen
+            (\codeStr ->
+                case codeStr of
+                    "INSUFFICIENT_PERMISSIONS" ->
+                        succeed InsufficientPermissions
+
+                    "NOT_LOGGED_IN" ->
+                        succeed NotLoggedIn
+
+                    "TOO_FEW_LOGIN_METHODS" ->
+                        succeed TooFewLoginMethods
+
+                    "NOT_FOUND" ->
+                        succeed NotFound
+
+                    "DATABASE_ERROR" ->
+                        succeed DatabaseError
+
+                    _ ->
+                        succeed OtherError
+            )
+
+
 decodeSeriatimResponse : Decoder a -> Decoder (SeriatimResult a)
 decodeSeriatimResponse jsonDecoder =
     (field "status" string)
@@ -91,7 +132,11 @@ decodeSeriatimResponse jsonDecoder =
                 case status of
                     "error" ->
                         (field "error" string)
-                            |> andThen (\error -> succeed (Err error))
+                            |> andThen
+                                (\desc ->
+                                    (field "code" decodeErrorCode)
+                                        |> andThen (\code -> succeed (Err { code = code, error = desc }))
+                                )
 
                     "success" ->
                         (field "data" jsonDecoder)

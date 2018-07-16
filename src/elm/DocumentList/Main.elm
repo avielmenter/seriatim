@@ -92,7 +92,7 @@ updateFromHttp status updateModel model r =
         Ok responseData ->
             case responseData of
                 Err msg ->
-                    ( { model | error = Just msg, status = status }, Cmd.none )
+                    ( { model | error = Just msg.error, status = status }, Cmd.none )
 
                 Ok data ->
                     let

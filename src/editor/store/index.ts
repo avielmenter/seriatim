@@ -9,9 +9,10 @@ import * as DocumentReducers from './reducers/document';
 import * as ErrorReducers from './reducers/errors';
 
 import * as Document from './data/document';
+import { Error } from './data/error';
 
 export type ApplicationState = {
-    errors: List<string>,
+    errors: List<Error>,
     saving: boolean,
     document: StateWithHistory<Document.Document | null>
 };

@@ -26,7 +26,8 @@ module.exports = (env, argv) => ({
                 test: /\.tsx?$/,
                 exclude: /node_modules/,
                 use: {
-                    loader: 'awesome-typescript-loader'
+                    loader: 'ts-loader',
+                    options: { appendTsSuffixTo: [/\.vue$/] }
                 }
             },
             {

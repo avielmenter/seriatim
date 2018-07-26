@@ -4,6 +4,7 @@ import * as ReactDOM from 'react-dom';
 import App from './app'
 
 import '../styles/editor.sass'
+import '../styles/editorComponent.sass'
 import '../styles/spinner.css'
 import '../styles/savingSpinner.css'
 

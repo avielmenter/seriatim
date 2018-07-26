@@ -1,0 +1,55 @@
+@import "common"
+
+=caption
+	font-size: 11pt
+	color: $spanishgray
+
+	a
+		color: inherit
+		&:hover
+			text-decoration: none
+
+#login
+	text-align: center
+
+	p
+		margin-bottom: 0.5em
+
+	a.login
+		display: block
+		margin-left: auto
+		margin-right: auto
+		margin-bottom: 0.5em
+
+		width: 4.5in
+		border: 1px solid $spanishgray
+		font-size: 14pt
+		padding-top: .25em
+		padding-bottom: .25em
+		color: white
+		text-decoration: none
+		font-weight: bold
+
+	a#loginTwitter
+		background: #0084B4
+		&:hover
+			background: #0084B4AA
+
+	a#loginGoogle
+		background: #DD4B39
+		&:hover
+			background: #DD4B39AA
+
+	a#loginFacebook
+		background: #3B5998
+		&:hover
+			background: #3B5998AA
+
+	a#viewDocuments
+		background: rgba(107, 127, 130, 1)
+		&:hover
+			background: rgba(107, 127, 130, .666)
+
+	#logoutMessage
+		+caption
+		margin-top: 1em

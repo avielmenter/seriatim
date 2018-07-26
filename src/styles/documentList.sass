@@ -1,0 +1,164 @@
+@import "common"
+
+#dlContent
+	display: flex
+	flex-direction: row
+
+	.errorMessage
+		width: 100%
+		background: #FF000044
+		padding: 0.25em 0.5em 0.25em
+		margin: 0.25em 0 0.25em
+		border: 1px solid darkred
+		border-radius: 3px
+		font-weight: bold
+		color: white
+
+		.removeError
+			float: right
+			color: #E7E7E7
+			&:hover
+				color: white
+				cursor: pointer
+
+	h3
+		margin-bottom: 1em
+
+	#refresh
+		padding-left: 1ch
+		color: gray
+
+		&:hover
+			cursor: pointer
+			color: slateblue
+
+		&::before
+			content: "\27F3"
+
+	#actions
+		width: 2.5in
+		margin-right: 0.5in
+
+		button
+			width: 100%
+			display: block
+			height: 2em
+			font-size: 12pt
+
+			background: none
+			text-align: left
+			padding-left: 3ch
+			border-bottom: 1px dashed $spanishgray
+			user-select: none
+
+			&:hover
+				cursor: pointer
+
+		button::before
+			font-weight: bold
+			display: inline-block
+			text-align: center
+			width: 3ch
+
+		button#createDocument
+			border-top: 1px dashed $spanishgray
+			&::before
+				content: "+"
+				color: green
+			&:hover
+				background: #00FF0011
+
+		button#renameDocument
+			&::before
+				content: "\270E"
+				color: slateblue
+			&:hover
+				background: #6A5ACD11
+
+		button#deleteDocument
+			&::before
+				content: "X"
+				color: red
+			&:hover
+				background: #FF000011
+
+		button.disabled
+			&::before
+				color: gray !important
+			&:hover
+				background: #00000011 !important
+
+	#documentList
+		flex: auto
+
+		table#documents
+			width: 100%
+			border-spacing: 0
+
+			#loadingRow
+				color: transparent
+
+				span
+					background: $spanishgray
+
+					opacity: 0.25
+					animation: pulseAnimation 2s infinite
+
+				@keyframes pulseAnimation
+					0%
+						opacity: 0.25
+					50%
+						opacity: 0.1
+					100%
+						opacity: 0.25
+
+				#loading1 span
+					margin-left: 2ch
+
+			tr:first-child td
+				font-weight: bold
+
+			tr td
+				border-bottom: 1px solid $spanishgray
+				height: 2em
+				width: 2in
+				vertical-align: middle
+
+				.remove
+					font-weight: bold
+					color: #F00
+					&:hover
+						text-decoration: underline
+
+				span, input
+					display: inline-block
+
+				span
+					vertical-align: middle
+					
+				input
+					padding-top: 0.5em
+					padding-bottom: 0.5em
+
+					font-size: 12pt
+					padding-left: 1em
+					padding-right: 1em
+					width: calc(100% - 2em)
+
+				a
+					color: teal
+					text-decoration: none
+					font-weight: bold
+					&:hover
+						text-decoration: underline
+
+			td:first-child
+				width: auto
+				span
+					padding-left: 1em
+
+			td:last-child
+				width: 0.5in
+			
+			tr.selected td
+				background-color: #FFFFFF55

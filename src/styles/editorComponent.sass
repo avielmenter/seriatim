@@ -1,0 +1,110 @@
+@import "common"
+
+=PageComponent
+	margin-left: 0.25in
+	position: relative
+	display: flex
+	align-items: center
+
+	$itemContentHoverColor: #EEEEFF
+	.itemContent:hover
+		background: $itemContentHoverColor
+
+	.buttons:hover ~ .itemContent
+		background: $itemContentHoverColor
+
+	.selectedItem
+		background: $selectedBG
+
+	.itemIndent
+		background: lightgray
+		border: none
+		height: 1px
+		flex: 0 0 .2in
+		margin-right: .05in
+
+.focusedItem .itemIndent
+		background: lightblue !important
+		height: 2px !important
+
+		
+=ItemContent
+	word-wrap: break-word
+	min-height: 24pt
+	padding-top: 6pt
+	flex: auto
+
+	h1, h2, h3, h4, h5, h6
+		margin-bottom: 0
+		margin-top: 0
+	
+	h1.title,h1.titleEmpty
+		font-size: 28pt
+		
+	h1.titleEmpty
+		color: $emptyTextColor
+	
+	p
+		font-size: 14pt
+		margin-top: 0
+		margin-bottom: 0.5em
+		font-weight: normal
+
+	a
+		color: #0AC
+		text-decoration: none
+		&:hover
+			text-decoration: underline
+		
+	li
+		font-size: 14pt
+		list-style-position: inside
+
+	blockquote
+		font-size: 12pt
+		p
+			font-size: 12pt
+
+		margin-left: 4ch
+
+	.itemContentRenderedEmpty
+		color: lightgray
+
+.Header
+	+PageComponent
+
+	.itemContent
+		+ItemContent
+		border-bottom: 1px solid #000
+		margin-bottom: 0.5em
+
+.Item
+	+PageComponent
+
+	.itemContent
+		+ItemContent	
+		border-bottom: 1px solid #CCC
+
+=ItemButton
+	background: transparent
+	border: none
+	font-size: 14pt
+	font-weight: bold
+
+.collapseExpand
+	button
+		+ItemButton
+		color: gray
+		padding-left: 0
+	
+	position: absolute
+	left: -0.8in
+	width: 0.8in
+	text-align: right
+
+.editArea
+	width: calc(100%)
+	font-family: $monoFont
+	border: 1px solid lightgray
+	font-size: 12pt
+	overflow: hidden

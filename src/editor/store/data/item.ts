@@ -14,11 +14,11 @@ export type Item = {
 	}
 }
 
-export interface ItemTree {
+export type ListItem = {
 	readonly item: Item,
 	readonly focused: boolean,
 	readonly selected: boolean,
-	readonly children: List<ItemTree>
+	readonly indent: number,
 }
 
 const ID_POOL_SIZE = 1000;

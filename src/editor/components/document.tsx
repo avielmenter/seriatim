@@ -4,7 +4,7 @@ import { Map, List } from 'immutable';
 
 import { Error } from '../store/data/error';
 import { Document as DocumentData, getLastItem, ItemDictionary, getSelectedItems } from '../store/data/document';
-import { Item as ItemData, ItemTree, ItemID } from '../store/data/item';
+import { Item as ItemData, ListItem, ItemID } from '../store/data/item';
 
 import Item from './item';
 import DocumentHeader from './documentHeader';
@@ -32,19 +32,6 @@ class Document extends React.Component<ComponentProps> {
 	constructor(props: ComponentProps) {
 		super(props);
 		this.documentDiv = React.createRef<HTMLDivElement>();
-	}
-
-	getDocumentTree(doc: DocumentData, selectedItems: ItemDictionary, nodeID: ItemID): ItemTree {
-		const rootItem = doc.items.get(nodeID);
-
-		const nodeChildren = rootItem.children.map(child => this.getDocumentTree(doc, selectedItems, child));
-
-		return {
-			item: rootItem,
-			focused: doc.focusedItemID == nodeID,
-			selected: selectedItems.has(nodeID),
-			children: nodeChildren.toList()
-		};
 	}
 
 	getTextAreaSelection(): string | undefined {
@@ -265,10 +252,30 @@ class Document extends React.Component<ComponentProps> {
 			});
 	}
 
+	getDocumentList(doc: DocumentData, selectedItems: ItemDictionary, curr: ItemID, indent: number = 0): List<ListItem> {
+		const currItem: ListItem = {
+			item: doc.items.get(curr),
+			focused: doc.focusedItemID == curr,
+			selected: selectedItems.has(curr),
+			indent
+		};
+
+		console.log("FOUND ITEM: " + currItem.item.text);
+
+		const currItemList = List<ListItem>([currItem]);
+
+		return currItem.item.view.collapsed
+			? currItemList
+			: currItem.item.children.reduce(
+				(prev, childID) => prev.concat(this.getDocumentList(doc, selectedItems, childID, indent + 1)).toList(),
+				currItemList
+			);
+	}
+
 	render() {
 		const doc = this.props.document;
 
-		const tree = !doc ? undefined : this.getDocumentTree(doc, getSelectedItems(doc), doc.rootItemID);
+		const list = !doc ? undefined : this.getDocumentList(doc, getSelectedItems(doc), doc.rootItemID);
 
 		document.title = !doc ? "..." : doc.title + " | Seriatim";
 
@@ -278,7 +285,7 @@ class Document extends React.Component<ComponentProps> {
 				{this.props.errors.map((error, index) => <ErrorMessage error={error} index={index} key={index} />)}
 				<div id="documentScrollContainer">
 					<div id="document" tabIndex={0} ref={this.documentDiv}>
-						{doc ? <Item node={tree as ItemTree} key={(tree as ItemTree).item.itemID} /> : <LoadingSpinner />}
+						{list ? list.map(i => <Item node={i} key={i.item.itemID} />) : <LoadingSpinner />}
 					</div>
 				</div>
 			</main>

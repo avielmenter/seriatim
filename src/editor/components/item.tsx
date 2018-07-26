@@ -1,14 +1,16 @@
 import * as React from 'react';
 import { connect } from 'react-redux';
+
+import { Range } from 'immutable';
 import * as classNames from 'classnames';
 
 import { ApplicationState, DispatchProps, mapDispatchToProps, handleClick } from '../store';
-import { ItemTree, ItemID, ItemType, Item as ItemData } from '../store/data/item';
+import { ListItem, ItemID, ItemType, Item as ItemData } from '../store/data/item';
 
 import ItemContent from './itemContent';
 
 type AttrProps = {
-	node: ItemTree
+	node: ListItem
 }
 
 type StateProps = {
@@ -19,7 +21,7 @@ type ComponentProps = StateProps & AttrProps & DispatchProps;
 
 const Item: React.SFC<ComponentProps> = (props) => {
 	const node = props.node;
-	const { item, children } = props.node;
+	const { item } = props.node;
 	const { text } = item;
 	const { itemType } = item.view;
 
@@ -27,24 +29,20 @@ const Item: React.SFC<ComponentProps> = (props) => {
 
 	const classes = classNames({
 		'Header': itemType == 'Title' || itemType == 'Header',
-		'Item': itemType == 'Item'
+		'Item': itemType == 'Item',
+		'focusedItem': node.focused
 	});
 
 	return (
 		<div className={classes} id={item.itemID}>
+			{Range(0, node.indent).map(i => <div className="itemIndent" key={"itemIndent_" + item.itemID + "_" + i} />)}
 			<div className="collapseExpand">
-				{node.focused && <div className="showFocused">
-					&ndash;
-				</div>}
-				{item.children.count() > 0 && <button className={item.view.collapsed ? "expandButton" : "collapseButton"}
+				{item.view.itemType != "Title" && item.children.count() > 0 && <button className={item.view.collapsed ? "expandButton" : "collapseButton"}
 					onClick={(event) => handleClick(event, () => actions.toggleItemCollapse(item))}>
 					{item.view.collapsed ? "▶" : "▼"}
 				</button>}
 			</div>
 			<ItemContent node={props.node} />
-			{!item.view.collapsed && children.map(child =>
-				<Item {...props} node={child} key={child.item.itemID} />
-			)}
 		</div>
 	);
 };

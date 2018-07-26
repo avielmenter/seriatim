@@ -6,14 +6,14 @@ import * as classNames from 'classnames';
 
 import { DispatchProps, mapDispatchToProps, handleClick } from '../store';
 
-import { ItemTree } from '../store/data/item';
+import { ListItem } from '../store/data/item';
 
 type StateProps = {
 
 }
 
 type AttrProps = {
-	node: ItemTree
+	node: ListItem
 }
 
 type ComponentProps = StateProps & AttrProps & DispatchProps;
@@ -63,6 +63,15 @@ class ItemContent extends React.Component<ComponentProps> {
 			actions.setFocus(item);
 	}
 
+	resizeTextArea() {
+		const textArea = this.editArea.current;
+		if (!textArea)
+			return;
+
+		textArea.style.height = 'auto';
+		textArea.style.height = (25 + textArea.scrollHeight) + 'px';
+	}
+
 	render() {
 		const node = this.props.node;
 		const item = this.props.node.item;
@@ -86,8 +95,14 @@ class ItemContent extends React.Component<ComponentProps> {
 				}
 				{node.focused &&
 					<textarea id={this.getTextAreaId()} className="editArea"
-						onChange={(event) => actions.updateItemText(item, event.target.value)}
-						onFocus={this.setSelectionRange}
+						onChange={(event) => {
+							this.resizeTextArea();
+							actions.updateItemText(item, event.target.value)
+						}}
+						onFocus={(event) => {
+							this.resizeTextArea();
+							this.setSelectionRange();
+						}}
 						value={item.text}
 						ref={this.editArea}
 					></textarea>

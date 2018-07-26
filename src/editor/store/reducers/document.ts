@@ -810,7 +810,6 @@ function undoableReducer(document: Document.Document | undefined | null, anyActi
 const skipHistoryFor: string[] = ["CopyItem", "CopySelection", "SetFocus", "IncrementFocus", "DecrementFocus", "SetFocus", "LoadDocument", "InitializeDocument", "UpdateItemIDs", "StartSaving", "StopSaving"];
 
 export const reducer = undoable(undoableReducer, {
-	groupBy: groupByActionTypes("UpdateItemText"),
 	ignoreInitialState: true,
 	filter: (action, curr, prev) => !curr ? true : !skipHistoryFor.includes(action.type) && !Document.equals(curr, prev._latestUnfiltered)
 });

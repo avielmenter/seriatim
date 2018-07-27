@@ -10,7 +10,7 @@ require('dotenv').config();
 module.exports = (env, argv) => ({
     entry: {
         'main': './src/index.ts',
-        'documents/documents': './src/documents/index.ts',
+        'app': './src/200.ts',
         'editor/editor': './src/editor/index.tsx',
         'privacy/privacy': './src/privacy/index.ts',
     },
@@ -18,7 +18,10 @@ module.exports = (env, argv) => ({
         path: path.join(__dirname, argv.mode === 'production' ? 'dist' : 'dist_dev')
     },
     devServer: {
-        contentBase: argv.mode === 'production' ? './dist' : './dist_dev'
+        contentBase: argv.mode === 'production' ? './dist' : './dist_dev',
+        historyApiFallback: {
+            index: '/200.html'
+        }
     },
     module: {
         rules: [
@@ -90,11 +93,11 @@ module.exports = (env, argv) => ({
             chunks: ['main']
         }),
         new HtmlWebPackPlugin({
-            template: './src/documents/index.html',
-            filename: './documents/index.html',
+            template: './src/200.html',
+            filename: './200.html',
             favicon: './src/favicon.ico',
             inject: true,
-            chunks: ['documents/documents']
+            chunks: ['app']
         }),
         new HtmlWebPackPlugin({
             template: './src/privacy/index.html',

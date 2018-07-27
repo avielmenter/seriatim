@@ -2,7 +2,7 @@ module DocumentList.Views.LoadingRow exposing (..)
 
 import Html exposing (..)
 import Html.Attributes exposing (id)
-import DocumentList.Message exposing (..)
+import Message exposing (..)
 
 
 view : Html Msg

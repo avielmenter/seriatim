@@ -1,7 +1,7 @@
 module DocumentList.Views.DocumentTableHeader exposing (view)
 
 import Html exposing (..)
-import DocumentList.Message exposing (..)
+import Message exposing (..)
 
 
 view : Html Msg

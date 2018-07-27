@@ -5,7 +5,7 @@ import DocumentList.Views.Document as Document
 import DocumentList.Views.DocumentTableHeader as TableHeader
 import Html exposing (Html, text)
 import Html.Attributes exposing (id)
-import DocumentList.Message exposing (..)
+import Message exposing (..)
 
 
 type alias Model =

@@ -3,7 +3,8 @@ module DocumentList.Views.Actions exposing (view)
 import Html exposing (Html, text)
 import Html.Attributes exposing (id, class)
 import Html.Events exposing (onClick)
-import DocumentList.Message exposing (..)
+import DocumentList.Message exposing (Msg(..))
+import Message exposing (..)
 
 
 type alias Model =
@@ -11,13 +12,13 @@ type alias Model =
     }
 
 
-view : Model -> Html Msg
+view : Model -> Html Message.Msg
 view model =
     Html.div [ id "actions" ]
         [ Html.h3 [] [ text "Actions" ]
         , Html.button
             [ id "createDocument"
-            , onClick CreateDocument
+            , onClick <| DocumentListMessage CreateDocument
             ]
             [ text "Create"
             ]
@@ -25,7 +26,7 @@ view model =
             ([ id "renameDocument"
              ]
                 ++ (if model.documentSelected then
-                        [ onClick FocusSelected ]
+                        [ onClick <| DocumentListMessage FocusSelected ]
                     else
                         [ class "disabled" ]
                    )
@@ -36,7 +37,7 @@ view model =
             ([ id "deleteDocument"
              ]
                 ++ (if model.documentSelected then
-                        [ onClick DeleteSelected ]
+                        [ onClick <| DocumentListMessage DeleteSelected ]
                     else
                         [ class "disabled" ]
                    )

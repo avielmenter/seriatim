@@ -4,12 +4,13 @@ import Html exposing (Html, text, div)
 import Html.Events exposing (onClick, on)
 import Html.Attributes exposing (class)
 import Json.Decode
-import DocumentList.Message exposing (..)
+import DocumentList.Message exposing (Msg(..))
+import Message exposing (..)
 import Data.Document exposing (Document, DocumentID)
 import Util exposing (seriatimDateString)
 
 
-onEnter : Msg -> Html.Attribute Msg
+onEnter : Message.Msg -> Html.Attribute Message.Msg
 onEnter msg =
     let
         isEnter code =
@@ -38,7 +39,7 @@ type alias Model =
     }
 
 
-view : Model -> Html Msg
+view : Model -> Html Message.Msg
 view model =
     let
         focusedText =
@@ -61,7 +62,7 @@ view model =
                 { stopPropagation = True
                 , preventDefault = False
                 }
-                (Json.Decode.succeed (Select doc.document_id))
+                (Json.Decode.succeed (DocumentListMessage <| Select doc.document_id))
              ]
                 ++ (if selected then
                         [ Html.Attributes.class "selected" ]
@@ -86,8 +87,8 @@ view model =
                             , Html.Attributes.id (inputID doc.document_id)
                             , Html.Attributes.value inputText
                             , Html.Attributes.autofocus True
-                            , Html.Events.onInput TitleInputChange
-                            , Html.Events.onBlur UnfocusTitle
+                            , Html.Events.onInput (\s -> DocumentListMessage <| TitleInputChange s)
+                            , Html.Events.onBlur (DocumentListMessage UnfocusTitle)
                             ]
                             []
                 ]
@@ -95,7 +96,7 @@ view model =
             , Html.td [] [ text <| Maybe.withDefault "never" <| Maybe.map seriatimDateString doc.modified_at ]
             , Html.td []
                 [ Html.span
-                    [ onClick (DeleteDocument doc.document_id)
+                    [ onClick (DocumentListMessage <| DeleteDocument doc.document_id)
                     , class "remove"
                     ]
                     [ text "X" ]

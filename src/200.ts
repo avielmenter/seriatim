@@ -2,7 +2,7 @@ import './styles/main.sass';
 import './styles/documentList.sass';
 
 var Elm = require('./elm/Main.elm');
-var mountNode = document.getElementsByTagName('main')[0];
+var mountNode = document.getElementById('app');
 
 var app = Elm.Main.embed(mountNode, {
 	seriatim_client_url: SERIATIM_CLIENT_URL,

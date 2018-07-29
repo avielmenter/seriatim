@@ -9,7 +9,7 @@ This repository contains only the code for the Seriatim front-end website and ed
 Seriatim is currently in early development. It is not a complete application.
 
 ## Try It!
-You can try the most recent working version of the Seriatim outline editor at [seriatim.io](http://seriatim.io). Note that Seriatim is still in early development. As such, many basic features are still unimplemented, and your saved data may be lost as development continues.
+You can try the most recent working version of Seriatim at [seriatim.io](https://seriatim.io). Note that Seriatim is still in early development. As such, many basic features are still unimplemented, and your saved data may be lost as development continues.
 
 # Setup
 If you want to download and run Seriatim yourself, you can do so by following these steps:

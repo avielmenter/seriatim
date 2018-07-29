@@ -1,8 +1,7 @@
 /* Copyright (c) Tobias Ahlin, under the MIT License */
 .spinner {
-	margin: 0 auto 0;
 	width: 70px;
-	text-align: center;
+	text-align: inherit;
   }
   
   .spinner > div {

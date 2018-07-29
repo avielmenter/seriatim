@@ -14,6 +14,10 @@ body
 	font-family: "Helvetica", "Arial", sans-serif
 	background: $antiflashwhite
 
+.heightTransition
+	transition: all 0.4s ease-in-out
+	overflow: hidden
+
 .flexibleContentWidth
 	margin-left: 0.5in
 	margin-right: 0.5in
@@ -32,8 +36,20 @@ header
 	background: $aurometalsaurus
 	color: white
 
+	.headerContent
+		padding-top: 0.3em
+		padding-bottom: 0.5em
+
+	.flexHeader
+		display: flex
+		align-items: center
+		height: 1.5em
+
 	#logo_bullet
 		color: lightgray
+
+	#headerLogin
+		float: right
 
 	h3
 		img.mini_logo
@@ -42,13 +58,23 @@ header
 			margin-bottom: -0.2em
 			display: inline-block
 			vertical-align: center
-
-		padding-top: 0.3em
-		padding-bottom: 0.5em
  	
 		a
 			color: white
 			text-decoration: none
+
+	h4
+		text-align: right
+		float: right
+		flex: 1
+
+	#userSettingsIcon
+		margin-right: 0.5ch
+		color: lightgray
+	
+	#userSettingsIconActive
+		margin-right: 0.5ch
+		color: cyan
 
 	h2
 		margin-top: 1em
@@ -79,6 +105,13 @@ header
 		color: inherit
 		&:hover
 			text-decoration: none
+
+.caption
+	+caption
+
+.headerCaption
+	+caption
+	color: lightgray
 
 footer
 	max-width: 11in

@@ -10,6 +10,10 @@ import Navigation exposing (Location)
 import Mouse
 import Keyboard
 import DocumentList.View
+import Settings.View
+import Views.NotFound as NotFound
+import Views.LoginGreeting as LoginGreeting
+import Views.Logo as Logo
 import Util exposing (Flags)
 
 
@@ -24,18 +28,13 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
     Html.div []
-        [ Html.header []
+        [ Html.header [] <|
             [ Html.div
-                [ class "headerContent flexibleContentWidth" ]
-                [ Html.h3 []
-                    [ Html.a [ href "./index.html" ]
-                        [ Html.img [ class "mini_logo", src "./assets/logo.png", alt "logo" ] []
-                        , text "seriatim "
-                        , Html.span [ id "logo_bullet" ] [ text "•" ]
-                        , text " io"
-                        ]
-                    ]
+                [ class "headerContent flexibleContentWidth flexHeader" ]
+                [ Logo.view
+                , LoginGreeting.view model
                 ]
+            , Settings.View.view model.settings
             ]
         , Html.main_ [ class "flexibleContentWidth" ]
             [ case model.route of
@@ -43,17 +42,7 @@ view model =
                     DocumentList.View.view model
 
                 _ ->
-                    Html.div
-                        [ id "msg404" ]
-                        [ Html.h2 []
-                            [ Html.em [] [ text "Oops! " ]
-                            ]
-                        , Html.h3 []
-                            [ text "We could not find a URL at the specified path. Click "
-                            , Html.a [ href "/" ] [ text "here" ]
-                            , text " to return home."
-                            ]
-                        ]
+                    NotFound.view {}
             ]
         ]
 

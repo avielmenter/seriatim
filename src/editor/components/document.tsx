@@ -285,7 +285,7 @@ class Document extends React.Component<ComponentProps> {
 				{this.props.errors.map((error, index) => <ErrorMessage error={error} index={index} key={index} />)}
 				<div id="documentScrollContainer">
 					<div id="document" tabIndex={0} ref={this.documentDiv}>
-						{list ? list.map(i => <Item node={i} key={i.item.itemID} />) : <LoadingSpinner />}
+						{list ? list.map(i => <Item node={i} key={i.item.itemID} />) : <div id="loadingDocument"><LoadingSpinner /></div>}
 					</div>
 				</div>
 			</main>

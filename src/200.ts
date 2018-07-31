@@ -3,6 +3,7 @@ import './styles/documentList.sass';
 import './styles/spinner.css'
 import './styles/savingSpinner.css'
 import './styles/settings.sass'
+import './styles/login.sass'
 
 var Elm = require('./elm/Main.elm');
 var mountNode = document.getElementById('app');

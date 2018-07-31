@@ -13,7 +13,6 @@ import Data.User exposing (User)
 type Msg
     = None
     | OnLocationChange Location
-    | UpdateUser (HttpResult User)
     | DocumentListMessage DocumentList.Msg
     | LoginMessage Login.Msg
     | SettingsMessage Settings.Msg

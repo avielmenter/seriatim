@@ -1,56 +1,39 @@
 module Settings.Model exposing (..)
 
 import Util exposing (Flags)
+import LoginWidget.Model exposing (LoginStatus)
 
 
 type Setting a
-    = Set a
-    | Editing a a
-    | Saving a a
-    | Saved a
-    | Unset
+    = Set
+    | Editing a
+    | Saving a
+    | Saved
 
 
-getSettingValue : Setting a -> Maybe a
-getSettingValue setting =
+getSettingValue : Setting a -> a -> a
+getSettingValue setting orig =
     case setting of
-        Set v ->
-            Just v
+        Set ->
+            orig
 
-        Editing v _ ->
-            Just v
+        Editing v ->
+            v
 
-        Saving v _ ->
-            Just v
+        Saving v ->
+            v
 
-        Saved v ->
-            Just v
-
-        Unset ->
-            Nothing
-
-
-getOriginalValue : Setting a -> Maybe a
-getOriginalValue setting =
-    case setting of
-        Set v ->
-            Just v
-
-        Editing _ v ->
-            Just v
-
-        Saving _ v ->
-            Just v
-
-        Saved v ->
-            Just v
-
-        Unset ->
-            Nothing
+        Saved ->
+            orig
 
 
 type alias Model =
-    { displayName : Setting String
+    { currentUser : LoginStatus
+    , displayName : Setting String
+    , hasFacebookLogin : Setting Bool
+    , hasGoogleLogin : Setting Bool
+    , hasTwitterLogin : Setting Bool
     , visible : Bool
     , config : Flags
+    , error : Maybe String
     }

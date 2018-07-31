@@ -1,11 +1,15 @@
 module Settings.Message exposing (..)
 
-import LoginWidget.Model exposing (LoginStatus)
+import SeriatimHttp exposing (HttpResult)
+import Data.User exposing (User)
+import LoginWidget.Model exposing (LoginMethod)
 
 
 type Msg
-    = LoadUser LoginStatus
+    = LoadUser (HttpResult User)
     | ToggleSettings
     | EditName String
     | SaveName
     | RejectName
+    | RemoveLoginMethod LoginMethod
+    | ClearError

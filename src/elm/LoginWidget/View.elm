@@ -1,21 +1,10 @@
 module LoginWidget.View exposing (view)
 
-import Http
 import Html exposing (..)
 import Html.Attributes exposing (href, id, class)
 import Message exposing (Msg(..))
-import LoginWidget.Model exposing (Model, LoginStatus(..))
+import LoginWidget.Model exposing (..)
 import Views.LoadingSpinner as LoadingSpinner
-import Util exposing (Flags)
-
-
-loginCallback : Flags -> String -> String
-loginCallback flags method =
-    flags.seriatim_server_url
-        ++ "login/"
-        ++ method
-        ++ "?url="
-        ++ (Http.encodeUri <| flags.seriatim_client_url ++ "documents")
 
 
 view : Model -> Html Msg
@@ -25,19 +14,19 @@ view model =
             div []
                 [ p [] [ text "Access Seriatim using your preferred social media account:" ]
                 , a
-                    [ href <| loginCallback model.flags "twitter"
+                    [ href <| loginCallback model.flags Twitter
                     , id "loginTwitter"
                     , class "login"
                     ]
                     [ text "Login via Twitter" ]
                 , a
-                    [ href <| loginCallback model.flags "google"
+                    [ href <| loginCallback model.flags Google
                     , id "loginGoogle"
                     , class "login"
                     ]
                     [ text "Login via Google" ]
                 , a
-                    [ href <| loginCallback model.flags "facebook"
+                    [ href <| loginCallback model.flags Facebook
                     , id "loginFacebook"
                     , class "login"
                     ]
@@ -52,10 +41,7 @@ view model =
                 , p [ id "logoutMessage" ]
                     [ text "Not you? "
                     , a
-                        [ href <|
-                            model.flags.seriatim_server_url
-                                ++ "login/logout?url="
-                                ++ (Http.encodeUri model.flags.seriatim_client_url)
+                        [ href <| logoutCallback model.flags
                         , id "logout"
                         ]
                         [ text "log out" ]

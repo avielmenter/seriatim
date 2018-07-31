@@ -19,7 +19,6 @@ type alias Model =
     , config : Flags
     , route : Route
     , settings : Settings.Model.Model
-    , currentUser : LoginStatus
     }
 
 
@@ -36,16 +35,20 @@ init flags location =
             }
 
         initSettings =
-            { displayName = Unset
+            { currentUser = LoginWidget.Model.Loading
+            , displayName = Set
+            , hasFacebookLogin = Set
+            , hasTwitterLogin = Set
+            , hasGoogleLogin = Set
             , config = flags
             , visible = location.hash == "#settings"
+            , error = Nothing
             }
     in
         ( { documentList = initDocList
           , config = flags
           , route = parseLocation location
           , settings = initSettings
-          , currentUser = LoginWidget.Model.Loading
           }
         , Cmd.batch
             [ Http.send (\r -> DocumentListMessage <| LoadDocuments r) (loadDocumentsRequest flags.seriatim_server_url)

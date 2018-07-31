@@ -20,21 +20,19 @@ updateDocumentList dlm model =
         ( { model | documentList = updatedDocumentList }, command )
 
 
-updateUser : LoginWidget.Message.Msg -> Model -> ( Model, Cmd Msg )
-updateUser lm model =
+updateLogin : LoginWidget.Message.Msg -> Model -> ( Model, Cmd Msg )
+updateLogin lm model =
     let
-        ( updatedUser, userCommand ) =
-            LoginWidget.Update.update lm { status = model.currentUser, flags = model.config }
+        ( updatedLogin, command ) =
+            LoginWidget.Update.update lm { status = model.settings.currentUser, flags = model.config }
 
-        ( updatedSettings, settingsCommand ) =
-            Settings.Update.update (Settings.Message.LoadUser updatedUser.status) model.settings
+        settings =
+            model.settings
+
+        updatedSettings =
+            { settings | currentUser = updatedLogin.status }
     in
-        ( { model
-            | settings = updatedSettings
-            , currentUser = updatedUser.status
-          }
-        , Cmd.batch [ userCommand, settingsCommand ]
-        )
+        ( { model | settings = updatedSettings }, command )
 
 
 updateSettings : Settings.Message.Msg -> Model -> ( Model, Cmd Msg )
@@ -67,12 +65,6 @@ update msg model =
                 , Cmd.none
                 )
 
-        UpdateUser (Ok (Ok u)) ->
-            updateUser (LoginWidget.Message.Load (Ok (Ok u))) model
-
-        UpdateUser _ ->
-            ( model, Cmd.none )
-
         SettingsMessage sm ->
             updateSettings sm model
 
@@ -80,7 +72,7 @@ update msg model =
             updateDocumentList dlm model
 
         LoginMessage lm ->
-            updateUser lm model
+            updateLogin lm model
 
         MouseEvent m ->
             case model.route of

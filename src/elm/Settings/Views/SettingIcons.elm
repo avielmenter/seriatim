@@ -16,20 +16,17 @@ view : Model a -> Html Msg
 view model =
     Html.div [ class "settingIcons" ]
         (case model.setting of
-            Set _ ->
+            Set ->
                 []
 
-            Editing _ _ ->
+            Editing _ ->
                 [ Html.span [ class "settingConfirm", onClick model.onConfirm ] [ text "✔" ]
                 , Html.span [ class "settingReject", onClick model.onReject ] [ text "✘" ]
                 ]
 
-            Saving _ _ ->
+            Saving _ ->
                 [ SavingSpinner.view ]
 
-            Saved _ ->
+            Saved ->
                 [ Html.span [ class "settingSaved" ] [ text "saved" ] ]
-
-            Unset ->
-                []
         )

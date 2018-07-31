@@ -13,7 +13,7 @@ import Settings.Message exposing (..)
 view : Model -> Html Message.Msg
 view model =
     Html.h4 [ onClick (Message.SettingsMessage Settings.Message.ToggleSettings) ] <|
-        case model.currentUser of
+        case model.settings.currentUser of
             LoggedInAs u ->
                 [ Html.span
                     [ id <|

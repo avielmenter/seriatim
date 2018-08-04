@@ -86,6 +86,7 @@ decodeDocument =
         |> optional "title" string "Untitled Document"
         |> required "created_at" decodeRocketDate
         |> optional "modified_at" (Json.Decode.map Just decodeRocketDate) Nothing
+        |> required "publicly_viewable" bool
 
 
 decodeUser : Decoder User

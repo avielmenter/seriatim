@@ -7,6 +7,8 @@ import Json.Decode
 import DocumentList.Message exposing (Msg(..))
 import Message exposing (..)
 import Data.Document exposing (Document, DocumentID)
+import DocumentList.Model exposing (ListDocument)
+import DocumentList.Views.DocumentSettings as DocumentSettings
 import Util exposing (seriatimDateString)
 
 
@@ -35,7 +37,7 @@ rowID (Data.Document.DocumentID idStr) =
 type alias Model =
     { selected : Bool
     , focusedText : Maybe String
-    , doc : Document
+    , doc : ListDocument
     }
 
 
@@ -56,13 +58,13 @@ view model =
             docID
     in
         Html.tr
-            ([ Html.Attributes.id (rowID doc.document_id)
+            ([ Html.Attributes.id (rowID doc.data.document_id)
              , Html.Events.onWithOptions
                 "click"
                 { stopPropagation = True
                 , preventDefault = False
                 }
-                (Json.Decode.succeed (DocumentListMessage <| Select doc.document_id))
+                (Json.Decode.succeed (DocumentListMessage <| Select doc.data.document_id))
              ]
                 ++ (if selected then
                         [ Html.Attributes.class "selected" ]
@@ -75,30 +77,36 @@ view model =
                     Nothing ->
                         Html.span [{- onClick (FocusOn doc) -}]
                             [ Html.a
-                                [ Html.Attributes.href ("/editor/?" ++ (idStr doc.document_id))
+                                [ Html.Attributes.href ("/editor/?" ++ (idStr doc.data.document_id))
                                 , Html.Attributes.target "_blank"
                                 ]
-                                [ text doc.title ]
+                                [ text doc.data.title ]
                             ]
 
                     Just inputText ->
                         Html.input
                             [ Html.Attributes.type_ "text"
-                            , Html.Attributes.id (inputID doc.document_id)
+                            , Html.Attributes.id (inputID doc.data.document_id)
                             , Html.Attributes.value inputText
                             , Html.Attributes.autofocus True
+                            , Html.Attributes.class "documentName"
                             , Html.Events.onInput (\s -> DocumentListMessage <| TitleInputChange s)
                             , Html.Events.onBlur (DocumentListMessage UnfocusTitle)
                             ]
                             []
                 ]
-            , Html.td [] [ text <| seriatimDateString doc.created_at ]
-            , Html.td [] [ text <| Maybe.withDefault "never" <| Maybe.map seriatimDateString doc.modified_at ]
-            , Html.td []
+            , Html.td [] [ text <| seriatimDateString doc.data.created_at ]
+            , Html.td [] [ text <| Maybe.withDefault "never" <| Maybe.map seriatimDateString doc.data.modified_at ]
+            , Html.td [] <|
                 [ Html.span
-                    [ onClick (DocumentListMessage <| DeleteDocument doc.document_id)
-                    , class "remove"
+                    [ class "documentSettingsIcon"
+                    , onClick (DocumentListMessage <| ToggleDocumentSettings doc.data)
                     ]
-                    [ text "X" ]
+                    [ text "⋮" ]
                 ]
+                    ++ (if doc.settings.visible then
+                            [ DocumentSettings.view doc ]
+                        else
+                            []
+                       )
             ]

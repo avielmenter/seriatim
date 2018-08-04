@@ -44,6 +44,12 @@ main
 	font-weight: bold
 	color: white
 
+	a
+		color: white
+		text-decoration: underline
+		&:hover
+			text-decoration: none
+
 	.removeError
 		float: right
 		color: #E7E7E7
@@ -68,6 +74,15 @@ main
 
 	h1.empty
 		color: $emptyTextColor
+
+	#readOnlyMessage
+		color: gray
+		font-size: 10pt
+		font-weight: normal
+		#copyDocument
+			text-decoration: underline
+			&:hover
+				text-decoration: none
 	
 	#documentMenu
 		padding-left: 0.25in

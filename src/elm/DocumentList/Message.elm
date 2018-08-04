@@ -8,14 +8,17 @@ import Keyboard
 
 
 type Msg
-    = None
-    | LoadDocuments (HttpResult (List Document))
+    = LoadDocuments (HttpResult (List Document))
     | DocumentCreated (HttpResult Document)
     | CreateDocument
+    | CopyDocument DocumentID
     | DeleteDocument DocumentID
     | DocumentDeleted (HttpResult Document)
     | DocumentRenamed (HttpResult Document)
+    | SavePublicViewability DocumentID Bool
+    | PublicViewabilitySaved DocumentID (HttpResult Document)
     | FocusOn Document
+    | ToggleDocumentSettings Document
     | FocusResult (Result Dom.Error ())
     | TitleInputChange String
     | UnfocusTitle

@@ -6,8 +6,6 @@ import Settings.Message as Settings
 import Navigation exposing (Location)
 import Mouse
 import Keyboard
-import SeriatimHttp exposing (HttpResult)
-import Data.User exposing (User)
 
 
 type Msg

@@ -5,14 +5,14 @@ type StateProps = {
 }
 
 type AttrProps = {
-
+	visible?: boolean
 }
 
 type ComponentProps = StateProps & AttrProps;
 
 const SavingSpinner: React.SFC<ComponentProps> = (props) => {
 	return (
-		<div className="sk-fading-circle">
+		<div className="sk-fading-circle" style={{ visibility: props.visible || props.visible === undefined ? 'visible' : 'hidden' }}>
 			<div className="sk-circle1 sk-circle"></div>
 			<div className="sk-circle2 sk-circle"></div>
 			<div className="sk-circle3 sk-circle"></div>

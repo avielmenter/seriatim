@@ -60,7 +60,15 @@
 				content: "\270E"
 				color: slateblue
 			&:hover
-				background: #6A5ACD11
+				background: transparentize(slateblue, 0.9)
+
+		button#copyDocument
+			&::before
+				content: "\002398"
+				color: lightblue
+			&:hover
+				background: transparentize(lightblue, 0.9)
+			
 
 		button#deleteDocument
 			&::before
@@ -123,7 +131,7 @@
 				span
 					vertical-align: middle
 					
-				input
+				input.documentName
 					padding-top: 0.5em
 					padding-bottom: 0.5em
 
@@ -149,3 +157,59 @@
 			
 			tr.selected td
 				background-color: #FFFFFF55
+
+			.documentSettingsIcon
+				display: inline-block
+				width: 100%
+
+.documentSettingsContainer
+	position: relative
+
+.documentSettings
+	position: absolute
+	bottom: 0
+	right: 0
+	z-index: 2
+	background-color: $antiflashwhite
+	border: 1px solid lightgray
+	min-width: 4in
+	text-align: left
+	padding-bottom: 1em
+	box-shadow: 0 0 1px 1px #0001
+
+	input
+		margin-right: 1ch
+		
+	.documentSettingsHeader
+		border-bottom: 1px solid lightgray
+		font-weight: bold
+		padding-top: 0.5em
+		padding-bottom: 0.5em
+		margin-bottom: 1.0em
+		background-color: #FAFAFA
+
+		.exitDocumentSettings
+			color: gray
+			display: inline-block
+			width: 0.5in
+			padding-left: 1ch
+
+	.settingIcons
+		.settingConfirm
+			border: 1px solid green
+			color: green
+			&:hover
+				background-color: #OFO5
+
+		.settingReject
+			border: 1px solid red
+			color: red
+			&:hover
+				background-color: #F005
+
+		.settingSaved
+			border: 1px solid green
+			color: green
+
+		.sk-fading-circle .sk-circle::before
+			background-color: #333

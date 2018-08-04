@@ -2,6 +2,7 @@ import { Item, ItemID, newItemFromParent, regenerateID } from './item';
 import { Map, List } from 'immutable';
 
 export type ItemDictionary = Map<ItemID, Item>;
+export type DocumentID = string;
 
 type SelectionRange = {
 	readonly start: ItemID,
@@ -9,8 +10,8 @@ type SelectionRange = {
 }
 
 export interface Document {
+	readonly documentID: DocumentID,
 	readonly title: string,
-	readonly saving: boolean,
 	readonly rootItemID: ItemID,
 	readonly focusedItemID: ItemID | undefined,
 	readonly selection: SelectionRange | undefined,
@@ -71,7 +72,7 @@ export function regenerateIDs(d: Document, curr: Item | undefined = d.items.get(
 		newItems = newItems.set(newItem.parentID, newParent);
 
 	const newDoc: Document = {
-		saving: d.saving,
+		documentID: d.documentID,
 		selection: newSelection,
 		focusedItemID: newFocus,
 		rootItemID: newRoot,
@@ -89,7 +90,7 @@ export function equals(lhs: any, rhs: any): boolean {
 
 export function getEmptyDocument(): Document {
 	let document: Document = {
-		saving: false,
+		documentID: "",
 		title: "Untitled Document",
 		rootItemID: "root",
 		focusedItemID: "root",

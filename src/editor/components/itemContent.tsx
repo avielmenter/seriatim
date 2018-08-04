@@ -4,12 +4,12 @@ import * as ReactMarkdown from 'react-markdown';
 
 import * as classNames from 'classnames';
 
-import { DispatchProps, mapDispatchToProps, handleClick } from '../store';
+import { DispatchProps, mapDispatchToProps, handleClick, ApplicationState } from '../store';
 
 import { ListItem } from '../store/data/item';
 
 type StateProps = {
-
+	canEdit: boolean
 }
 
 type AttrProps = {
@@ -51,6 +51,9 @@ class ItemContent extends React.Component<ComponentProps> {
 	}
 
 	handleContentClick(event: React.MouseEvent<HTMLDivElement>): void {
+		if (!this.props.canEdit)
+			return;
+
 		event.stopPropagation();
 		event.preventDefault();
 
@@ -120,5 +123,17 @@ class ItemContent extends React.Component<ComponentProps> {
 	}
 }
 
-const mapStateToProps = (state: any) => ({});
+const mapStateToProps = (state: ApplicationState | {}) => {
+	let canEdit = false;
+
+	if (state != {}) {
+		const permissions = (state as ApplicationState).permissions;
+		canEdit = permissions !== null && permissions.edit;
+	}
+
+	return {
+		canEdit
+	}
+};
+
 export default connect<StateProps, DispatchProps, AttrProps>(mapStateToProps, mapDispatchToProps)(ItemContent);

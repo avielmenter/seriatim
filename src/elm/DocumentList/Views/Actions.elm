@@ -5,10 +5,12 @@ import Html.Attributes exposing (id, class)
 import Html.Events exposing (onClick)
 import DocumentList.Message exposing (Msg(..))
 import Message exposing (..)
+import Data.Document exposing (DocumentID)
+import Util exposing (isSomething)
 
 
 type alias Model =
-    { documentSelected : Bool
+    { documentSelected : Maybe DocumentID
     }
 
 
@@ -25,7 +27,7 @@ view model =
         , Html.button
             ([ id "renameDocument"
              ]
-                ++ (if model.documentSelected then
+                ++ (if isSomething model.documentSelected then
                         [ onClick <| DocumentListMessage FocusSelected ]
                     else
                         [ class "disabled" ]
@@ -34,9 +36,22 @@ view model =
             [ text "Rename"
             ]
         , Html.button
+            ([ id "copyDocument"
+             ]
+                ++ (case model.documentSelected of
+                        Just docID ->
+                            [ onClick <| DocumentListMessage (CopyDocument docID) ]
+
+                        Nothing ->
+                            [ class "disabled" ]
+                   )
+            )
+            [ text "Copy"
+            ]
+        , Html.button
             ([ id "deleteDocument"
              ]
-                ++ (if model.documentSelected then
+                ++ (if isSomething model.documentSelected then
                         [ onClick <| DocumentListMessage DeleteSelected ]
                     else
                         [ class "disabled" ]

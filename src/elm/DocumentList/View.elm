@@ -12,13 +12,12 @@ import DocumentList.Views.DocumentTableHeader as TableHeader
 import DocumentList.Views.LoadingRow as LoadingRow
 import DocumentList.Views.ErrorMessage as ErrorMessage
 import Html.Events exposing (onClick)
-import Util exposing (..)
 
 
 view : Model -> Html Message.Msg
 view model =
     div [ id "dlContent" ]
-        [ ActionsView.view { documentSelected = isSomething model.documentList.selected }
+        [ ActionsView.view { documentSelected = model.documentList.selected }
         , div [ id "documentList" ]
             ([ Html.h3 [] <|
                 [ text "Documents"

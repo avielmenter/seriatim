@@ -15,17 +15,17 @@ type AttrProps = {
 
 type ComponentProps = StateProps & AttrProps & DispatchProps;
 
-function friendlyErrorMessage(e: Error): string {
+function friendlyErrorMessage(e: Error): JSX.Element {
 	switch (e.code) {
 		case 'NOT_LOGGED_IN':
-			return "You must be logged in to view this document";
+			return <span>You are not <a href={SERIATIM_CLIENT_URL} target='_blank'>logged in</a>.</span>;
 		case 'INSUFFICIENT_PERMISSIONS':
-			return "You do not have permission to view this document";
+			return <span>You do not have permission to view this document</span>;
 		case 'NOT_FOUND':
-			return "No document could be found with the specified ID";
+			return <span>No document could be found with the specified ID</span>;
 		default:
 			console.log("WEIRD ERROR: " + e.code);
-			return e.error;
+			return <span>{e.error}</span>;
 	}
 }
 

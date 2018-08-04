@@ -13,11 +13,5 @@ type alias Document =
     , title : String
     , created_at : Date
     , modified_at : Maybe Date
+    , publicly_viewable : Bool
     }
-
-
-getDocumentByID : DocumentID -> List Document -> Maybe Document
-getDocumentByID docID docs =
-    docs
-        |> List.filter (\d -> d.document_id == docID)
-        |> List.head

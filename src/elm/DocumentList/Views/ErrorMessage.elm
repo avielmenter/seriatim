@@ -2,7 +2,8 @@ module DocumentList.Views.ErrorMessage exposing (..)
 
 import Html exposing (..)
 import Html.Attributes exposing (class)
-import Html.Events exposing (onClick)
+import Html.Events exposing (onWithOptions)
+import Json.Decode as Json
 import DocumentList.Message exposing (Msg(..))
 import Message exposing (..)
 
@@ -15,5 +16,12 @@ view : Model -> Html Message.Msg
 view msg =
     div [ class "errorMessage" ]
         [ text msg
-        , span [ class "removeError", onClick <| DocumentListMessage ClearError ] [ text "x" ]
+        , span
+            [ class "removeError"
+            , onWithOptions
+                "click"
+                { stopPropagation = True, preventDefault = True }
+                (Json.succeed <| DocumentListMessage ClearError)
+            ]
+            [ text "x" ]
         ]

@@ -1,7 +1,9 @@
 import * as React from 'react';
+import { connect } from 'react-redux';
+import { ApplicationState, DispatchProps, mapDispatchToProps } from '../store';
 
 type StateProps = {
-
+	canEdit: boolean,
 }
 
 type AttrProps = {
@@ -10,16 +12,20 @@ type AttrProps = {
 	text: string,
 	shortcut?: string,
 	enabled?: boolean,
+	enabledOnReadOnly?: boolean,
 	callback: (event: React.MouseEvent<HTMLLIElement>) => void
 }
 
-type ComponentProps = StateProps & AttrProps;
+type ComponentProps = StateProps & AttrProps & DispatchProps;
 
 const MenuItem: React.SFC<ComponentProps> = (props) => {
 	const { icon, text, shortcut, callback, enabled, ID } = props;
 
+	const enabledOnReadOnly = props.enabledOnReadOnly === true;
+	const itemEnabled = (enabled == true || enabled === undefined) && (props.canEdit || enabledOnReadOnly);
+
 	return (
-		<li className={enabled ? "ddMenuItem" : "ddMenuItemDisabled"} id={ID ? ID : ""} onClick={enabled ? (event) => callback(event) : () => { }}>
+		<li className={itemEnabled ? "ddMenuItem" : "ddMenuItemDisabled"} id={ID ? ID : ""} onClick={itemEnabled ? (event) => callback(event) : () => { }}>
 			<span className="icon">{icon || " "}</span>
 			{text}
 			{shortcut && <span className="shortcut">({shortcut})</span>}
@@ -31,4 +37,17 @@ MenuItem.defaultProps = {
 	enabled: true
 }
 
-export default MenuItem;
+const mapStateToProps = (state: ApplicationState | {}) => {
+	let canEdit: boolean = false;
+
+	if (state != {}) {
+		const appState = state as ApplicationState;
+		canEdit = !appState.permissions ? false : appState.permissions.edit;
+	}
+
+	return {
+		canEdit
+	};
+}
+
+export default connect<StateProps, DispatchProps, AttrProps>(mapStateToProps, mapDispatchToProps)(MenuItem);

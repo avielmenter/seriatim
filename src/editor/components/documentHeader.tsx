@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { connect } from 'react-redux';
-import { StateWithHistory } from 'redux-undo';
 
 import { Document, getLastItem, getEmptyDocument } from '../store/data/document';
 import { Item } from '../store/data/item';
@@ -13,7 +12,7 @@ import * as Server from '../network/server';
 import SavingSpinner from './savingSpinner';
 
 type StateProps = {
-	documentState: StateWithHistory<Document | null> | undefined
+	state: ApplicationState | undefined
 }
 
 type AttrProps = {
@@ -23,11 +22,14 @@ type AttrProps = {
 type ComponentProps = StateProps & AttrProps & DispatchProps;
 
 const DocumentHeader: React.SFC<ComponentProps> = (props) => {
-	if (!props.documentState)
+	if (!props || !props.state)
 		return (<div />);
 
-	const isLoading = !props.documentState.present;
-	const document = props.documentState.present || getEmptyDocument();
+	const state = props.state;
+	const canEdit = state.permissions && state.permissions.edit;
+
+	const isLoading = !state.document.present;
+	const document = state.document.present || getEmptyDocument();
 
 	const actions = props.actions.document;
 	const focused = !document || !document.focusedItemID ? undefined : document.items.get(document.focusedItemID);
@@ -40,37 +42,52 @@ const DocumentHeader: React.SFC<ComponentProps> = (props) => {
 	const collapsable = focused != undefined && focused.children.count() > 0;
 	const expandable = focused != undefined && collapsable && focused.view.collapsed;
 
+	const document_id = window.location.search.substring(1); // skip initial ? symbol
+
+	const makeCopy = () => {
+		Server.makeCopy(document_id)
+			.then(response => {
+				if (response.status == 'success')
+					window.location.href = SERIATIM_CLIENT_URL + 'editor/?' + response.data.documentID;
+				else
+					props.actions.errors.addError(response);
+			});
+	};
+
 	return (
 		<div id="documentHeader">
 			<div id="headerContents">
 				<h1 className={isLoading || document.title.length == 0 ? "empty" : ""}
-					onClick={(event) => handleClick(event, () => actions.setFocus(document.items.get(document.rootItemID)))}>
+					onClick={(event) => handleClick(event, () => canEdit && actions.setFocus(document.items.get(document.rootItemID)))}>
 					{isLoading ? "Loading..." : document.title.length == 0 ? "Untitled Document..." : document.title}
-					{document.saving && <SavingSpinner />}
+					<SavingSpinner visible={state.saving} />
+					{!canEdit && !isLoading && <span id="readOnlyMessage">
+						You are viewing this document in read only mode. To edit it, <span id="copyDocument" onClick={makeCopy}>copy it</span> onto your account.
+					</span>}
 				</h1>
 				<div id="documentMenu">
 					<div className="menuItem">
 						File
 						<ul>
-							<MenuItem text="Save" enabled={!isLoading} shortcut="Ctrl-S" callback={() => {
-								const document_id = window.location.search.substring(1); // skip initial ? symbol
-								if (!props.documentState || !props.documentState.present)
+							<MenuItem text="Save" shortcut="Ctrl-S" callback={() => {
+								if (!state.document || !state.document.present)
 									return;
 
-								Server.saveDocument(document_id, props.documentState.present)
+								Server.saveDocument(document_id, state.document.present)
 									.then(response => {
 										if (response.status == 'success')
 											actions.updateItemIDs(response.data);
 										else
 											props.actions.errors.addError(response);
 									})
-									.finally(() => props.actions.document.stopSaving());
+									.finally(() => props.actions.stopSaving());
 
-								actions.startSaving();
+								props.actions.startSaving();
 							}} />
+							<MenuItem text="Make Copy" enabled={!isLoading} enabledOnReadOnly={true} callback={makeCopy} />
 							<MenuItem text="Rename" shortcut="Esc, ↹"
 								callback={(event) => handleClick(event, () => actions.setFocus(document.items.get(document.rootItemID)))} />
-							<MenuItem text="Exit" callback={() => { window.close() }} />
+							<MenuItem text="Exit" enabledOnReadOnly={true} callback={() => { window.close() }} />
 						</ul>
 					</div>
 					<div className="menuItem">
@@ -99,9 +116,9 @@ const DocumentHeader: React.SFC<ComponentProps> = (props) => {
 								})} />
 							<MenuItem text="Paste" icon="⎗" shortcut="Ctrl-V" ID="paste" enabled={document.clipboard != undefined}
 								callback={(event) => handleClick(event, () => actions.paste(focused || lastItem))} />
-							<MenuItem text="Undo" icon="⟲" shortcut="Ctrl-Z" ID="undo" enabled={props.documentState.past.length > 0}
+							<MenuItem text="Undo" icon="⟲" shortcut="Ctrl-Z" ID="undo" enabled={state.document.past.length > 0}
 								callback={(event) => handleClick(event, () => actions.undo())} />
-							<MenuItem text="Redo" icon="⟳" shortcut="Ctrl-⇧-Z" ID="redo" enabled={props.documentState.future.length > 0}
+							<MenuItem text="Redo" icon="⟳" shortcut="Ctrl-⇧-Z" ID="redo" enabled={state.document.future.length > 0}
 								callback={(event) => handleClick(event, () => actions.redo())} />
 							<MenuItem text="Remove" icon="X" shortcut="Ctrl-⌫" ID="removeItem"
 								enabled={!(focused && focused.view.itemType == "Title") && lastItem.view.itemType != "Title"}
@@ -139,7 +156,7 @@ const DocumentHeader: React.SFC<ComponentProps> = (props) => {
 }
 
 const mapStateToProps = (state: ApplicationState | {}) => ({
-	documentState: state == {} ? undefined : (state as ApplicationState).document
+	state: state == {} ? undefined : (state as ApplicationState)
 });
 
 export default connect<StateProps, DispatchProps, AttrProps>(mapStateToProps, mapDispatchToProps)(DocumentHeader);

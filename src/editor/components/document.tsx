@@ -14,10 +14,12 @@ import ErrorMessage from './errorMessage';
 import { DispatchProps, mapDispatchToProps, ApplicationState } from '../store';
 
 import * as Server from '../network/server';
+import { Permissions } from '../store/data/permissions';
 
 type StateProps = {
 	errors: List<Error>,
 	document: DocumentData | null
+	permissions: Permissions | null
 }
 
 type AttrProps = {
@@ -55,7 +57,7 @@ class Document extends React.Component<ComponentProps> {
 		let preventDefault = true;
 
 		const doc = this.props.document;
-		if (!doc)
+		if (!doc || !this.props.permissions || !this.props.permissions.edit)
 			return;
 
 		const focusedItem = doc.focusedItemID ? doc.items.get(doc.focusedItemID) : undefined;
@@ -101,9 +103,9 @@ class Document extends React.Component<ComponentProps> {
 							else
 								this.props.actions.errors.addError(response);
 						})
-						.finally(() => actions.stopSaving());
+						.finally(() => this.props.actions.stopSaving());
 
-					actions.startSaving();
+					this.props.actions.startSaving();
 					break;
 
 				case 'z':
@@ -239,7 +241,7 @@ class Document extends React.Component<ComponentProps> {
 		Server.fetchDocument(document_id)
 			.then(response => {
 				if (response.status == "success")
-					actions.loadDocument(response.data)
+					this.props.actions.loadDocument(response)
 				else
 					errors.addError(response);
 			})
@@ -259,8 +261,6 @@ class Document extends React.Component<ComponentProps> {
 			selected: selectedItems.has(curr),
 			indent
 		};
-
-		console.log("FOUND ITEM: " + currItem.item.text);
 
 		const currItemList = List<ListItem>([currItem]);
 
@@ -304,7 +304,8 @@ class Document extends React.Component<ComponentProps> {
 
 const mapStateToProps = (state: ApplicationState | {}) => ({
 	errors: state == {} ? List<Error>() : (state as ApplicationState).errors,
-	document: state == {} || !(state as ApplicationState).document.present ? null : (state as ApplicationState).document.present
+	document: state == {} || !(state as ApplicationState).document.present ? null : (state as ApplicationState).document.present,
+	permissions: state == {} ? null : (state as ApplicationState).permissions
 })
 
 export default connect<StateProps, DispatchProps, AttrProps>(mapStateToProps, mapDispatchToProps)(Document);

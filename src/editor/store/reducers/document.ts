@@ -152,23 +152,6 @@ type Paste = {
 	}
 }
 
-type LoadDocument = {
-	type: "LoadDocument",
-	data: {
-		document: Document.Document
-	}
-}
-
-type StartSaving = {
-	type: "StartSaving",
-	data: {}
-}
-
-type StopSaving = {
-	type: "StopSaving",
-	data: {}
-}
-
 type UpdateItemIDs = {
 	type: "UpdateItemIDs",
 	data: {
@@ -198,9 +181,6 @@ export type Action = AddItemToParent |
 	UnindentSelection |
 	CopySelection |
 	MultiSelect |
-	LoadDocument |
-	StartSaving |
-	StopSaving |
 	UpdateItemIDs;
 
 // REDUCERS
@@ -714,30 +694,6 @@ function initializeDocument(document: Document.Document | null, action: Initiali
 	return Document.getEmptyDocument();
 }
 
-function loadDocument(document: Document.Document | null, action: LoadDocument): Document.Document | null {
-	return action.data.document;
-}
-
-function startSaving(document: Document.Document | null, action: StartSaving): Document.Document | null {
-	if (!document)
-		return document;
-
-	return {
-		...document,
-		saving: true
-	}
-}
-
-function stopSaving(document: Document.Document | null, action: StopSaving): Document.Document | null {
-	if (!document)
-		return document;
-
-	return {
-		...document,
-		saving: false
-	}
-}
-
 function updateItemIDs(document: Document.Document | null, action: UpdateItemIDs): Document.Document | null {
 	if (!document)
 		return document;
@@ -794,12 +750,6 @@ function undoableReducer(document: Document.Document | undefined | null, anyActi
 			return copySelection(doc, action);
 		case "Paste":
 			return paste(doc, action);
-		case "LoadDocument":
-			return loadDocument(doc, action);
-		case "StartSaving":
-			return startSaving(doc, action);
-		case "StopSaving":
-			return stopSaving(doc, action);
 		case "UpdateItemIDs":
 			return updateItemIDs(doc, action);
 		default:
@@ -807,7 +757,7 @@ function undoableReducer(document: Document.Document | undefined | null, anyActi
 	}
 }
 
-const skipHistoryFor: string[] = ["CopyItem", "CopySelection", "SetFocus", "IncrementFocus", "DecrementFocus", "SetFocus", "LoadDocument", "InitializeDocument", "UpdateItemIDs", "StartSaving", "StopSaving"];
+const skipHistoryFor: string[] = ["CopyItem", "CopySelection", "SetFocus", "IncrementFocus", "DecrementFocus", "SetFocus", "InitializeDocument", "UpdateItemIDs"];
 
 export const reducer = undoable(undoableReducer, {
 	ignoreInitialState: true,
@@ -907,18 +857,6 @@ export const creators = (dispatch: Dispatch) => ({
 		type: "Paste",
 		data: { item }
 	}),
-	loadDocument: (document: Document.Document) => dispatch({
-		type: "LoadDocument",
-		data: { document }
-	}),
-	startSaving: () => dispatch({
-		type: "StartSaving",
-		data: {}
-	}),
-	stopSaving: () => dispatch({
-		type: "StopSaving",
-		data: {}
-	}),
 	updateItemIDs: (newIDs: Map<Item.ItemID, Item.ItemID>) => dispatch({
 		type: "UpdateItemIDs",
 		data: { newIDs }
@@ -950,9 +888,6 @@ export type DispatchProps = {
 	unindentSelection: () => void,
 	copySelection: () => void,
 	paste: (item: Item.Item) => void,
-	loadDocument: (document: Document.Document) => void,
-	startSaving: () => void,
-	stopSaving: () => void,
 	updateItemIDs: (newIDs: Map<Item.ItemID, Item.ItemID>) => void,
 	undo: () => void,
 	redo: () => void

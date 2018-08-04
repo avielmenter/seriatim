@@ -1,6 +1,7 @@
 module DocumentList.Views.DocumentList exposing (view)
 
-import Data.Document as Data
+import Data.Document exposing (DocumentID)
+import DocumentList.Model exposing (ListDocument)
 import DocumentList.Views.Document as Document
 import DocumentList.Views.DocumentTableHeader as TableHeader
 import Html exposing (Html, text)
@@ -9,22 +10,22 @@ import Message exposing (..)
 
 
 type alias Model =
-    { focused : Maybe ( Data.DocumentID, String )
-    , selected : Maybe Data.DocumentID
-    , documents : List Data.Document
+    { focused : Maybe ( DocumentID, String )
+    , selected : Maybe DocumentID
+    , documents : List ListDocument
     }
 
 
 view : Model -> Html Msg
 view model =
     let
-        viewDocument : Data.Document -> Html Msg
+        viewDocument : ListDocument -> Html Msg
         viewDocument doc =
             let
                 focusedText =
                     case model.focused of
                         Just ( docID, docTitle ) ->
-                            if docID == doc.document_id then
+                            if docID == doc.data.document_id then
                                 (Just docTitle)
                             else
                                 Nothing
@@ -35,7 +36,7 @@ view model =
                 selected =
                     case model.selected of
                         Just docID ->
-                            docID == doc.document_id
+                            docID == doc.data.document_id
 
                         Nothing ->
                             False

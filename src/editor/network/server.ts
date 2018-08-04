@@ -2,9 +2,11 @@ import { List, Map } from 'immutable';
 
 import { Item, ItemID } from '../store/data/item';
 import { Document, ItemDictionary, updateItemIDs } from '../store/data/document';
+import { Permissions } from '../store/data/permissions';
 
 export type SeriatimSuccess<T> = {
 	status: "success",
+	permissions?: Permissions,
 	data: T
 }
 
@@ -41,6 +43,10 @@ type ServerDocument = {
 	items?: { [item_id: string]: ServerItem }
 }
 
+type ServerPermissions = {
+	edit?: boolean
+}
+
 function parseServerItem(sItem: ServerItem, root_id: string): Item | undefined {
 	if (!sItem.item_id || sItem.parent_id === undefined || (sItem.text === undefined) || (sItem.child_order === undefined))
 		return undefined;
@@ -68,13 +74,22 @@ function parseServerItem(sItem: ServerItem, root_id: string): Item | undefined {
 	}
 }
 
+function parseServerPermissions(sPermissions: ServerPermissions): Permissions | undefined {
+	if (sPermissions.edit === undefined)
+		return undefined;
+
+	return {
+		edit: sPermissions.edit
+	}
+}
+
 function parseServerDocument(sDoc: ServerDocument): Document | undefined {
 	let serverItems = sDoc.items || {};
 
 	const rootItemID = sDoc.root_item_id;
 	const title = sDoc.title || "";
 
-	if (!rootItemID)
+	if (!rootItemID || !sDoc.document_id)
 		return undefined;
 
 	let items = Object.keys(serverItems)
@@ -117,7 +132,7 @@ function parseServerDocument(sDoc: ServerDocument): Document | undefined {
 	});
 
 	return {
-		saving: false,
+		documentID: sDoc.document_id,
 		clipboard: undefined,
 		selection: undefined,
 		focusedItemID: rootItemID,
@@ -140,10 +155,10 @@ function httpPost(url: string, body: any): Promise<Response> {
 		credentials: 'include',
 		method: 'POST',
 		mode: 'cors',
-		headers: {
+		headers: !body ? undefined : {
 			'Content-Type': 'application/json'
 		},
-		body: JSON.stringify(body)
+		body: !body ? undefined : JSON.stringify(body)
 	});
 }
 
@@ -164,6 +179,7 @@ async function parseHttpResponse<TParsed, TRaw>(response: Response, parse: (raw:
 
 	return {
 		status: "success",
+		permissions: responseJson.permissions ? parseServerPermissions(responseJson.permissions) : undefined,
 		data: parsed
 	}
 }
@@ -235,4 +251,9 @@ export async function saveDocument(documentID: string, state: Document): Promise
 		return structureResponse;
 
 	return structureResponse;
+}
+
+export async function makeCopy(documentID: string): Promise<SeriatimResponse<Document>> {
+	const response = await httpPost('document/' + documentID + '/copy', undefined);
+	return await parseHttpResponse(response, parseServerDocument);
 }

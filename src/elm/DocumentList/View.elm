@@ -22,7 +22,11 @@ view model =
         , div [ id "documentList" ]
             ([ Html.h3 [] <|
                 [ text "Documents"
-                , Html.span [ onClick (DocumentListMessage Refresh), id "refresh" ] [ MaterialIcon.view "cached" ]
+                , Html.span
+                    [ onClick <| DocumentListMessage (Refresh Loading)
+                    , id "refresh"
+                    ]
+                    [ MaterialIcon.view "cached" ]
                 ]
              ]
                 ++ case model.documentList.status of

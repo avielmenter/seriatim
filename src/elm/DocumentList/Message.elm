@@ -6,6 +6,7 @@ import Dom
 import Mouse
 import Keyboard
 import Time exposing (Time)
+import DocumentList.Model exposing (PageStatus)
 
 
 type Msg
@@ -30,5 +31,5 @@ type Msg
     | ClearError
     | MouseEvent Mouse.Position
     | KeyboardEvent Keyboard.KeyCode
-    | Refresh
+    | Refresh PageStatus
     | TimedRefresh Time

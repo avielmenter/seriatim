@@ -306,19 +306,19 @@ update msg model =
         ClearError ->
             ( { model | error = Nothing, status = Displaying }, Cmd.none )
 
-        Refresh ->
-            ( { model | status = Loading }, Http.send (\r -> DocumentListMessage <| LoadDocuments r) (loadDocumentsRequest model.config.seriatim_server_url) )
+        Refresh displayStatus ->
+            ( { model | status = displayStatus }, Http.send (\r -> DocumentListMessage <| LoadDocuments r) (loadDocumentsRequest model.config.seriatim_server_url) )
 
         TimedRefresh refreshTime ->
             case model.loadTime of
                 Nothing ->
-                    update Refresh model
+                    update (Refresh Displaying) model
 
                 Just lt ->
                     if (Date.fromTime refreshTime |> Date.minute) - (Date.minute lt) <= 1 then
                         ( model, Cmd.none )
                     else
-                        update Refresh model
+                        update (Refresh Displaying) model
 
         DocumentList.Message.MouseEvent position ->
             if isSomething model.selected then

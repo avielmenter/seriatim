@@ -11,6 +11,7 @@ import DocumentList.Views.DocumentList as DLView
 import DocumentList.Views.DocumentTableHeader as TableHeader
 import DocumentList.Views.LoadingRow as LoadingRow
 import DocumentList.Views.ErrorMessage as ErrorMessage
+import Views.MaterialIcon as MaterialIcon
 import Html.Events exposing (onClick)
 
 
@@ -21,7 +22,7 @@ view model =
         , div [ id "documentList" ]
             ([ Html.h3 [] <|
                 [ text "Documents"
-                , Html.span [ onClick (DocumentListMessage Refresh), id "refresh" ] []
+                , Html.span [ onClick (DocumentListMessage Refresh), id "refresh" ] [ MaterialIcon.view "cached" ]
                 ]
              ]
                 ++ case model.documentList.status of
@@ -33,6 +34,7 @@ view model =
                                     { focused = model.documentList.focused
                                     , selected = model.documentList.selected
                                     , documents = model.documentList.documents
+                                    , loadTime = model.documentList.loadTime
                                     }
                                ]
 

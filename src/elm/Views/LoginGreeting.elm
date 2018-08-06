@@ -5,6 +5,7 @@ import Html.Attributes exposing (id)
 import Html.Events exposing (onClick)
 import LoginWidget.Model exposing (LoginStatus(..))
 import Views.LoadingSpinner as LoadingSpinner
+import Views.MaterialIcon as MaterialIcon
 import Model exposing (..)
 import Message exposing (..)
 import Settings.Message exposing (..)
@@ -24,7 +25,7 @@ view model =
                                     ""
                                )
                     ]
-                    [ text "⚙" ]
+                    [ MaterialIcon.view "settings" ]
                 , text <| "Hello, " ++ u.display_name
                 ]
 

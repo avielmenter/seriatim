@@ -23,8 +23,14 @@ type alias SeriatimError =
     }
 
 
+type alias SeriatimSuccess a =
+    { data : a
+    , timestamp : Date
+    }
+
+
 type alias SeriatimResult a =
-    Result SeriatimError a
+    Result SeriatimError (SeriatimSuccess a)
 
 
 type alias HttpResult a =
@@ -141,7 +147,11 @@ decodeSeriatimResponse jsonDecoder =
 
                     "success" ->
                         (field "data" jsonDecoder)
-                            |> andThen (\data -> succeed (Ok data))
+                            |> andThen
+                                (\data ->
+                                    (field "timestamp" decodeRocketDate)
+                                        |> andThen (\ts -> succeed (Ok { data = data, timestamp = ts }))
+                                )
 
                     other ->
                         fail <| "Uknown response status: " ++ other

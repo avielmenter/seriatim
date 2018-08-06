@@ -6,6 +6,7 @@ import Html.Events exposing (onClick)
 import DocumentList.Message exposing (Msg(..))
 import Message exposing (..)
 import Data.Document exposing (DocumentID)
+import Views.MaterialIcon as MaterialIcon
 import Util exposing (isSomething)
 
 
@@ -22,7 +23,8 @@ view model =
             [ id "createDocument"
             , onClick <| DocumentListMessage CreateDocument
             ]
-            [ text "Create"
+            [ MaterialIcon.view "add"
+            , text "Create"
             ]
         , Html.button
             ([ id "renameDocument"
@@ -33,7 +35,8 @@ view model =
                         [ class "disabled" ]
                    )
             )
-            [ text "Rename"
+            [ MaterialIcon.view "create"
+            , text "Rename"
             ]
         , Html.button
             ([ id "copyDocument"
@@ -46,7 +49,8 @@ view model =
                             [ class "disabled" ]
                    )
             )
-            [ text "Copy"
+            [ MaterialIcon.view "file_copy"
+            , text "Copy"
             ]
         , Html.button
             ([ id "deleteDocument"
@@ -57,6 +61,7 @@ view model =
                         [ class "disabled" ]
                    )
             )
-            [ text "Delete"
+            [ MaterialIcon.view "delete"
+            , text "Delete"
             ]
         ]

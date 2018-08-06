@@ -7,6 +7,7 @@ import { Permissions } from '../store/data/permissions';
 export type SeriatimSuccess<T> = {
 	status: "success",
 	permissions?: Permissions,
+	timestamp?: Date,
 	data: T
 }
 
@@ -19,6 +20,15 @@ export type SeriatimError = {
 }
 
 export type SeriatimResponse<T> = SeriatimSuccess<T> | SeriatimError;
+
+type SeriatimSuccessRaw<T> = {
+	status: "success",
+	permissions?: ServerPermissions,
+	timestamp?: ServerDate,
+	data: T
+}
+
+type SeriatimResponseRaw<T> = SeriatimSuccessRaw<T> | SeriatimError;
 
 type ServerDate = {
 	secs_since_epoch: number
@@ -46,6 +56,7 @@ type ServerDocument = {
 type ServerPermissions = {
 	edit?: boolean
 }
+
 
 function parseServerItem(sItem: ServerItem, root_id: string): Item | undefined {
 	if (!sItem.item_id || sItem.parent_id === undefined || (sItem.text === undefined) || (sItem.child_order === undefined))
@@ -81,6 +92,10 @@ function parseServerPermissions(sPermissions: ServerPermissions): Permissions | 
 	return {
 		edit: sPermissions.edit
 	}
+}
+
+function parseServerDate(sDate: ServerDate | undefined): Date | undefined {
+	return !sDate || !sDate.secs_since_epoch ? undefined : new Date(sDate.secs_since_epoch * 1000);
 }
 
 function parseServerDocument(sDoc: ServerDocument): Document | undefined {
@@ -163,7 +178,7 @@ function httpPost(url: string, body: any): Promise<Response> {
 }
 
 async function parseHttpResponse<TParsed, TRaw>(response: Response, parse: (raw: TRaw) => TParsed | undefined): Promise<SeriatimResponse<TParsed>> {
-	const responseJson = await response.json() as SeriatimResponse<TRaw>;
+	const responseJson = await response.json() as SeriatimResponseRaw<TRaw>;
 
 	if (responseJson.status == "error")
 		return responseJson as SeriatimError;
@@ -180,6 +195,7 @@ async function parseHttpResponse<TParsed, TRaw>(response: Response, parse: (raw:
 	return {
 		status: "success",
 		permissions: responseJson.permissions ? parseServerPermissions(responseJson.permissions) : undefined,
+		timestamp: parseServerDate(responseJson.timestamp),
 		data: parsed
 	}
 }

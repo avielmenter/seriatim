@@ -7,12 +7,14 @@ import DocumentList.Views.DocumentTableHeader as TableHeader
 import Html exposing (Html, text)
 import Html.Attributes exposing (id)
 import Message exposing (..)
+import Date exposing (Date)
 
 
 type alias Model =
     { focused : Maybe ( DocumentID, String )
     , selected : Maybe DocumentID
     , documents : List ListDocument
+    , loadTime : Maybe Date
     }
 
 
@@ -41,7 +43,7 @@ view model =
                         Nothing ->
                             False
             in
-                Document.view { focusedText = focusedText, selected = selected, doc = doc }
+                Document.view { focusedText = focusedText, selected = selected, doc = doc, loadTime = model.loadTime }
     in
         Html.table [ id "documents" ]
             ([ TableHeader.view ]

@@ -4,6 +4,7 @@ import Html exposing (Html, programWithFlags, text)
 import Html.Attributes exposing (id, class, href, src, alt)
 import Model exposing (..)
 import Message exposing (..)
+import DocumentList.Message exposing (Msg(TimedRefresh))
 import Update exposing (..)
 import Routing exposing (..)
 import Navigation exposing (Location)
@@ -15,17 +16,19 @@ import Views.NotFound as NotFound
 import Views.LoginGreeting as LoginGreeting
 import Views.Logo as Logo
 import Util exposing (Flags)
+import Time
 
 
-subscriptions : Model -> Sub Msg
+subscriptions : Model -> Sub Message.Msg
 subscriptions model =
     Sub.batch
         [ Mouse.clicks MouseEvent
         , Keyboard.downs KeyboardEvent
+        , Time.every Time.minute (\t -> DocumentListMessage <| TimedRefresh t)
         ]
 
 
-view : Model -> Html Msg
+view : Model -> Html Message.Msg
 view model =
     Html.div []
         [ Html.header [] <|
@@ -47,7 +50,7 @@ view model =
         ]
 
 
-main : Program Flags Model Msg
+main : Program Flags Model Message.Msg
 main =
     Navigation.programWithFlags OnLocationChange
         { init = init

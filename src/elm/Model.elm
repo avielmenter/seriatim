@@ -32,6 +32,7 @@ init flags location =
             , focused = Nothing
             , selected = Nothing
             , documents = []
+            , loadTime = Nothing
             }
 
         initSettings =

@@ -5,6 +5,7 @@ import Data.Document exposing (Document, DocumentID)
 import Dom
 import Mouse
 import Keyboard
+import Time exposing (Time)
 
 
 type Msg
@@ -30,3 +31,4 @@ type Msg
     | MouseEvent Mouse.Position
     | KeyboardEvent Keyboard.KeyCode
     | Refresh
+    | TimedRefresh Time

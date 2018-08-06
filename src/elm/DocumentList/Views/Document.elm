@@ -9,7 +9,9 @@ import Message exposing (..)
 import Data.Document exposing (Document, DocumentID)
 import DocumentList.Model exposing (ListDocument)
 import DocumentList.Views.DocumentSettings as DocumentSettings
+import Views.MaterialIcon as MaterialIcon
 import Util exposing (seriatimDateString)
+import Date exposing (Date)
 
 
 onEnter : Message.Msg -> Html.Attribute Message.Msg
@@ -38,6 +40,7 @@ type alias Model =
     { selected : Bool
     , focusedText : Maybe String
     , doc : ListDocument
+    , loadTime : Maybe Date
     }
 
 
@@ -95,14 +98,14 @@ view model =
                             ]
                             []
                 ]
-            , Html.td [] [ text <| seriatimDateString doc.data.created_at ]
-            , Html.td [] [ text <| Maybe.withDefault "never" <| Maybe.map seriatimDateString doc.data.modified_at ]
+            , Html.td [] [ text <| seriatimDateString model.loadTime doc.data.created_at ]
+            , Html.td [] [ text <| Maybe.withDefault "never" <| Maybe.map (seriatimDateString model.loadTime) doc.data.modified_at ]
             , Html.td [] <|
                 [ Html.span
                     [ class "documentSettingsIcon"
                     , onClick (DocumentListMessage <| ToggleDocumentSettings doc.data)
                     ]
-                    [ text "⋮" ]
+                    [ MaterialIcon.view "more_vert" ]
                 ]
                     ++ (if doc.settings.visible then
                             [ DocumentSettings.view doc ]

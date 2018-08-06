@@ -13,6 +13,7 @@ import SeriatimHttp exposing (HttpResult)
 import Dom exposing (focus)
 import Task
 import Util exposing (..)
+import Date
 
 
 updateFromHttp : PageStatus -> (a -> Model) -> Model -> HttpResult a -> ( Model, Cmd Message.Msg )
@@ -26,12 +27,18 @@ updateFromHttp status updateModel model r =
                 Err msg ->
                     ( { model | error = Just msg.error, status = status }, Cmd.none )
 
-                Ok data ->
+                Ok successResponse ->
                     let
                         updated =
-                            updateModel data
+                            updateModel successResponse.data
                     in
-                        ( { updated | error = Nothing, status = Displaying }, Cmd.none )
+                        ( { updated
+                            | error = Nothing
+                            , status = Displaying
+                            , loadTime = Just successResponse.timestamp
+                          }
+                        , Cmd.none
+                        )
 
 
 updateDocumentSettings : (DocumentSettings -> DocumentSettings) -> Model -> DocumentID -> Model
@@ -301,6 +308,17 @@ update msg model =
 
         Refresh ->
             ( { model | status = Loading }, Http.send (\r -> DocumentListMessage <| LoadDocuments r) (loadDocumentsRequest model.config.seriatim_server_url) )
+
+        TimedRefresh refreshTime ->
+            case model.loadTime of
+                Nothing ->
+                    update Refresh model
+
+                Just lt ->
+                    if (Date.fromTime refreshTime |> Date.minute) - (Date.minute lt) <= 1 then
+                        ( model, Cmd.none )
+                    else
+                        update Refresh model
 
         DocumentList.Message.MouseEvent position ->
             if isSomething model.selected then

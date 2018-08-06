@@ -69,7 +69,7 @@ const DocumentHeader: React.SFC<ComponentProps> = (props) => {
 					<div className="menuItem">
 						File
 						<ul>
-							<MenuItem text="Save" shortcut="Ctrl-S" callback={() => {
+							<MenuItem text="Save" shortcut="Ctrl-S" icon="save_alt" callback={() => {
 								if (!state.document || !state.document.present)
 									return;
 
@@ -84,24 +84,24 @@ const DocumentHeader: React.SFC<ComponentProps> = (props) => {
 
 								props.actions.startSaving();
 							}} />
-							<MenuItem text="Make Copy" enabled={!isLoading} enabledOnReadOnly={true} callback={makeCopy} />
+							<MenuItem text="Make Copy" icon="file_copy" enabled={!isLoading} enabledOnReadOnly={true} callback={makeCopy} />
 							<MenuItem text="Rename" shortcut="Esc, ↹"
 								callback={(event) => handleClick(event, () => actions.setFocus(document.items.get(document.rootItemID)))} />
-							<MenuItem text="Exit" enabledOnReadOnly={true} callback={() => { window.close() }} />
+							<MenuItem text="Exit" icon="exit_to_app" enabledOnReadOnly={true} callback={() => { window.close() }} />
 						</ul>
 					</div>
 					<div className="menuItem">
 						Edit
 						<ul>
-							<MenuItem text="Add Item" icon="+" shortcut="Ctrl-⏎" ID="addSibling"
+							<MenuItem text="Add Item" icon="add" shortcut="Ctrl-⏎" ID="addSibling"
 								callback={(event) => handleClick(event, addSibling)} />
-							<MenuItem text="Add Sub-Item" icon="▼" shortcut="Ctrl-⇧-⏎" ID="addChild"
+							<MenuItem text="Add Sub-Item" icon="subdirectory_arrow_right" shortcut="Ctrl-⇧-⏎" ID="addChild"
 								callback={(event) => handleClick(event, () => actions.addItemToParent(focused || lastItem))} />
-							<MenuItem text="Indent" icon="»" shortcut="Ctrl-]" enabled={focused != undefined || document.selection != undefined} ID="indentItem"
+							<MenuItem text="Indent" icon="format_indent_increase" shortcut="Ctrl-]" enabled={focused != undefined || document.selection != undefined} ID="indentItem"
 								callback={(event) => handleClick(event, () => document.selection ? actions.indentSelection() : actions.indentItem(focused || lastItem))} />
-							<MenuItem text="Unindent" icon="«" shortcut="Ctrl-[" enabled={focused != undefined || document.selection != undefined} ID="unindentItem"
+							<MenuItem text="Unindent" icon="format_indent_decrease" shortcut="Ctrl-[" enabled={focused != undefined || document.selection != undefined} ID="unindentItem"
 								callback={(event) => handleClick(event, () => document.selection ? actions.unindentSelection() : actions.unindentItem(focused || lastItem))} />
-							<MenuItem text="Copy" icon="⎘" shortcut="Ctrl-C" enabled={focused != undefined || document.selection != undefined} ID="copy"
+							<MenuItem text="Copy" icon="assignment" shortcut="Ctrl-C" enabled={focused != undefined || document.selection != undefined} ID="copy"
 								callback={(event) => handleClick(event, () => document.selection ? actions.copySelection() : actions.copyItem(focused || lastItem))} />
 							<MenuItem text="Cut" icon="✂" shortcut="Ctrl-X" enabled={(focused != undefined && focused.view.itemType != "Title") || document.selection != undefined}
 								ID="cut"
@@ -116,11 +116,11 @@ const DocumentHeader: React.SFC<ComponentProps> = (props) => {
 								})} />
 							<MenuItem text="Paste" icon="⎗" shortcut="Ctrl-V" ID="paste" enabled={document.clipboard != undefined}
 								callback={(event) => handleClick(event, () => actions.paste(focused || lastItem))} />
-							<MenuItem text="Undo" icon="⟲" shortcut="Ctrl-Z" ID="undo" enabled={state.document.past.length > 0}
+							<MenuItem text="Undo" icon="undo" shortcut="Ctrl-Z" ID="undo" enabled={state.document.past.length > 0}
 								callback={(event) => handleClick(event, () => actions.undo())} />
-							<MenuItem text="Redo" icon="⟳" shortcut="Ctrl-⇧-Z" ID="redo" enabled={state.document.future.length > 0}
+							<MenuItem text="Redo" icon="redo" shortcut="Ctrl-⇧-Z" ID="redo" enabled={state.document.future.length > 0}
 								callback={(event) => handleClick(event, () => actions.redo())} />
-							<MenuItem text="Remove" icon="X" shortcut="Ctrl-⌫" ID="removeItem"
+							<MenuItem text="Remove" icon="clear" shortcut="Ctrl-⌫" ID="removeItem"
 								enabled={!(focused && focused.view.itemType == "Title") && lastItem.view.itemType != "Title"}
 								callback={(event) => handleClick(event, () => document.selection ? actions.removeSelection() : actions.removeItem(focused || lastItem))} />
 						</ul>
@@ -128,7 +128,7 @@ const DocumentHeader: React.SFC<ComponentProps> = (props) => {
 					<div className="menuItem">
 						View
 						<ul>
-							<MenuItem text={expandable ? "Expand Item" : "Collapse Item"} icon={expandable ? "▼" : "▶"} shortcut="Ctrl-␣" ID="collapse"
+							<MenuItem text={expandable ? "Expand Item" : "Collapse Item"} icon={expandable ? "arrow_drop_down" : "arrow_right"} shortcut="Ctrl-␣" ID="collapse"
 								enabled={collapsable} callback={(event) => handleClick(event, () => actions.toggleItemCollapse(focused as Item))} />
 							<MenuItem text="Turn Into Header" shortcut="Ctrl-⇧-H" ID="makeHeader" enabled={(focused || lastItem).view.itemType != "Title"}
 								callback={(event) => handleClick(event, () => document.selection ? actions.makeSelectionHeader() : actions.makeHeader(focused || lastItem))} />
@@ -139,11 +139,11 @@ const DocumentHeader: React.SFC<ComponentProps> = (props) => {
 					<div className="menuItem">
 						Selection
 						<ul>
-							<MenuItem text="Focus on Next Item" icon="→" shortcut="↹" ID="selectNext"
+							<MenuItem text="Focus on Next Item" icon="arrow_forward" shortcut="↹" ID="selectNext"
 								callback={(event) => handleClick(event, () => actions.incrementFocus(false))} />
-							<MenuItem text="Focus Previous Item" icon="←" shortcut="⇧-↹" ID="selectPrev"
+							<MenuItem text="Focus Previous Item" icon="arrow_back" shortcut="⇧-↹" ID="selectPrev"
 								callback={(event) => handleClick(event, () => actions.decrementFocus())} />
-							<MenuItem text="Select Item Range" icon="☰" shortcut="⇧-⏎" ID="multiSelect" enabled={focused != undefined}
+							<MenuItem text="Select Item Range" icon="reorder" shortcut="⇧-⏎" ID="multiSelect" enabled={focused != undefined}
 								callback={(event) => handleClick(event, () => actions.multiSelect(focused))} />
 							<MenuItem text="Unselect All" shortcut="Esc" ID="unselect" enabled={focused != undefined || document.selection != undefined}
 								callback={(event) => handleClick(event, () => { actions.setFocus(undefined); actions.multiSelect(undefined); })} />

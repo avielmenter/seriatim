@@ -30,7 +30,7 @@ update msg model =
                 case r of
                     Ok (Ok u) ->
                         ( { resetModel
-                            | currentUser = LoggedInAs u
+                            | currentUser = LoggedInAs u.data
                             , displayName =
                                 case model.displayName of
                                     Saving _ ->

@@ -2,6 +2,8 @@ import * as React from 'react';
 import { connect } from 'react-redux';
 import { ApplicationState, DispatchProps, mapDispatchToProps } from '../store';
 
+import MaterialIcon from './materialIcon';
+
 type StateProps = {
 	canEdit: boolean,
 }
@@ -26,7 +28,7 @@ const MenuItem: React.SFC<ComponentProps> = (props) => {
 
 	return (
 		<li className={itemEnabled ? "ddMenuItem" : "ddMenuItemDisabled"} id={ID ? ID : ""} onClick={itemEnabled ? (event) => callback(event) : () => { }}>
-			<span className="icon">{icon || " "}</span>
+			<MaterialIcon icon={icon} />
 			{text}
 			{shortcut && <span className="shortcut">({shortcut})</span>}
 		</li>

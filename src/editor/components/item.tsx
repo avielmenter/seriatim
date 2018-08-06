@@ -8,6 +8,7 @@ import { ApplicationState, DispatchProps, mapDispatchToProps, handleClick } from
 import { ListItem, ItemID, ItemType, Item as ItemData } from '../store/data/item';
 
 import ItemContent from './itemContent';
+import MaterialIcon from './materialIcon';
 
 type AttrProps = {
 	node: ListItem
@@ -39,7 +40,7 @@ const Item: React.SFC<ComponentProps> = (props) => {
 			<div className="collapseExpand">
 				{item.view.itemType != "Title" && item.children.count() > 0 && <button className={item.view.collapsed ? "expandButton" : "collapseButton"}
 					onClick={(event) => handleClick(event, () => actions.toggleItemCollapse(item))}>
-					{item.view.collapsed ? "▶" : "▼"}
+					<MaterialIcon icon={item.view.collapsed ? "arrow_right" : "arrow_drop_down"} />
 				</button>}
 			</div>
 			<ItemContent node={props.node} />

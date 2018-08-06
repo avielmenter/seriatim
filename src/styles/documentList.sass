@@ -11,16 +11,12 @@
 		margin-bottom: 1em
 
 	#refresh
-		line-height: 1
 		padding-left: 1ch
 		color: gray
 
 		&:hover
 			cursor: pointer
 			color: slateblue
-
-		&::before
-			content: "\27F3"
 
 	#actions
 		width: 2.5in
@@ -41,44 +37,40 @@
 			&:hover
 				cursor: pointer
 
-		button::before
-			font-weight: bold
-			display: inline-block
-			text-align: center
-			width: 3ch
+			i
+				font-weight: bold
+				display: inline-block
+				text-align: center
+				width: 3ch
 
 		button#createDocument
 			border-top: 1px dashed $spanishgray
-			&::before
-				content: "+"
+			i
 				color: green
 			&:hover
 				background: #00FF0011
 
 		button#renameDocument
-			&::before
-				content: "\270E"
+			i
 				color: slateblue
 			&:hover
 				background: transparentize(slateblue, 0.9)
 
 		button#copyDocument
-			&::before
-				content: "\002398"
+			i
 				color: lightblue
 			&:hover
 				background: transparentize(lightblue, 0.9)
 			
 
 		button#deleteDocument
-			&::before
-				content: "X"
+			i
 				color: red
 			&:hover
 				background: #FF000011
 
 		button.disabled
-			&::before
+			i
 				color: gray !important
 			&:hover
 				background: #00000011 !important

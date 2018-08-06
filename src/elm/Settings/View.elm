@@ -12,7 +12,6 @@ import Settings.Views.ErrorMessage as ErrorMessage
 import Settings.Views.LoginMethod as LoginMethod
 import LoginWidget.View
 import Util exposing (isSomething, isNothing)
-import Debug exposing (log)
 
 
 view : Model -> Html Message.Msg
@@ -34,7 +33,7 @@ view model =
             Nothing ->
                 []
          )
-            ++ case (log "USER: " model.currentUser) of
+            ++ case model.currentUser of
                 LoggedInAs u ->
                     [ Html.div [ id "userSettings" ] <|
                         [ Html.a [ href <| logoutCallback model.config, id "logoutLink" ] [ text "Log Out" ]

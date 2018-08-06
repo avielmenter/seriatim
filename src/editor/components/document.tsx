@@ -267,7 +267,8 @@ class Document extends React.Component<ComponentProps> {
 							? "Are you sure you want to leave this page? You have unsaved changes which will be lost."
 							: undefined;
 
-						event.returnValue = msg;
+						if (msg)
+							event.returnValue = msg;
 						return msg;
 					}
 				}

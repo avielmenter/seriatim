@@ -7,7 +7,7 @@ import { Permissions } from '../store/data/permissions';
 export type SeriatimSuccess<T> = {
 	status: "success",
 	permissions?: Permissions,
-	timestamp?: Date,
+	timestamp: Date,
 	data: T
 }
 
@@ -104,7 +104,9 @@ function parseServerDocument(sDoc: ServerDocument): Document | undefined {
 	const rootItemID = sDoc.root_item_id;
 	const title = sDoc.title || "";
 
-	if (!rootItemID || !sDoc.document_id)
+	const created_at = parseServerDate(sDoc.created_at);
+
+	if (!rootItemID || !sDoc.document_id || !created_at)
 		return undefined;
 
 	let items = Object.keys(serverItems)
@@ -148,6 +150,8 @@ function parseServerDocument(sDoc: ServerDocument): Document | undefined {
 
 	return {
 		documentID: sDoc.document_id,
+		lastModified: parseServerDate(sDoc.modified_at) || created_at,
+		editedSinceSave: false,
 		clipboard: undefined,
 		selection: undefined,
 		focusedItemID: rootItemID,
@@ -184,7 +188,9 @@ async function parseHttpResponse<TParsed, TRaw>(response: Response, parse: (raw:
 		return responseJson as SeriatimError;
 
 	const parsed = parse(responseJson.data);
-	if (!parsed) {
+	const timestamp = parseServerDate(responseJson.timestamp);
+
+	if (!parsed || !timestamp) {
 		return {
 			status: "error",
 			code: "OTHER_ERROR",
@@ -195,7 +201,7 @@ async function parseHttpResponse<TParsed, TRaw>(response: Response, parse: (raw:
 	return {
 		status: "success",
 		permissions: responseJson.permissions ? parseServerPermissions(responseJson.permissions) : undefined,
-		timestamp: parseServerDate(responseJson.timestamp),
+		timestamp,
 		data: parsed
 	}
 }

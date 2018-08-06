@@ -189,7 +189,10 @@ function addItemToParent(document: Document.Document | null, action: AddItemToPa
 	if (!document)
 		return null;
 
-	return Document.addItem(document, action.data.parent);
+	return {
+		...Document.addItem(document, action.data.parent),
+		editedSinceSave: true
+	};
 }
 
 function addItemAfterSibling(document: Document.Document | null, action: AddItemAfterSibling): Document.Document | null {
@@ -206,7 +209,10 @@ function addItemAfterSibling(document: Document.Document | null, action: AddItem
 		return document;
 
 	const item = Item.newItemFromParent(parent);
-	const newDocument = Document.addItem(document, parent, indexOfSibling + 1, item);
+	const newDocument = {
+		...Document.addItem(document, parent, indexOfSibling + 1, item),
+		editedSinceSave: true
+	};
 
 	return focusOnNew ?
 		setFocus(newDocument, { type: "SetFocus", data: { item } }) :
@@ -253,6 +259,7 @@ function updateItemText(document: Document.Document | null, action: UpdateItemTe
 
 	return Document.updateItems({
 		...document,
+		editedSinceSave: true,
 		title: newTitle
 	}, newItem);
 }
@@ -269,7 +276,7 @@ function removeItem(document: Document.Document | null, action: RemoveItem): Doc
 
 	const children = item.children.map(childID => document.items.get(childID));
 
-	let newDocument = document;
+	let newDocument = { ...document, editedSinceSave: true };
 
 	if (prevSibling) {
 		newDocument = children.reduce((prev, curr) => {
@@ -347,7 +354,7 @@ function indentItem(document: Document.Document | null, action: IndentItem): Doc
 		return document;
 
 	const indentation = Document.indentItem(document, item);
-	let newDocument = indentation.document;
+	let newDocument = { ...indentation.document, editedSinceSave: true };
 	const indented = indentation.moved;
 
 	if (indented.parentID == item.parentID)
@@ -373,7 +380,10 @@ function unindentItem(document: Document.Document | null, action: UnindentItem):
 			return unindentItem(newDocument, { type: "UnindentItem", data: { item: nextItem } });
 	}
 
-	return newDocument;
+	return {
+		...newDocument,
+		editedSinceSave: true
+	};
 }
 
 function makeHeader(document: Document.Document | null, action: MakeHeader): Document.Document | null {
@@ -408,7 +418,7 @@ function makeHeader(document: Document.Document | null, action: MakeHeader): Doc
 		}
 	};
 
-	return Document.updateItems(document, newItem);
+	return Document.updateItems({ ...document, editedSinceSave: true }, newItem);
 }
 
 function makeItem(document: Document.Document | null, action: MakeItem): Document.Document | null {
@@ -429,7 +439,7 @@ function makeItem(document: Document.Document | null, action: MakeItem): Documen
 		}
 	};
 
-	return Document.updateItems(document, newItem);
+	return Document.updateItems({ ...document, editedSinceSave: true }, newItem);
 }
 
 function copyItem(document: Document.Document | null, action: CopyItem): Document.Document | null {
@@ -501,7 +511,7 @@ function makeSelectionItem(document: Document.Document | null, action: MakeSelec
 		return null;
 
 	return Document.getSelectionRange(document)
-		.reduce((prev: Document.Document | null, selected) => makeItem(prev, { type: "MakeItem", data: { item: selected } }), document)
+		.reduce((prev: Document.Document | null, selected) => makeItem(prev, { type: "MakeItem", data: { item: selected } }), { ...document, editedSinceSave: true });
 }
 
 function makeSelectionHeader(document: Document.Document | null, action: MakeSelectionHeader): Document.Document | null {
@@ -509,7 +519,7 @@ function makeSelectionHeader(document: Document.Document | null, action: MakeSel
 		return null;
 
 	return Document.getSelectionRange(document)
-		.reduce((prev: Document.Document | null, selected) => makeHeader(prev, { type: "MakeHeader", data: { item: selected } }), document)
+		.reduce((prev: Document.Document | null, selected) => makeHeader(prev, { type: "MakeHeader", data: { item: selected } }), { ...document, editedSinceSave: true });
 }
 
 function removeSelection(document: Document.Document | null, action: RemoveSelection): Document.Document | null {
@@ -561,7 +571,10 @@ function indentSelection(document: Document.Document | null, action: IndentSelec
 		curr = next;
 	}
 
-	return itemsToIndent.reduce((prev, curr) => Document.indentItem(prev, prev.items.get(curr.itemID)).document, document);
+	return {
+		...itemsToIndent.reduce((prev, curr) => Document.indentItem(prev, prev.items.get(curr.itemID)).document, document),
+		editedSinceSave: true
+	};
 }
 
 function unindentSelection(document: Document.Document | null, action: UnindentSelection): Document.Document | null {
@@ -593,7 +606,10 @@ function unindentSelection(document: Document.Document | null, action: UnindentS
 		curr = next;
 	}
 
-	return itemsToUnindent.reduce((prev, curr) => Document.unindentItem(prev, prev.items.get(curr.itemID)).document, document);
+	return {
+		...itemsToUnindent.reduce((prev, curr) => Document.unindentItem(prev, prev.items.get(curr.itemID)).document, document),
+		editedSinceSave: true
+	};
 }
 
 function paste(document: Document.Document | null, action: Paste): Document.Document | null {
@@ -649,7 +665,10 @@ function paste(document: Document.Document | null, action: Paste): Document.Docu
 	if (addToParent)
 		newDocument = Document.removeItem(document, pasteBelow);
 
-	return newDocument;
+	return {
+		...newDocument,
+		editedSinceSave: true
+	};
 }
 
 function multiSelect(document: Document.Document | null, action: MultiSelect): Document.Document | null {
@@ -681,6 +700,7 @@ function multiSelect(document: Document.Document | null, action: MultiSelect): D
 
 	return {
 		...document,
+		editedSinceSave: false,
 		selection: {
 			...document.selection,
 			end: item.itemID

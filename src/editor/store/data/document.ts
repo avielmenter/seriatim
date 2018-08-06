@@ -11,7 +11,9 @@ type SelectionRange = {
 
 export interface Document {
 	readonly documentID: DocumentID,
+	readonly lastModified: Date,
 	readonly title: string,
+	readonly editedSinceSave: boolean,
 	readonly rootItemID: ItemID,
 	readonly focusedItemID: ItemID | undefined,
 	readonly selection: SelectionRange | undefined,
@@ -73,6 +75,8 @@ export function regenerateIDs(d: Document, curr: Item | undefined = d.items.get(
 
 	const newDoc: Document = {
 		documentID: d.documentID,
+		lastModified: new Date(),
+		editedSinceSave: d.editedSinceSave,
 		selection: newSelection,
 		focusedItemID: newFocus,
 		rootItemID: newRoot,
@@ -91,6 +95,8 @@ export function equals(lhs: any, rhs: any): boolean {
 export function getEmptyDocument(): Document {
 	let document: Document = {
 		documentID: "",
+		lastModified: new Date(),
+		editedSinceSave: true,
 		title: "Untitled Document",
 		rootItemID: "root",
 		focusedItemID: "root",

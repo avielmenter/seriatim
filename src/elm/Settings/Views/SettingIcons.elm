@@ -6,6 +6,7 @@ import Html.Events exposing (onClick)
 import Message exposing (Msg)
 import Settings.Model exposing (..)
 import Views.SavingSpinner as SavingSpinner
+import Views.MaterialIcon as MaterialIcon
 
 
 type alias Model a =
@@ -20,13 +21,13 @@ view model =
                 []
 
             Editing _ ->
-                [ Html.span [ class "settingConfirm", onClick model.onConfirm ] [ text "✔" ]
-                , Html.span [ class "settingReject", onClick model.onReject ] [ text "✘" ]
+                [ Html.span [ class "settingConfirm", onClick model.onConfirm ] [ MaterialIcon.view "done" ]
+                , Html.span [ class "settingReject", onClick model.onReject ] [ MaterialIcon.view "clear" ]
                 ]
 
             Saving _ ->
                 [ SavingSpinner.view ]
 
             Saved ->
-                [ Html.span [ class "settingSaved" ] [ text "saved" ] ]
+                [ Html.span [ class "settingSaved" ] [ MaterialIcon.view "check_circle" ] ]
         )

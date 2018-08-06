@@ -30,6 +30,7 @@ type ComponentProps = StateProps & AttrProps & DispatchProps;
 
 class Document extends React.Component<ComponentProps> {
 	documentDiv: React.RefObject<HTMLDivElement>;
+	saveInterval?: number;
 
 	constructor(props: ComponentProps) {
 		super(props);
@@ -50,6 +51,24 @@ class Document extends React.Component<ComponentProps> {
 			activeTextArea.textContent.slice(activeTextArea.selectionStart, activeTextArea.selectionEnd);
 
 		return selectedText;
+	}
+
+	saveDocument() {
+		const document_id = window.location.search.substring(1); // skip initial ? symbol
+		const doc = this.props.document;
+		if (!doc)
+			return;
+
+		Server.saveDocument(document_id, doc)
+			.then(response => {
+				if (response.status == 'success')
+					this.props.actions.document.updateItemIDs(response.data);
+				else
+					this.props.actions.errors.addError(response);
+			})
+			.finally(() => this.props.actions.stopSaving());
+
+		this.props.actions.startSaving();
 	}
 
 	handleKeyDown = (event: KeyboardEvent): void => {
@@ -95,17 +114,7 @@ class Document extends React.Component<ComponentProps> {
 		} else {
 			switch (event.key.toLowerCase()) {
 				case 's':
-					const document_id = window.location.search.substring(1); // skip initial ? symbol
-					Server.saveDocument(document_id, doc)
-						.then(response => {
-							if (response.status == 'success')
-								actions.updateItemIDs(response.data);
-							else
-								this.props.actions.errors.addError(response);
-						})
-						.finally(() => this.props.actions.stopSaving());
-
-					this.props.actions.startSaving();
+					this.saveDocument();
 					break;
 
 				case 'z':
@@ -240,10 +249,18 @@ class Document extends React.Component<ComponentProps> {
 
 		Server.fetchDocument(document_id)
 			.then(response => {
-				if (response.status == "success")
-					this.props.actions.loadDocument(response)
-				else
+				if (response.status == "error") {
 					errors.addError(response);
+					return;
+				}
+
+				this.props.actions.loadDocument(response);
+				if (response.permissions && response.permissions.edit) {
+					this.saveInterval = window.setInterval(() => {
+						if (this.props.document && this.props.document.editedSinceSave)
+							this.saveDocument();
+					}, 5 * 60 * 1000);
+				}
 			})
 			.catch(response => {
 				errors.addError({
@@ -299,6 +316,8 @@ class Document extends React.Component<ComponentProps> {
 
 	componentWillUnmount() {
 		document.removeEventListener('keydown', this.handleKeyDown);
+		if (this.saveInterval)
+			clearInterval(this.saveInterval);
 	}
 }
 

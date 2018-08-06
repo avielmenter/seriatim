@@ -115,6 +115,21 @@ main
 				opacity: 0
 				transition: opacity 0.1s ease-in
 
+				#exit .material-icons
+					color: #C00
+
+				#exit:hover
+					background: #FEE
+
+				#copyDocument .material-icons
+					color: lightblue
+
+				#rename .material-icons
+					color: slateblue
+
+				#saveIcon .material-icons
+					color: green
+
 				#addChild .material-icons
 					color: #00F
 
@@ -157,7 +172,7 @@ main
 					+Unselectable
 
 					&:not(:last-child)
-						border-bottom: 1px dashed gray
+						border-bottom: 1px solid lightgray
 
 					.material-icons
 						width: 2ch
@@ -174,7 +189,7 @@ main
 
 				.ddMenuItemDisabled
 					color: darkgray !important
-					.icon
+					.material-icons
 						color: darkgray !important
 					&:hover
 						background: transparent !important

@@ -1,6 +1,5 @@
 import * as React from 'react';
 import * as dateFormat from 'dateformat';
-import { render } from '../../../node_modules/@types/react-dom';
 
 type StateProps = {
 

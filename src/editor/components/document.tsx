@@ -287,6 +287,9 @@ class Document extends React.Component<ComponentProps> {
 			item: doc.items.get(curr),
 			focused: doc.focusedItemID == curr,
 			selected: selectedItems.has(curr),
+			itemType: curr == doc.rootItemID
+				? "Title"
+				: (/^#+\s+/.test(doc.items.get(curr).text) ? "Header" : "Item"), // starts with at least one '#', and then at least one space
 			indent
 		};
 

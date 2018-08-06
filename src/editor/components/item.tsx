@@ -24,7 +24,7 @@ const Item: React.SFC<ComponentProps> = (props) => {
 	const node = props.node;
 	const { item } = props.node;
 	const { text } = item;
-	const { itemType } = item.view;
+	const { itemType } = node;
 
 	const actions = props.actions.document;
 
@@ -38,7 +38,7 @@ const Item: React.SFC<ComponentProps> = (props) => {
 		<div className={classes} id={item.itemID}>
 			{Range(0, node.indent).map(i => <div className="itemIndent" key={"itemIndent_" + item.itemID + "_" + i} />)}
 			<div className="collapseExpand">
-				{item.view.itemType != "Title" && item.children.count() > 0 && <button className={item.view.collapsed ? "expandButton" : "collapseButton"}
+				{itemType != "Title" && item.children.count() > 0 && <button className={item.view.collapsed ? "expandButton" : "collapseButton"}
 					onClick={(event) => handleClick(event, () => actions.toggleItemCollapse(item))}>
 					<MaterialIcon icon={item.view.collapsed ? "arrow_right" : "arrow_drop_down"} />
 				</button>}

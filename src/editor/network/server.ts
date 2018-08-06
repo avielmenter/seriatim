@@ -65,9 +65,6 @@ function parseServerItem(sItem: ServerItem, root_id: string): Item | undefined {
 	const itemID = sItem.item_id;
 	const parentID = sItem.parent_id;
 	const text = sItem.text;
-	const itemType = sItem.item_id == root_id ? "Title" : (
-		sItem.text && sItem.text.match(/^#+\s+/i) ? "Header" : "Item"
-	);
 	const collapsed = sItem.collapsed || false;
 
 	if (itemID === undefined)
@@ -78,7 +75,6 @@ function parseServerItem(sItem: ServerItem, root_id: string): Item | undefined {
 		parentID,
 		text,
 		view: {
-			itemType,
 			collapsed
 		},
 		children: List<ItemID>()

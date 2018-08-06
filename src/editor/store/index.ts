@@ -6,7 +6,8 @@ import { Store, createStore, combineReducers, AnyAction } from 'redux';
 import { List } from 'immutable';
 
 import * as DocumentReducers from './reducers/document';
-import * as ErrorReducers from './reducers/errors';
+import * as ErrorReducers from './reducers/error';
+import * as ItemReducers from './reducers/item';
 import * as StateReducers from './reducers';
 
 import * as Document from './data/document';
@@ -35,7 +36,8 @@ export const store = createStore(rootReducer);
 export type DispatchProps = {
     actions: StateReducers.DispatchProps & {
         errors: ErrorReducers.DispatchProps,
-        document: DocumentReducers.DispatchProps
+        document: DocumentReducers.DispatchProps,
+        item: ItemReducers.DispatchProps,
     }
 }
 
@@ -44,7 +46,8 @@ export const mapDispatchToProps = (dispatch: Dispatch) => ({
     actions: {
         ...StateReducers.creators(dispatch),
         errors: ErrorReducers.creators(dispatch),
-        document: DocumentReducers.creators(dispatch)
+        document: DocumentReducers.creators(dispatch),
+        item: ItemReducers.creators(dispatch),
     }
 });
 

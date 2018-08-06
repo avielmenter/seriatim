@@ -39,7 +39,7 @@ class ItemContent extends React.Component<ComponentProps> {
 
 		if (this.editArea.current) {
 			const selectionEnd = this.editArea.current.value.length;
-			const selectionStart = item.view.itemType == "Title" && item.text == "Untitled Document" ? 0 : selectionEnd;
+			const selectionStart = this.props.node.itemType == "Title" && item.text == "Untitled Document" ? 0 : selectionEnd;
 
 			this.editArea.current.setSelectionRange(selectionStart, selectionEnd);
 		}
@@ -78,7 +78,7 @@ class ItemContent extends React.Component<ComponentProps> {
 	render() {
 		const node = this.props.node;
 		const item = this.props.node.item;
-		const actions = this.props.actions.document;
+		const actions = this.props.actions;
 
 		const textWithoutHeader = item.text.replace(/(^#+\s+)?/, '');
 
@@ -89,7 +89,7 @@ class ItemContent extends React.Component<ComponentProps> {
 
 		return (
 			<div className={classes} id={this.getContentDivId()} onClick={(event) => this.handleContentClick(event)}>
-				{item.view.itemType != "Title" ?
+				{node.itemType != "Title" ?
 					<ReactMarkdown
 						source={textWithoutHeader.length == 0 ? "New Item" : item.text}
 						className={textWithoutHeader.length == 0 ? "itemContentRenderedEmpty" : "itemContentRendered"}
@@ -100,7 +100,7 @@ class ItemContent extends React.Component<ComponentProps> {
 					<textarea id={this.getTextAreaId()} className="editArea"
 						onChange={(event) => {
 							this.resizeTextArea();
-							actions.updateItemText(item, event.target.value)
+							actions.item.updateItemText(item, event.target.value)
 						}}
 						onFocus={(event) => {
 							this.resizeTextArea();

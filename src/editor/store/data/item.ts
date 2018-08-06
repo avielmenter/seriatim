@@ -9,7 +9,6 @@ export type Item = {
 	readonly text: string,
 	readonly children: List<ItemID>,
 	readonly view: {
-		readonly itemType: ItemType,
 		readonly collapsed: boolean
 	}
 }
@@ -19,6 +18,7 @@ export type ListItem = {
 	readonly focused: boolean,
 	readonly selected: boolean,
 	readonly indent: number,
+	readonly itemType: ItemType,
 }
 
 const ID_POOL_SIZE = 1000;
@@ -58,7 +58,6 @@ export function newItemFromParent(parent: Item): Item {
 		text: "",
 		children: List<ItemID>([]),
 		view: {
-			itemType: "Item",
 			collapsed: false
 		}
 	}

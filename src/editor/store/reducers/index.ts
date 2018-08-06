@@ -7,7 +7,7 @@ import { SeriatimSuccess, SeriatimError } from '../../network/server';
 
 import * as Document from '../data/document';
 
-import { ApplicationState } from '../';
+import { ApplicationState } from '..';
 
 // UTILITY
 
@@ -40,9 +40,10 @@ type LoadDocument = {
 	}
 }
 
-export type Action = LoadDocument |
-	StartSaving |
-	StopSaving;
+export type Action
+	= LoadDocument
+	| StartSaving
+	| StopSaving;
 
 // REDUCERS
 

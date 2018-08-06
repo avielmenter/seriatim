@@ -6,7 +6,7 @@ import { List, Map, Range } from 'immutable';
 import * as Item from '../data/item';
 import * as Document from '../data/document';
 
-import * as Store from '../';
+import * as ItemReducers from './item';
 
 // ACTION TYPES
 
@@ -36,14 +36,6 @@ type ToggleItemCollapse = {
 	type: "ToggleItemCollapse",
 	data: {
 		item: Item.Item
-	}
-}
-
-type UpdateItemText = {
-	type: "UpdateItemText",
-	data: {
-		item: Item.Item,
-		newText: string
 	}
 }
 
@@ -152,6 +144,14 @@ type Paste = {
 	}
 }
 
+type UpdateItem = {
+	type: "UpdateItem",
+	data: {
+		item: Item.Item,
+		action: ItemReducers.Action
+	}
+}
+
 type UpdateItemIDs = {
 	type: "UpdateItemIDs",
 	data: {
@@ -159,29 +159,42 @@ type UpdateItemIDs = {
 	}
 }
 
-export type Action = AddItemToParent |
-	AddItemAfterSibling |
-	InitializeDocument |
-	ToggleItemCollapse |
-	RemoveItem |
-	SetFocus |
-	IncrementFocus |
-	DecrementFocus |
-	IndentItem |
-	UnindentItem |
-	UpdateItemText |
-	MakeHeader |
-	MakeItem |
-	CopyItem |
-	Paste |
-	MakeSelectionItem |
-	MakeSelectionHeader |
-	RemoveSelection |
-	IndentSelection |
-	UnindentSelection |
-	CopySelection |
-	MultiSelect |
-	UpdateItemIDs;
+type MarkSaved = {
+	type: "MarkSaved",
+	data: {}
+}
+
+type MarkUnsaved = {
+	type: "MarkUnsaved",
+	data: {}
+}
+
+export type Action
+	= AddItemToParent
+	| AddItemAfterSibling
+	| InitializeDocument
+	| ToggleItemCollapse
+	| RemoveItem
+	| SetFocus
+	| IncrementFocus
+	| DecrementFocus
+	| IndentItem
+	| UnindentItem
+	| MakeHeader
+	| MakeItem
+	| CopyItem
+	| Paste
+	| MakeSelectionItem
+	| MakeSelectionHeader
+	| RemoveSelection
+	| IndentSelection
+	| UnindentSelection
+	| CopySelection
+	| MultiSelect
+	| UpdateItem
+	| UpdateItemIDs
+	| MarkSaved
+	| MarkUnsaved;
 
 // REDUCERS
 
@@ -234,34 +247,6 @@ function toggleItemCollapse(document: Document.Document | null, action: ToggleIt
 			collapsed: !item.view.collapsed
 		}
 	});
-}
-
-function updateItemText(document: Document.Document | null, action: UpdateItemText): Document.Document | null {
-	if (!document)
-		return null;
-	else if (!document.items.get(action.data.item.itemID))
-		return document;
-
-	const { item, newText } = action.data;
-
-	const newType = (newText.match(/\s*#+\s+.*/) ? "Header" : "Item");
-
-	const newItem = {
-		...item,
-		text: newText,
-		view: {
-			...item.view,
-			itemType: (item.view.itemType == "Title" ? "Title" : newType) as Item.ItemType
-		}
-	};
-
-	const newTitle = newItem.view.itemType == "Title" ? newItem.text : document.title;
-
-	return Document.updateItems({
-		...document,
-		editedSinceSave: true,
-		title: newTitle
-	}, newItem);
 }
 
 function removeItem(document: Document.Document | null, action: RemoveItem): Document.Document | null {
@@ -414,7 +399,6 @@ function makeHeader(document: Document.Document | null, action: MakeHeader): Doc
 		text: item.text.replace(/^(#+\s)?/, hashes + ' '),
 		view: {
 			...item.view,
-			itemType: "Header"
 		}
 	};
 
@@ -435,7 +419,6 @@ function makeItem(document: Document.Document | null, action: MakeItem): Documen
 		text: item.text.replace(/^(#+\s)?/, ''),
 		view: {
 			...item.view,
-			itemType: "Item"
 		}
 	};
 
@@ -718,7 +701,45 @@ function updateItemIDs(document: Document.Document | null, action: UpdateItemIDs
 	if (!document)
 		return document;
 
-	return Document.updateItemIDs(document, action.data.newIDs);
+	return {
+		...Document.updateItemIDs(document, action.data.newIDs),
+		editedSinceSave: false
+	};
+}
+
+function updateItem(document: Document.Document | null, action: UpdateItem): Document.Document | null {
+	if (!document)
+		return document;
+
+	const itemAction = action.data.action;
+
+	const itemInDocument = document.items.get(action.data.item.itemID);
+	if (!itemInDocument)
+		return document;
+
+	const updatedItem = ItemReducers.reducer(itemInDocument, itemAction);
+	if (updatedItem === undefined)
+		return document;
+
+	const title = updatedItem.itemID == document.rootItemID ? updatedItem.text : document.title;
+
+	return {
+		...Document.updateItems(document, updatedItem),
+		title,
+		editedSinceSave: true
+	}
+}
+
+function markSaved(document: Document.Document | null, action: MarkSaved): Document.Document | null {
+	return !document
+		? null
+		: { ...document, editedSinceSave: false };
+}
+
+function markUnsaved(document: Document.Document | null, action: MarkUnsaved): Document.Document | null {
+	return !document
+		? null
+		: { ...document, editedSinceSave: true };
 }
 
 function undoableReducer(document: Document.Document | undefined | null, anyAction: AnyAction): Document.Document | null {
@@ -734,8 +755,6 @@ function undoableReducer(document: Document.Document | undefined | null, anyActi
 			return addItemAfterSibling(doc, action);
 		case "ToggleItemCollapse":
 			return toggleItemCollapse(doc, action);
-		case "UpdateItemText":
-			return updateItemText(doc, action);
 		case "RemoveItem":
 			return removeItem(doc, action);
 		case "SetFocus":
@@ -772,6 +791,12 @@ function undoableReducer(document: Document.Document | undefined | null, anyActi
 			return paste(doc, action);
 		case "UpdateItemIDs":
 			return updateItemIDs(doc, action);
+		case "UpdateItem":
+			return updateItem(doc, action);
+		case "MarkSaved":
+			return markSaved(doc, action);
+		case "MarkUnsaved":
+			return markUnsaved(doc, action);
 		default:
 			return doc;
 	}
@@ -808,10 +833,6 @@ export const creators = (dispatch: Dispatch) => ({
 	removeItem: (item: Item.Item) => dispatch({
 		type: "RemoveItem",
 		data: { item }
-	}),
-	updateItemText: (item: Item.Item, newText: string) => dispatch({
-		type: "UpdateItemText",
-		data: { item, newText }
 	}),
 	setFocus: (item: Item.Item | undefined) => dispatch({
 		type: "SetFocus",
@@ -881,6 +902,10 @@ export const creators = (dispatch: Dispatch) => ({
 		type: "UpdateItemIDs",
 		data: { newIDs }
 	}),
+	markUnsaved: () => dispatch({
+		type: "MarkUnsaved",
+		data: {}
+	}),
 	undo: () => dispatch(ActionCreators.undo()),
 	redo: () => dispatch(ActionCreators.redo()),
 });
@@ -890,7 +915,6 @@ export type DispatchProps = {
 	addItemAfterSibling: (parent: Item.Item, focusOnNew: boolean) => void,
 	toggleItemCollapse: (item: Item.Item) => void,
 	initializeDocument: (document: Document.Document | null) => void,
-	updateItemText: (item: Item.Item, newText: string) => void,
 	removeItem: (item: Item.Item) => void,
 	setFocus: (item: Item.Item | undefined) => void,
 	incrementFocus: (createNewData: boolean) => void,
@@ -909,6 +933,7 @@ export type DispatchProps = {
 	copySelection: () => void,
 	paste: (item: Item.Item) => void,
 	updateItemIDs: (newIDs: Map<Item.ItemID, Item.ItemID>) => void,
+	markUnsaved: () => void,
 	undo: () => void,
 	redo: () => void
 }

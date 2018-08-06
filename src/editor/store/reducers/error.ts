@@ -24,7 +24,10 @@ type ClearErrors = {
 	data: {}
 }
 
-export type Action = AddError | RemoveError | ClearErrors
+export type Action
+	= AddError
+	| RemoveError
+	| ClearErrors
 
 // REDUCERS
 

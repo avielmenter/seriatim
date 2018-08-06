@@ -255,11 +255,21 @@ class Document extends React.Component<ComponentProps> {
 				}
 
 				this.props.actions.loadDocument(response);
+
 				if (response.permissions && response.permissions.edit) {
 					this.saveInterval = window.setInterval(() => {
 						if (this.props.document && this.props.document.editedSinceSave)
 							this.saveDocument();
 					}, 5 * 60 * 1000);
+
+					window.onbeforeunload = (event) => {
+						const msg = this.props.document && this.props.document.editedSinceSave
+							? "Are you sure you want to leave this page? You have unsaved changes which will be lost."
+							: undefined;
+
+						event.returnValue = msg;
+						return msg;
+					}
 				}
 			})
 			.catch(response => {

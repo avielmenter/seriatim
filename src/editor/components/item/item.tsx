@@ -4,11 +4,11 @@ import { connect } from 'react-redux';
 import { Range } from 'immutable';
 import * as classNames from 'classnames';
 
-import { ApplicationState, DispatchProps, mapDispatchToProps, handleClick } from '../store';
-import { ListItem, ItemID, ItemType, Item as ItemData } from '../store/data/item';
+import { ApplicationState, DispatchProps, mapDispatchToProps, handleClick } from '../../store';
+import { ListItem, ItemID, ItemType, Item as ItemData } from '../../store/data/item';
 
 import ItemContent from './itemContent';
-import MaterialIcon from './materialIcon';
+import MaterialIcon from '../util/materialIcon';
 
 type AttrProps = {
 	node: ListItem

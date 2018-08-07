@@ -2,19 +2,19 @@ import * as React from 'react';
 import { connect } from 'react-redux';
 import { Map, List } from 'immutable';
 
-import { Error } from '../store/data/error';
-import { Document as DocumentData, getLastItem, ItemDictionary, getSelectedItems } from '../store/data/document';
-import { Item as ItemData, ListItem, ItemID } from '../store/data/item';
+import { Error } from '../../store/data/error';
+import { Document as DocumentData, getLastItem, ItemDictionary, getSelectedItems } from '../../store/data/document';
+import { Item as ItemData, ListItem, ItemID } from '../../store/data/item';
 
-import Item from './item';
+import Item from '../item/item';
 import DocumentHeader from './documentHeader';
-import LoadingSpinner from './loadingSpinner';
-import ErrorMessage from './errorMessage';
+import LoadingSpinner from '../util/loadingSpinner'
+import ErrorMessage from '../util/errorMessage';
 
-import { DispatchProps, mapDispatchToProps, ApplicationState } from '../store';
+import { DispatchProps, mapDispatchToProps, ApplicationState } from '../../store';
 
-import * as Server from '../network/server';
-import { Permissions } from '../store/data/permissions';
+import * as Server from '../../network/server';
+import { Permissions } from '../../store/data/permissions';
 
 type StateProps = {
 	errors: List<Error>,
@@ -114,7 +114,9 @@ class Document extends React.Component<ComponentProps> {
 		} else {
 			switch (event.key.toLowerCase()) {
 				case 'b':
-					if (focusedItem)
+					if (focusedItem && event.shiftKey)
+						this.props.actions.item.blockQuote(focusedItem);
+					else if (focusedItem)
 						this.props.actions.item.emboldenItem(focusedItem);
 					else
 						preventDefault = false;
@@ -251,6 +253,8 @@ class Document extends React.Component<ComponentProps> {
 	}
 
 	handleMainClick(event: React.MouseEvent<HTMLMainElement>) {
+		console.log("HANDLING CLICK");
+
 		const actions = this.props.actions.document;
 		const doc = this.props.document;
 

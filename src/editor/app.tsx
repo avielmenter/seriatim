@@ -1,17 +1,14 @@
 import * as React from 'react';
 
 import { Provider } from 'react-redux';
-import * as Store from './store';
+import { store } from './store';
 
-import * as Doc from './store/data/document';
-
-import Document from './components/document';
-import DocumentHeader from './components/documentHeader';
+import Document from './components/document/document';
 
 export default class App extends React.Component {
 	render() {
 		return (
-			<Provider store={Store.store}>
+			<Provider store={store}>
 				<Document />
 			</Provider>
 		)

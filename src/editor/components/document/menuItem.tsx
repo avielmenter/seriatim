@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { connect } from 'react-redux';
-import { ApplicationState, DispatchProps, mapDispatchToProps } from '../store';
+import { ApplicationState, DispatchProps, mapDispatchToProps } from '../../store';
 
-import MaterialIcon from './materialIcon';
+import MaterialIcon from '../util/materialIcon';
 
 type StateProps = {
 	canEdit: boolean,

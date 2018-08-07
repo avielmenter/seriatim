@@ -1,16 +1,16 @@
 import * as React from 'react';
 import { connect } from 'react-redux';
 
-import { Document, getLastItem, getEmptyDocument } from '../store/data/document';
-import { Item } from '../store/data/item';
+import { Document, getLastItem, getEmptyDocument } from '../../store/data/document';
+import { Item } from '../../store/data/item';
 
-import { DispatchProps, mapDispatchToProps, ApplicationState, handleClick } from '../store';
+import { DispatchProps, mapDispatchToProps, ApplicationState, handleClick } from '../../store';
 
 import MenuItem from './menuItem';
 
-import * as Server from '../network/server';
-import SavingSpinner from './savingSpinner';
-import FriendlyDate from './friendlyDate';
+import * as Server from '../../network/server';
+import SavingSpinner from '../util/savingSpinner';
+import FriendlyDate from '../util/friendlyDate';
 
 type StateProps = {
 	state: ApplicationState | undefined
@@ -162,6 +162,10 @@ const DocumentHeader: React.SFC<ComponentProps> = (props) => {
 								callback={(event) => handleClick(event, () => focused && props.actions.item.italicizeItem(focused))} />
 							<MenuItem text="Add Link" icon="link" shortcut="Ctrl-K" ID="addURL" enabled={focused != undefined}
 								callback={(event) => handleClick(event, () => focused && props.actions.item.addURL(focused))} />
+							<MenuItem text="Block Quote" icon="format_quote" shortcut="Ctrl-⇧-B" ID="blockQuote" enabled={focused != undefined}
+								callback={(event) => handleClick(event, () => focused && props.actions.item.blockQuote(focused))} />
+							<MenuItem text="Unquote" icon="" ID="unquote" enabled={focused != undefined}
+								callback={(event) => handleClick(event, () => focused && props.actions.item.unquote(focused))} />
 						</ul>
 					</div>
 				</div>

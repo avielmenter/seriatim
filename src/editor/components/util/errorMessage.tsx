@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { connect } from 'react-redux';
 
-import { Error } from '../store/data/error';
-import { DispatchProps, mapDispatchToProps } from '../store';
+import { Error } from '../..//store/data/error';
+import { DispatchProps, mapDispatchToProps } from '../../store';
 
 type StateProps = {
 

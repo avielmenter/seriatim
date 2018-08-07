@@ -1,4 +1,6 @@
 import { AnyAction } from 'redux';
+import { List } from 'immutable';
+
 import { Item, CursorPosition, getHeaderLevel } from '../data/item';
 
 // UTILITY
@@ -15,6 +17,8 @@ function applyMarkdownToSubstr(item: Item, opening: string, closing: string, sta
 	const newText = removeMarkdown
 		? (item.text.substr(0, startSubstr - opening.length)
 			+ item.text.substr(startSubstr, lenSubstr)
+				.replace(opening, '')
+				.replace(closing, '')
 			+ item.text.substr(startSubstr + lenSubstr + closing.length)
 		)
 		: (item.text.substr(0, startSubstr)
@@ -81,6 +85,30 @@ function applyMarkdown(item: Item, opening: string, closing: string): Item {
 	}
 }
 
+function getAllIndicesOf(haystack: string, needle: string, offset: number = 0): List<number> {
+	const index = haystack.indexOf(needle);
+
+	return index == -1
+		? List<number>()
+		: List<number>([index + offset])
+			.concat(getAllIndicesOf(haystack.substr(index + needle.length), needle, index + offset + needle.length))
+			.toList();
+}
+
+function getParagraphIndices(item: Item): List<number> {
+	const { cursorPosition } = item.view;
+
+	return (!cursorPosition
+		? List<number>([0])
+			.concat(getAllIndicesOf(item.text, '\n'))
+			.toList()
+		: List<number>([Math.max(0, item.text.lastIndexOf('\n', cursorPosition.start))])
+			.concat(getAllIndicesOf(item.text.substr(cursorPosition.start, cursorPosition.length), '\n', cursorPosition.start))
+			.toList()
+	).toSet().toList() // remove duplicates
+		.sort().toList();
+}
+
 // ACTION TYPES
 
 type UpdateItemText = {
@@ -110,6 +138,11 @@ type BlockQuote = {
 	data: {}
 }
 
+type Unquote = {
+	type: "Unquote",
+	data: {}
+}
+
 type UpdateCursor = {
 	type: "UpdateCursor",
 	data: {
@@ -123,6 +156,7 @@ export type Action
 	| ItalicizeItem
 	| AddURL
 	| BlockQuote
+	| Unquote
 	| UpdateCursor;
 
 // REDUCERS
@@ -160,6 +194,72 @@ function addURL(item: Item, action: AddURL): Item | undefined {
 	return applyMarkdown(item, '[', '](https://)');
 }
 
+function blockQuote(item: Item, action: BlockQuote): Item | undefined {
+	const { cursorPosition } = item.view;
+
+	const blockQuoteMarkdown = '> ';
+
+	const paragraphIndices = getParagraphIndices(item);
+
+	const startBlockQuote = paragraphIndices.first();
+	const endBlockQuote = paragraphIndices.last();
+
+	const newlineOffset = endBlockQuote == 0 ? 0 : 1;
+
+	const quotedText = item.text.substr(startBlockQuote, newlineOffset + endBlockQuote - startBlockQuote)
+		.replace(/(\n)/g, '$1' + blockQuoteMarkdown);
+
+	const newText = (startBlockQuote == 0 ? '> ' : '')
+		+ item.text.substr(0, startBlockQuote)
+		+ quotedText
+		+ item.text.substr(endBlockQuote + newlineOffset);
+
+	return {
+		...item,
+		text: newText,
+		view: {
+			...item.view,
+			cursorPosition: cursorPosition && {
+				...cursorPosition,
+				start: cursorPosition.start + blockQuoteMarkdown.length
+			}
+		}
+	}
+}
+
+function unquote(item: Item, action: Unquote): Item | undefined {
+	const { cursorPosition } = item.view;
+
+	const blockQuoteMarkdown = '> ';
+	const paragraphIndices = getParagraphIndices(item);
+
+	const startBlockQuote = paragraphIndices.first();
+	const endBlockQuote = paragraphIndices.last();
+
+	const newlineOffset = (endBlockQuote == 0 ? 0 : 1);
+
+	const unquotedText = item.text.substr(startBlockQuote, (endBlockQuote - startBlockQuote) + blockQuoteMarkdown.length + newlineOffset)
+		.replace(/> /g, '');
+
+	const newText = item.text.substr(0, startBlockQuote)
+		+ unquotedText
+		+ item.text.substr(endBlockQuote + blockQuoteMarkdown.length + newlineOffset);
+
+	const cursorStart = cursorPosition && (cursorPosition.start - (item.text.indexOf(blockQuoteMarkdown) != -1 ? blockQuoteMarkdown.length : 0));
+
+	return {
+		...item,
+		text: newText,
+		view: {
+			...item.view,
+			cursorPosition: (!cursorPosition || !cursorStart) ? undefined : {
+				start: cursorStart,
+				length: Math.min(cursorPosition.length, newText.length - cursorStart)
+			}
+		}
+	}
+}
+
 function updateCursor(item: Item, action: UpdateCursor): Item | undefined {
 	return {
 		...item,
@@ -182,6 +282,10 @@ export function reducer(item: Item, anyAction: AnyAction): Item | undefined {
 			return italicizeItem(item, action);
 		case "AddURL":
 			return addURL(item, action);
+		case "BlockQuote":
+			return blockQuote(item, action);
+		case "Unquote":
+			return unquote(item, action);
 		case "UpdateCursor":
 			return updateCursor(item, action);
 		default:
@@ -227,6 +331,18 @@ export const creators = (dispatch: Dispatch) => {
 				data: {}
 			}
 		),
+		blockQuote: (item: Item) => itemDispatch(
+			item, {
+				type: "BlockQuote",
+				data: {}
+			}
+		),
+		unquote: (item: Item) => itemDispatch(
+			item, {
+				type: "Unquote",
+				data: {}
+			}
+		),
 		updateCursor: (item: Item, cursorPosition?: CursorPosition) => itemDispatch(
 			item, {
 				type: "UpdateCursor",
@@ -243,5 +359,7 @@ export type DispatchProps = {
 	emboldenItem: (item: Item) => void,
 	italicizeItem: (item: Item) => void,
 	addURL: (item: Item) => void,
+	blockQuote: (item: Item) => void,
+	unquote: (item: Item) => void,
 	updateCursor: (item: Item, cursorPosition?: CursorPosition) => void,
 }

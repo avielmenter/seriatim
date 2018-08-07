@@ -802,11 +802,14 @@ function undoableReducer(document: Document.Document | undefined | null, anyActi
 	}
 }
 
-const skipHistoryFor: string[] = ["CopyItem", "CopySelection", "SetFocus", "IncrementFocus", "DecrementFocus", "SetFocus", "InitializeDocument", "UpdateItemIDs"];
+const skipHistoryFor: string[] = ["CopyItem", "CopySelection", "InitializeDocument", "UpdateItemIDs", "UpdateCursor"];
 
 export const reducer = undoable(undoableReducer, {
 	ignoreInitialState: true,
-	filter: (action, curr, prev) => !curr ? true : !skipHistoryFor.includes(action.type) && !Document.equals(curr, prev._latestUnfiltered)
+	filter: (action, curr, prev) => !curr ? true :
+		!skipHistoryFor.includes(action.type)
+		&& !(action.type == "UpdateItem" && skipHistoryFor.includes((action as UpdateItem).data.action.type))
+		&& !Document.equals(curr, prev._latestUnfiltered)
 });
 
 // DISPATCH PROPERTIES

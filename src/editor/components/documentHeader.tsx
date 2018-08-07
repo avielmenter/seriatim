@@ -153,6 +153,17 @@ const DocumentHeader: React.SFC<ComponentProps> = (props) => {
 								callback={(event) => handleClick(event, () => { actions.setFocus(undefined); actions.multiSelect(undefined); })} />
 						</ul>
 					</div>
+					<div className="menuItem">
+						Format
+						<ul>
+							<MenuItem text="Bold" icon="B" shortcut="Ctrl-B" ID="embolden" enabled={focused != undefined}
+								callback={(event) => handleClick(event, () => focused && props.actions.item.emboldenItem(focused))} />
+							<MenuItem text="Italicize" icon="I" shortcut="Ctrl-I" ID="italicize" enabled={focused != undefined}
+								callback={(event) => handleClick(event, () => focused && props.actions.item.italicizeItem(focused))} />
+							<MenuItem text="Add Link" icon="link" shortcut="Ctrl-K" ID="addURL" enabled={focused != undefined}
+								callback={(event) => handleClick(event, () => focused && props.actions.item.addURL(focused))} />
+						</ul>
+					</div>
 				</div>
 			</div>
 		</div>

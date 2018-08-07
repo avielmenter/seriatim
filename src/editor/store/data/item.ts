@@ -3,13 +3,19 @@ import { List, Set } from 'immutable';
 export type ItemID = string;
 export type ItemType = "Header" | "Item" | "Title";
 
+export type CursorPosition = {
+	start: number,
+	length: number
+}
+
 export type Item = {
 	readonly itemID: ItemID,
 	readonly parentID: ItemID,
 	readonly text: string,
 	readonly children: List<ItemID>,
 	readonly view: {
-		readonly collapsed: boolean
+		readonly collapsed: boolean,
+		readonly cursorPosition?: CursorPosition
 	}
 }
 
@@ -68,4 +74,14 @@ export function regenerateID(item: Item): Item {
 		...item,
 		itemID: generateItemID()
 	}
+}
+
+export function getHeaderLevel(item: Item): number {
+	const numHashes = List(item.text)
+		.takeWhile(c => c == '#')
+		.count();
+
+	return item.text.length > numHashes && item.text[numHashes] == ' '
+		? numHashes
+		: 0;
 }

@@ -113,6 +113,27 @@ class Document extends React.Component<ComponentProps> {
 			}
 		} else {
 			switch (event.key.toLowerCase()) {
+				case 'b':
+					if (focusedItem)
+						this.props.actions.item.emboldenItem(focusedItem);
+					else
+						preventDefault = false;
+					break;
+
+				case 'i':
+					if (focusedItem)
+						this.props.actions.item.italicizeItem(focusedItem);
+					else
+						preventDefault = false;
+					break;
+
+				case 'k':
+					if (focusedItem)
+						this.props.actions.item.addURL(focusedItem);
+					else
+						preventDefault = false;
+					break;
+
 				case 's':
 					this.saveDocument();
 					break;

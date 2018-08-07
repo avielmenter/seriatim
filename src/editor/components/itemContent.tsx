@@ -6,7 +6,7 @@ import * as classNames from 'classnames';
 
 import { DispatchProps, mapDispatchToProps, handleClick, ApplicationState } from '../store';
 
-import { ListItem } from '../store/data/item';
+import { ListItem, CursorPosition } from '../store/data/item';
 
 type StateProps = {
 	canEdit: boolean
@@ -34,15 +34,34 @@ class ItemContent extends React.Component<ComponentProps> {
 		return '__edit__' + this.props.node.item.itemID;
 	}
 
-	setSelectionRange = (): void => {
+	setSelectionRange = (position?: CursorPosition): void => {
 		const item = this.props.node.item;
 
 		if (this.editArea.current) {
 			const selectionEnd = this.editArea.current.value.length;
 			const selectionStart = this.props.node.itemType == "Title" && item.text == "Untitled Document" ? 0 : selectionEnd;
 
-			this.editArea.current.setSelectionRange(selectionStart, selectionEnd);
+			this.editArea.current.setSelectionRange(!position ? selectionStart : position.start, !position ? selectionEnd : position.start + position.length)
+			this.props.actions.item.updateCursor(item, {
+				start: !position ? selectionStart : position.start,
+				length: !position ? 0 : position.start + position.length
+			});
 		}
+	}
+
+	getCursorPosition(event: React.KeyboardEvent<HTMLTextAreaElement> | React.MouseEvent<HTMLTextAreaElement> | React.ChangeEvent<HTMLTextAreaElement>): CursorPosition | undefined {
+		if (!this.editArea.current)
+			return undefined;
+
+		const item = this.props.node.item;
+
+		const start = this.editArea.current.selectionStart;
+		const length = this.editArea.current.selectionEnd - start;
+
+		return {
+			start,
+			length
+		};
 	}
 
 	focusOnTextArea() {
@@ -100,12 +119,15 @@ class ItemContent extends React.Component<ComponentProps> {
 					<textarea id={this.getTextAreaId()} className="editArea"
 						onChange={(event) => {
 							this.resizeTextArea();
-							actions.item.updateItemText(item, event.target.value)
+							actions.item.updateItemText(item, event.target.value);
 						}}
 						onFocus={(event) => {
 							this.resizeTextArea();
 							this.setSelectionRange();
 						}}
+						onKeyUp={(event) => this.props.actions.item.updateCursor(item, this.getCursorPosition(event))}
+						onClick={(event) => this.props.actions.item.updateCursor(item, this.getCursorPosition(event))}
+						onBlur={() => this.props.actions.item.updateCursor(item, undefined)}
 						value={item.text}
 						ref={this.editArea}
 					></textarea>
@@ -120,6 +142,11 @@ class ItemContent extends React.Component<ComponentProps> {
 
 	componentDidUpdate() {
 		this.focusOnTextArea();
+
+		const cursorPosition = this.props.node.item.view.cursorPosition;
+
+		if (this.editArea.current && this.editArea.current.selectionStart != (!cursorPosition ? 0 : cursorPosition.start))
+			this.setSelectionRange(this.props.node.item.view.cursorPosition);
 	}
 }
 

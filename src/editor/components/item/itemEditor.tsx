@@ -89,7 +89,14 @@ class ItemEditor extends React.Component<ComponentProps> {
 					this.resizeTextArea();
 					actions.item.updateItemText(item, event.target.value);
 				}}
-				onKeyUp={(event) => this.props.actions.item.updateCursor(item, this.getCursorPosition(event))}
+				onKeyUp={(event) => {
+					if ((event.key < 'a' || event.key > 'z')
+						&& event.key.toLowerCase() != 'backspace'
+						&& event.key.toLowerCase() != 'delete'
+						&& event.key != ' ') {	// only update cursor if updateItemText didn't 
+						this.props.actions.item.updateCursor(item, this.getCursorPosition(event));
+					}
+				}}
 				onClick={(event) => this.props.actions.item.updateCursor(item, this.getCursorPosition(event))}
 				value={item.text}
 				ref={this.editArea}

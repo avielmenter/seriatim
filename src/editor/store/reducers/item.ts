@@ -5,6 +5,10 @@ import { Item, CursorPosition, getHeaderLevel } from '../data/item';
 
 // UTILITY
 
+function escapeRegExp(text: string) { //ew. why did I have to copy this from stackoverflow
+	return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+}
+
 function applyMarkdownToSubstr(item: Item, opening: string, closing: string, startSubstr: number, lenSubstr: number): Item {
 	const { cursorPosition } = item.view;
 
@@ -12,21 +16,31 @@ function applyMarkdownToSubstr(item: Item, opening: string, closing: string, sta
 		&& item.text.substr(startSubstr - opening.length, opening.length) == opening
 		&& startSubstr + lenSubstr <= item.text.length - closing.length
 		&& item.text.substr(startSubstr + lenSubstr, closing.length) == closing
-	);
+	) || (
+			!cursorPosition
+			&& item.text.startsWith(opening)
+			&& item.text.endsWith(closing)
+		);
 
 	const newText = removeMarkdown
 		? (item.text.substr(0, startSubstr - opening.length)
 			+ item.text.substr(startSubstr, lenSubstr)
-				.replace(opening, '')
-				.replace(closing, '')
+				.replace(new RegExp(escapeRegExp(opening), 'g'), '')
+				.replace(new RegExp(escapeRegExp(closing), 'g'), '')
 			+ item.text.substr(startSubstr + lenSubstr + closing.length)
 		)
 		: (item.text.substr(0, startSubstr)
 			+ opening
 			+ item.text.substr(startSubstr, lenSubstr)
+				.replace(/(.)\n/g, '$1' + closing + '\n')
+				.replace(/\n(.)/g, '\n' + opening + '$1')	// markdown breaks if spread across multiple lines
 			+ closing
 			+ item.text.substr(startSubstr + lenSubstr)
 		);
+
+	const cursorStartChange = (removeMarkdown ? -1 : 1) * opening.length;
+	const cursorLengthChange = (newText.length - item.text.length)
+		- (removeMarkdown ? -1 : 1) * (opening.length + closing.length);
 
 	return {
 		...item,
@@ -34,8 +48,8 @@ function applyMarkdownToSubstr(item: Item, opening: string, closing: string, sta
 		view: {
 			...item.view,
 			cursorPosition: cursorPosition && {
-				...cursorPosition,
-				start: cursorPosition.start + (removeMarkdown ? -1 : 1) * opening.length
+				start: cursorPosition.start + cursorStartChange,
+				length: cursorPosition.length + cursorLengthChange
 			}
 		}
 	};
@@ -133,6 +147,11 @@ type AddURL = {
 	data: {}
 }
 
+type AddImage = {
+	type: "AddImage",
+	data: {}
+}
+
 type BlockQuote = {
 	type: "BlockQuote",
 	data: {}
@@ -140,6 +159,11 @@ type BlockQuote = {
 
 type Unquote = {
 	type: "Unquote",
+	data: {}
+}
+
+type ClearFormatting = {
+	type: "ClearFormatting",
 	data: {}
 }
 
@@ -155,8 +179,10 @@ export type Action
 	| EmboldenItem
 	| ItalicizeItem
 	| AddURL
+	| AddImage
 	| BlockQuote
 	| Unquote
+	| ClearFormatting
 	| UpdateCursor;
 
 // REDUCERS
@@ -194,6 +220,10 @@ function addURL(item: Item, action: AddURL): Item | undefined {
 	return applyMarkdown(item, '[', '](https://)');
 }
 
+function addImage(item: Item, action: AddImage): Item | undefined {
+	return applyMarkdown(item, '![', '](https://[image-url])');
+}
+
 function blockQuote(item: Item, action: BlockQuote): Item | undefined {
 	const { cursorPosition } = item.view;
 
@@ -214,14 +244,16 @@ function blockQuote(item: Item, action: BlockQuote): Item | undefined {
 		+ quotedText
 		+ item.text.substr(endBlockQuote + newlineOffset);
 
+	const cursorLengthChange = (paragraphIndices.count() - 1) * blockQuoteMarkdown.length;
+
 	return {
 		...item,
 		text: newText,
 		view: {
 			...item.view,
 			cursorPosition: cursorPosition && {
-				...cursorPosition,
-				start: cursorPosition.start + blockQuoteMarkdown.length
+				start: cursorPosition.start + blockQuoteMarkdown.length,
+				length: cursorPosition.length + cursorLengthChange
 			}
 		}
 	}
@@ -246,6 +278,7 @@ function unquote(item: Item, action: Unquote): Item | undefined {
 		+ item.text.substr(endBlockQuote + blockQuoteMarkdown.length + newlineOffset);
 
 	const cursorStart = cursorPosition && (cursorPosition.start - (item.text.indexOf(blockQuoteMarkdown) != -1 ? blockQuoteMarkdown.length : 0));
+	const cursorLengthChange = (paragraphIndices.count() - 1) * blockQuoteMarkdown.length;
 
 	return {
 		...item,
@@ -254,7 +287,77 @@ function unquote(item: Item, action: Unquote): Item | undefined {
 			...item.view,
 			cursorPosition: (!cursorPosition || !cursorStart) ? undefined : {
 				start: cursorStart,
-				length: Math.min(cursorPosition.length, newText.length - cursorStart)
+				length: cursorPosition.length - cursorLengthChange
+			}
+		}
+	}
+}
+
+function clearFormatting(item: Item, action: ClearFormatting): Item | undefined {
+	const { cursorPosition } = item.view;
+
+	const markdown = [
+		/\*\*([^\*]*)\*\*/g, 			// bold markdown
+		/_([^\_]*)_/g,  				// italicize markdown
+		/!?\[([^\]]*)\]\([^\)]*\)/g, 	// image / link markdown
+		/>\s()/g						// blockquote markdown
+	];
+
+	if (!cursorPosition) {
+		const newText = markdown.reduce((text, md) => text.replace(md, '$1'), item.text);
+
+		return {
+			...item,
+			text: newText
+		}
+	} else if (cursorPosition.length == 0) {
+		const cursor = cursorPosition.start;
+
+		const wordStart = Math.max(0,
+			item.text.lastIndexOf(' ', cursor),
+			item.text.lastIndexOf('\n', cursor)
+		);
+
+		const wordEnd = Math.min(item.text.length,
+			item.text.indexOf(' ', cursor) == -1 ? Infinity : item.text.indexOf(' ', cursor),
+			item.text.indexOf('\n', cursor) == -1 ? Infinity : item.text.indexOf('\n', cursor)
+		);
+
+		const formatted = item.text.substr(wordStart, wordEnd - wordStart);
+		const unformatted = markdown.reduce((text, md) => text.replace(md, '$1'), formatted);
+		const newText = item.text.substr(0, wordStart)
+			+ unformatted
+			+ item.text.substr(wordEnd);
+
+		const startChange = Math.max(formatted.trim().indexOf(unformatted.trim()), 0);
+
+		return {
+			...item,
+			text: newText,
+			view: {
+				...item.view,
+				cursorPosition: {
+					start: cursorPosition.start - startChange,
+					length: 0
+				}
+			}
+		}
+	} else {
+		const formatted = item.text.substr(cursorPosition.start, cursorPosition.length);
+		const unformatted = markdown.reduce((text, md) => text.replace(md, '$1'), formatted);
+		const newText = item.text.substr(0, cursorPosition.start)
+			+ unformatted
+			+ item.text.substr(cursorPosition.start + cursorPosition.length);
+
+		return {
+			...item,
+			text: newText,
+			view: {
+				...item.view,
+				cursorPosition: {
+					start: cursorPosition.start,
+					length: cursorPosition.length - (formatted.length - unformatted.length)
+				}
 			}
 		}
 	}
@@ -282,10 +385,14 @@ export function reducer(item: Item, anyAction: AnyAction): Item | undefined {
 			return italicizeItem(item, action);
 		case "AddURL":
 			return addURL(item, action);
+		case "AddImage":
+			return addImage(item, action);
 		case "BlockQuote":
 			return blockQuote(item, action);
 		case "Unquote":
 			return unquote(item, action);
+		case "ClearFormatting":
+			return clearFormatting(item, action);
 		case "UpdateCursor":
 			return updateCursor(item, action);
 		default:
@@ -306,6 +413,13 @@ export const creators = (dispatch: Dispatch) => {
 		}
 	});
 
+	const selectionDispatch = (action: Action): void => dispatch({
+		type: "UpdateSelection",
+		data: {
+			action
+		}
+	});
+
 	return {
 		updateItemText: (item: Item, newText: string) => itemDispatch(
 			item, {
@@ -319,15 +433,29 @@ export const creators = (dispatch: Dispatch) => {
 				data: {}
 			}
 		),
+		emboldenSelection: () => selectionDispatch({
+			type: "EmboldenItem",
+			data: {}
+		}),
 		italicizeItem: (item: Item) => itemDispatch(
 			item, {
 				type: "ItalicizeItem",
 				data: {}
 			}
 		),
+		italicizeSelection: () => selectionDispatch({
+			type: "ItalicizeItem",
+			data: {}
+		}),
 		addURL: (item: Item) => itemDispatch(
 			item, {
 				type: "AddURL",
+				data: {}
+			}
+		),
+		addImage: (item: Item) => itemDispatch(
+			item, {
+				type: "AddImage",
 				data: {}
 			}
 		),
@@ -337,12 +465,30 @@ export const creators = (dispatch: Dispatch) => {
 				data: {}
 			}
 		),
+		blockQuoteSelection: () => selectionDispatch({
+			type: "BlockQuote",
+			data: {}
+		}),
 		unquote: (item: Item) => itemDispatch(
 			item, {
 				type: "Unquote",
 				data: {}
 			}
 		),
+		unquoteSelection: () => selectionDispatch({
+			type: "Unquote",
+			data: {}
+		}),
+		clearFormatting: (item: Item) => itemDispatch(
+			item, {
+				type: "ClearFormatting",
+				data: {}
+			}
+		),
+		clearSelectionFormatting: () => selectionDispatch({
+			type: "ClearFormatting",
+			data: {}
+		}),
 		updateCursor: (item: Item, cursorPosition?: CursorPosition) => itemDispatch(
 			item, {
 				type: "UpdateCursor",
@@ -357,9 +503,16 @@ export const creators = (dispatch: Dispatch) => {
 export type DispatchProps = {
 	updateItemText: (item: Item, newText: string) => void,
 	emboldenItem: (item: Item) => void,
+	emboldenSelection: () => void,
 	italicizeItem: (item: Item) => void,
+	italicizeSelection: () => void,
 	addURL: (item: Item) => void,
+	addImage: (item: Item) => void,
 	blockQuote: (item: Item) => void,
+	blockQuoteSelection: () => void,
 	unquote: (item: Item) => void,
+	unquoteSelection: () => void,
+	clearFormatting: (item: Item) => void,
+	clearSelectionFormatting: () => void,
 	updateCursor: (item: Item, cursorPosition?: CursorPosition) => void,
 }

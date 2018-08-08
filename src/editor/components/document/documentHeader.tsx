@@ -33,6 +33,7 @@ const DocumentHeader: React.SFC<ComponentProps> = (props) => {
 	const document = state.document.present || getEmptyDocument();
 
 	const actions = props.actions.document;
+	const itemActions = props.actions.item;
 	const focused = !document || !document.focusedItemID ? undefined : document.items.get(document.focusedItemID);
 	const lastItem = getLastItem(document, document.items.get(document.rootItemID));
 
@@ -55,12 +56,16 @@ const DocumentHeader: React.SFC<ComponentProps> = (props) => {
 			});
 	};
 
+	const displayTitle = document.title.length == 0
+		? "Untitled Document..."
+		: (document.title.length > 64 ? document.title.substr(0, 61) + "..." : document.title);
+
 	return (
 		<div id="documentHeader">
 			<div id="headerContents">
 				<h1 className={isLoading || document.title.length == 0 ? "empty" : ""}
 					onClick={(event) => handleClick(event, () => canEdit && actions.setFocus(document.items.get(document.rootItemID)))}>
-					{isLoading ? "Loading..." : document.title.length == 0 ? "Untitled Document..." : document.title}
+					{isLoading ? "Loading..." : displayTitle}
 					<SavingSpinner visible={state.saving} />
 					{!canEdit && !isLoading && <span id="readOnlyMessage">
 						You are viewing this document in read only mode. To edit it, <span id="copyDocument" onClick={makeCopy}>copy it</span> onto your account.
@@ -156,16 +161,20 @@ const DocumentHeader: React.SFC<ComponentProps> = (props) => {
 					<div className="menuItem">
 						Format
 						<ul>
-							<MenuItem text="Bold" icon="B" shortcut="Ctrl-B" ID="embolden" enabled={focused != undefined}
-								callback={(event) => handleClick(event, () => focused && props.actions.item.emboldenItem(focused))} />
-							<MenuItem text="Italicize" icon="I" shortcut="Ctrl-I" ID="italicize" enabled={focused != undefined}
-								callback={(event) => handleClick(event, () => focused && props.actions.item.italicizeItem(focused))} />
+							<MenuItem text="Bold" icon="B" shortcut="Ctrl-B" ID="embolden" enabled={focused != undefined || document.selection != undefined}
+								callback={(event) => handleClick(event, () => document.selection ? itemActions.emboldenSelection() : (focused && itemActions.emboldenItem(focused)))} />
+							<MenuItem text="Italicize" icon="I" shortcut="Ctrl-I" ID="italicize" enabled={focused != undefined || document.selection != undefined}
+								callback={(event) => handleClick(event, () => document.selection ? itemActions.italicizeSelection() : (focused && itemActions.italicizeItem(focused)))} />
 							<MenuItem text="Add Link" icon="link" shortcut="Ctrl-K" ID="addURL" enabled={focused != undefined}
-								callback={(event) => handleClick(event, () => focused && props.actions.item.addURL(focused))} />
-							<MenuItem text="Block Quote" icon="format_quote" shortcut="Ctrl-⇧-B" ID="blockQuote" enabled={focused != undefined}
-								callback={(event) => handleClick(event, () => focused && props.actions.item.blockQuote(focused))} />
-							<MenuItem text="Unquote" icon="" ID="unquote" enabled={focused != undefined}
-								callback={(event) => handleClick(event, () => focused && props.actions.item.unquote(focused))} />
+								callback={(event) => handleClick(event, () => focused && itemActions.addURL(focused))} />
+							<MenuItem text="Add Image" icon="insert_photo" shortcut="Ctrl-⇧-I" ID="addImage" enabled={focused != undefined}
+								callback={(event) => handleClick(event, () => focused && itemActions.addImage(focused))} />
+							<MenuItem text="Block Quote" icon="format_quote" shortcut="Ctrl-⇧-B" ID="blockQuote" enabled={focused != undefined || document.selection != undefined}
+								callback={(event) => handleClick(event, () => document.selection ? itemActions.blockQuoteSelection() : (focused && itemActions.blockQuote(focused)))} />
+							<MenuItem text="Unquote" icon="" ID="unquote" enabled={focused != undefined || document.selection != undefined}
+								callback={(event) => handleClick(event, () => document.selection ? itemActions.unquoteSelection() : (focused && itemActions.unquote(focused)))} />
+							<MenuItem text="Clear Format" icon="format_clear" ID="clearFormatting" enabled={focused != undefined || document.selection != undefined}
+								callback={(event) => handleClick(event, () => document.selection ? itemActions.clearSelectionFormatting() : (focused && itemActions.clearFormatting(focused)))} />
 						</ul>
 					</div>
 				</div>

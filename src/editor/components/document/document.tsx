@@ -114,7 +114,11 @@ class Document extends React.Component<ComponentProps> {
 		} else {
 			switch (event.key.toLowerCase()) {
 				case 'b':
-					if (focusedItem && event.shiftKey)
+					if (doc.selection && event.shiftKey)
+						this.props.actions.item.blockQuoteSelection();
+					else if (doc.selection)
+						this.props.actions.item.emboldenSelection();
+					else if (focusedItem && event.shiftKey)
 						this.props.actions.item.blockQuote(focusedItem);
 					else if (focusedItem)
 						this.props.actions.item.emboldenItem(focusedItem);
@@ -123,7 +127,11 @@ class Document extends React.Component<ComponentProps> {
 					break;
 
 				case 'i':
-					if (focusedItem)
+					if (focusedItem && event.shiftKey)
+						this.props.actions.item.addImage(focusedItem)
+					else if (doc.selection)
+						this.props.actions.item.italicizeSelection();
+					else if (focusedItem)
 						this.props.actions.item.italicizeItem(focusedItem);
 					else
 						preventDefault = false;
@@ -253,8 +261,6 @@ class Document extends React.Component<ComponentProps> {
 	}
 
 	handleMainClick(event: React.MouseEvent<HTMLMainElement>) {
-		console.log("HANDLING CLICK");
-
 		const actions = this.props.actions.document;
 		const doc = this.props.document;
 

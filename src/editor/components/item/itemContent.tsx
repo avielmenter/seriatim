@@ -54,13 +54,15 @@ const ItemContent: React.SFC<ComponentProps> = (props) => {
 
 	return (
 		<div className={classes} id={getContentDivId(item.itemID)} onClick={(event) => handleContentClick(event, props)}>
-			{node.itemType != "Title" ?
-				<ReactMarkdown
-					source={textWithoutHeader.length == 0 ? "New Item" : item.text}
-					className={textWithoutHeader.length == 0 ? "itemContentRenderedEmpty" : "itemContentRendered"}
-				/> :
-				<h1 className={item.text.length == 0 ? "titleEmpty" : "title"}>{item.text.length == 0 ? "Untitled Document..." : item.text}</h1>
-			}
+			<div onClick={(event) => handleContentClick(event, props)}>
+				{node.itemType != "Title" ?
+					<ReactMarkdown
+						source={textWithoutHeader.length == 0 ? "New Item" : item.text}
+						className={textWithoutHeader.length == 0 ? "itemContentRenderedEmpty" : "itemContentRendered"}
+					/> :
+					<h1 className={item.text.length == 0 ? "titleEmpty" : "title"}>{item.text.length == 0 ? "Untitled Document..." : item.text}</h1>
+				}
+			</div>
 			{node.focused && <ItemEditor node={node} />}
 		</div>
 	);

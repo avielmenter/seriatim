@@ -152,6 +152,13 @@ type UpdateItem = {
 	}
 }
 
+type UpdateSelection = {
+	type: "UpdateSelection",
+	data: {
+		action: ItemReducers.Action
+	}
+}
+
 type UpdateItemIDs = {
 	type: "UpdateItemIDs",
 	data: {
@@ -192,6 +199,7 @@ export type Action
 	| CopySelection
 	| MultiSelect
 	| UpdateItem
+	| UpdateSelection
 	| UpdateItemIDs
 	| MarkSaved
 	| MarkUnsaved;
@@ -726,8 +734,29 @@ function updateItem(document: Document.Document | null, action: UpdateItem): Doc
 	return {
 		...Document.updateItems(document, updatedItem),
 		title,
-		editedSinceSave: true
+		editedSinceSave: updatedItem.text == action.data.item.text ? document.editedSinceSave : true
 	}
+}
+
+function updateSelection(document: Document.Document | null, action: UpdateSelection): Document.Document | null {
+	if (!document || !document.selection)
+		return document;
+
+	const selection = Document.getSelectionRange(document);
+	const focused = !document.focusedItemID ? undefined : document.items.get(document.focusedItemID);
+
+	const unfocusedDocument = !focused ? document : {
+		...Document.updateItems(document, { ...focused, view: { ...focused.view, cursorPosition: undefined } }),
+		focusedItemID: undefined
+	}
+
+	return selection.reduce((prev: Document.Document | null, curr) => prev && updateItem(prev, {
+		type: "UpdateItem",
+		data: {
+			item: curr,
+			action: action.data.action
+		}
+	}), unfocusedDocument);
 }
 
 function markSaved(document: Document.Document | null, action: MarkSaved): Document.Document | null {
@@ -793,6 +822,8 @@ function undoableReducer(document: Document.Document | undefined | null, anyActi
 			return updateItemIDs(doc, action);
 		case "UpdateItem":
 			return updateItem(doc, action);
+		case "UpdateSelection":
+			return updateSelection(doc, action);
 		case "MarkSaved":
 			return markSaved(doc, action);
 		case "MarkUnsaved":

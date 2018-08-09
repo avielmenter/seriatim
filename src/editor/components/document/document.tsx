@@ -31,6 +31,7 @@ type ComponentProps = StateProps & AttrProps & DispatchProps;
 class Document extends React.Component<ComponentProps> {
 	documentDiv: React.RefObject<HTMLDivElement>;
 	saveInterval?: number;
+	cmdPressed: boolean = false;
 
 	constructor(props: ComponentProps) {
 		super(props);
@@ -84,7 +85,7 @@ class Document extends React.Component<ComponentProps> {
 
 		const item = focusedItem || lastItem;
 
-		if (!event.ctrlKey) {
+		if (!event.ctrlKey && !event.metaKey) {
 			switch (event.key.toLowerCase()) {
 				case 'tab':
 					if (event.shiftKey)

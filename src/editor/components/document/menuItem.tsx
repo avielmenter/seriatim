@@ -23,14 +23,19 @@ type ComponentProps = StateProps & AttrProps & DispatchProps;
 const MenuItem: React.SFC<ComponentProps> = (props) => {
 	const { icon, text, shortcut, callback, enabled, ID } = props;
 
+	const platformShortcut = navigator.platform.toLowerCase().indexOf('mac') >= 0 // if user is on a mac
+		? (shortcut && shortcut.replace(/ctrl/i, '⌘'))
+		: shortcut;
+
 	const enabledOnReadOnly = props.enabledOnReadOnly === true;
 	const itemEnabled = (enabled == true || enabled === undefined) && (props.canEdit || enabledOnReadOnly);
 
 	return (
-		<li className={itemEnabled ? "ddMenuItem" : "ddMenuItemDisabled"} id={ID ? ID : ""} onClick={itemEnabled ? (event) => callback(event) : () => { }}>
+		<li className={itemEnabled ? "ddMenuItem" : "ddMenuItemDisabled"} id={ID ? ID : ""}
+			onClick={itemEnabled ? (event) => callback(event) : () => { }}>
 			<MaterialIcon icon={icon} />
 			{text}
-			{shortcut && <span className="shortcut">({shortcut})</span>}
+			{shortcut && <span className="shortcut">({platformShortcut})</span>}
 		</li>
 	)
 }

@@ -62,7 +62,7 @@ function getWordStart(text: string, index: number): number {
 		return 0;
 
 	return Math.max(
-		...wordBoundingChars.map(c => text.lastIndexOf(c, index) + 1)
+		...wordBoundingChars.map(c => text.lastIndexOf(c, index - 1) + 1)
 	);
 }
 

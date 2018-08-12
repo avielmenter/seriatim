@@ -49,3 +49,24 @@ publicViewabilityRequest server (DocumentID docID) publiclyViewable =
 copyDocumentRequest : String -> DocumentID -> Http.Request (SeriatimResult Document)
 copyDocumentRequest server (DocumentID docID) =
     httpRequest POST (server ++ "document/" ++ docID ++ "/copy") Http.emptyBody (decodeSeriatimResponse decodeDocument)
+
+
+addCategoryRequest : String -> DocumentID -> String -> Http.Request (SeriatimResult Document)
+addCategoryRequest server (DocumentID docID) category_name =
+    let
+        requestBodyJson =
+            object [ ( "name", string category_name ) ]
+
+        requestBody =
+            Http.jsonBody requestBodyJson
+    in
+        httpRequest POST (server ++ "document/" ++ docID ++ "/categories") requestBody (decodeSeriatimResponse decodeDocument)
+
+
+removeCategoryRequest : String -> DocumentID -> String -> Http.Request (SeriatimResult Document)
+removeCategoryRequest server (DocumentID docID) category_name =
+    httpRequest
+        DELETE
+        (server ++ "document/" ++ docID ++ "/categories/" ++ (Http.encodeUri category_name))
+        Http.emptyBody
+        (decodeSeriatimResponse decodeDocument)

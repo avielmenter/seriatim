@@ -22,8 +22,12 @@ class FriendlyDate extends React.Component<ComponentProps> {
 
 		if (now.getFullYear() != date.getFullYear())
 			return dateFormat(date, 'mmm d, yyyy');
-		else if (now.getDay() != date.getDay())
+		else if (now.getMonth() != date.getMonth())
 			return dateFormat(date, 'd mmmm');
+		else if (now.getDay() - date.getDay() == 1)
+			return 'yesterday';
+		else if (now.getDay() != date.getDay())
+			return (now.getDay() - date.getDay()) + ' days ago';
 		else if (now.getHours() - date.getHours() == 1)
 			return '1 hour ago';
 		else if (now.getHours() != date.getHours())

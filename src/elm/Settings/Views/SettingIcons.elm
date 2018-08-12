@@ -20,7 +20,7 @@ view model =
             Set ->
                 []
 
-            Editing _ ->
+            Editing v ->
                 [ Html.span [ class "settingConfirm", onClick model.onConfirm ] [ MaterialIcon.view "done" ]
                 , Html.span [ class "settingReject", onClick model.onReject ] [ MaterialIcon.view "clear" ]
                 ]

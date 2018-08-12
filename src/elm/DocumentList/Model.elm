@@ -15,6 +15,7 @@ type PageStatus
 type alias DocumentSettings =
     { visible : Bool
     , publiclyViewable : Setting Bool
+    , newCategory : Setting String
     }
 
 
@@ -30,6 +31,7 @@ type alias Model =
     , error : Maybe String
     , focused : Maybe ( DocumentID, String )
     , selected : Maybe DocumentID
+    , filter : Maybe String
     , documents : List ListDocument
     , loadTime : Maybe Date
     }

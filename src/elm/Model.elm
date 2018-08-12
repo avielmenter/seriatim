@@ -31,6 +31,7 @@ init flags location =
             , error = Nothing
             , focused = Nothing
             , selected = Nothing
+            , filter = Nothing
             , documents = []
             , loadTime = Nothing
             }

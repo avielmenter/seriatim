@@ -5,6 +5,7 @@ import Json.Decode exposing (..)
 import Json.Decode.Pipeline exposing (decode, required, optional, custom)
 import Data.Document exposing (Document, DocumentID)
 import Data.User exposing (User, UserID)
+import Data.Category exposing (Category, CategoryID)
 import Date exposing (Date)
 
 
@@ -84,6 +85,18 @@ decodeUserID =
     string |> andThen (\userID -> Data.User.UserID userID |> succeed)
 
 
+decodeCategoryID : Decoder CategoryID
+decodeCategoryID =
+    string |> andThen (\catID -> Data.Category.CategoryID catID |> succeed)
+
+
+decodeCategory : Decoder Category
+decodeCategory =
+    decode Category
+        |> required "id" decodeCategoryID
+        |> required "category_name" string
+
+
 decodeDocument : Decoder Document
 decodeDocument =
     decode Document
@@ -93,6 +106,7 @@ decodeDocument =
         |> required "created_at" decodeRocketDate
         |> optional "modified_at" (Json.Decode.map Just decodeRocketDate) Nothing
         |> required "publicly_viewable" bool
+        |> required "categories" (list decodeCategory)
 
 
 decodeUser : Decoder User

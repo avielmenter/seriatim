@@ -18,14 +18,15 @@
 			cursor: pointer
 			color: slateblue
 
-	#actions
-		width: 2.5in
-		margin-right: 0.5in
+	#dlSidebar
+		display: flex
+		flex-direction: column
+		padding-right: 0.5in
 
 		button
 			width: 100%
 			display: block
-			height: 2em
+			height: 2rem
 			font-size: 12pt
 
 			background: none
@@ -43,27 +44,56 @@
 				text-align: center
 				width: 3ch
 
-		button#createDocument
+	#categories
+		margin-top: 2rem
+
+		h3
+			height: 2rem
+			margin-bottom: 0
+		
+		button .material-icons
+			color: gray
+
+		button:first-child
+			border-top: 1px solid lightgray
+		
+		button:last-child
+			margin-bottom: 2rem
+
+		button.categorySelected
+			background: #FAFAFA
+
+			.material-icons
+				color: black
+
+		.trashButtonContainer
+			button.categorySelected .material-icons
+				color: red
+
+	#actions
+		width: 2.5in
+
+		button.createDocument
 			border-top: 1px solid lightgray
 			i
 				color: green
 			&:hover
 				background: #00FF0011
 
-		button#renameDocument
+		button.renameDocument
 			i
 				color: slateblue
 			&:hover
 				background: transparentize(slateblue, 0.9)
 
-		button#copyDocument
+		button.copyDocument
 			i
 				color: lightblue
 			&:hover
 				background: transparentize(lightblue, 0.9)
 			
 
-		button#deleteDocument
+		button.deleteDocument
 			i
 				color: red
 			&:hover
@@ -106,7 +136,7 @@
 				font-weight: bold
 
 			tr
-				height: 2em
+				height: 2rem
 
 			tr td
 				border-bottom: 1px solid $spanishgray
@@ -132,7 +162,7 @@
 					font-size: 12pt
 					padding-left: 1em
 					padding-right: 1em
-					width: calc(100% - 2em)
+					width: calc(100% - 2rem)
 
 				a
 					color: teal
@@ -156,20 +186,28 @@
 				display: inline-block
 				width: 100%
 
+				&:hover
+					cursor: pointer
+
 .documentSettingsContainer
 	position: relative
 
 .documentSettings
 	position: absolute
-	bottom: 0
+	top: 0
 	right: 0
 	z-index: 2
 	background-color: $antiflashwhite
 	border: 1px solid lightgray
-	min-width: 4in
+	min-width: 4.5in
 	text-align: left
 	padding-bottom: 1em
 	box-shadow: 0 0 1px 1px #0001
+
+	h4
+		margin-left: 0.25in
+		margin-bottom: 0.5em
+		margin-top: 0.5em
 
 	input
 		margin-right: 1ch
@@ -187,6 +225,23 @@
 			display: inline-block
 			width: 0.5in
 			padding-left: 1ch
+
+	.categorySettings
+		margin-left: calc(0.6in + 1ch)
+		margin-bottom: 1em
+
+		li
+			list-style-type: none
+
+			.removeCategory
+				color: red
+				margin-right: 0.5ch
+				&:hover
+					cursor: pointer
+
+		li.noCategories
+			color: gray
+			font-style: italic
 
 	.settingIcons
 		.settingConfirm

@@ -2,7 +2,7 @@ module DocumentList.Update exposing (..)
 
 import Http
 import DocumentList.Model exposing (PageStatus)
-import Data.Document as Data exposing (DocumentID(..))
+import Data.Document as Data exposing (DocumentID(..), inTrash)
 import DocumentList.Views.Document as Document
 import DocumentList.HttpRequests exposing (..)
 import DocumentList.Model exposing (..)
@@ -41,29 +41,36 @@ updateFromHttp status updateModel model r =
                         )
 
 
-updateDocumentSettings : (DocumentSettings -> DocumentSettings) -> Model -> DocumentID -> Model
-updateDocumentSettings updateSettings model docID =
-    { model
-        | documents =
-            List.map
-                (\d ->
-                    if d.data.document_id == docID then
-                        { d | settings = updateSettings d.settings }
-                    else
-                        d
-                )
-                model.documents
-    }
+updateDocumentSettings : (DocumentSettings -> DocumentSettings) -> DocumentID -> (List ListDocument -> List ListDocument)
+updateDocumentSettings updateSettings docID =
+    List.map
+        (\d ->
+            if d.data.document_id == docID then
+                { d | settings = updateSettings d.settings }
+            else
+                d
+        )
 
 
-updateSettingFromHttp : (DocumentSettings -> DocumentSettings) -> (DocumentSettings -> DocumentSettings) -> Model -> DocumentID -> HttpResult Data.Document -> ( Model, Cmd Message.Msg )
-updateSettingFromHttp onSuccess onError model docID r =
+updateDocumentData : Data.Document -> (List ListDocument -> List ListDocument)
+updateDocumentData doc =
+    List.map
+        (\d ->
+            if d.data.document_id == doc.document_id then
+                { data = doc, settings = d.settings }
+            else
+                d
+        )
+
+
+updateDocumentFromHttp : (DocumentSettings -> DocumentSettings) -> (DocumentSettings -> DocumentSettings) -> Model -> DocumentID -> HttpResult Data.Document -> ( Model, Cmd Message.Msg )
+updateDocumentFromHttp onSuccess onError model docID r =
     let
         updateWithError : String -> ( Model, Cmd Message.Msg )
         updateWithError errorMessage =
             ( { model
                 | error = Just errorMessage
-                , documents = (updateDocumentSettings onError model docID).documents
+                , documents = updateDocumentSettings onError docID model.documents
               }
             , Cmd.none
             )
@@ -78,9 +85,15 @@ updateSettingFromHttp onSuccess onError model docID r =
                         updateWithError msg.error
 
                     Ok data ->
-                        ( updateDocumentSettings onSuccess model docID
-                        , Cmd.none
-                        )
+                        let
+                            updatedModel =
+                                { model
+                                    | documents =
+                                        updateDocumentData data.data model.documents
+                                            |> updateDocumentSettings onSuccess data.data.document_id
+                                }
+                        in
+                            ( updatedModel, Cmd.none )
 
 
 unfocusAndRename : Message.Msg -> Model -> ( Model, Cmd Message.Msg )
@@ -116,7 +129,7 @@ getFocusedDocument model =
 
 initSettings : DocumentSettings
 initSettings =
-    { visible = False, publiclyViewable = Set }
+    { visible = False, publiclyViewable = Set, newCategory = Set }
 
 
 update : DocumentList.Message.Msg -> Model -> ( Model, Cmd Message.Msg )
@@ -163,7 +176,11 @@ update msg model =
             updateFromHttp Displaying
                 (\doc ->
                     { model
-                        | documents = List.filter (\d -> d.data.document_id /= doc.document_id) model.documents
+                        | documents =
+                            if inTrash doc then
+                                List.filter (\d -> d.data.document_id /= doc.document_id) model.documents
+                            else
+                                updateDocumentData doc model.documents
                     }
                 )
                 model
@@ -190,51 +207,125 @@ update msg model =
                 (\doc ->
                     { model
                         | focused = Nothing
-                        , documents =
-                            List.filter (\d -> d.data.document_id /= doc.document_id) model.documents
-                                |> (\l -> l ++ [ { data = doc, settings = initSettings } ])
-                                |> List.sortBy (\d -> d.data.title)
+                        , documents = updateDocumentData doc model.documents
                     }
                 )
                 model
                 r
 
         SavePublicViewability docID publiclyViewable ->
-            ( updateDocumentSettings (\s -> { s | publiclyViewable = Saving publiclyViewable }) model docID
+            ( { model | documents = updateDocumentSettings (\s -> { s | publiclyViewable = Saving publiclyViewable }) docID model.documents }
             , Http.send
                 (\r -> DocumentListMessage <| PublicViewabilitySaved docID r)
                 (publicViewabilityRequest model.config.seriatim_server_url docID publiclyViewable)
             )
 
         PublicViewabilitySaved docID r ->
-            let
-                ( updatedSettingsModel, settingsCommand ) =
-                    updateSettingFromHttp
-                        (\s -> { s | publiclyViewable = Saved })
-                        (\s -> { s | publiclyViewable = Set })
-                        model
-                        docID
-                        r
+            updateDocumentFromHttp
+                (\s -> { s | publiclyViewable = Saved })
+                (\s -> { s | publiclyViewable = Set })
+                model
+                docID
+                r
 
-                ( updatedModel, command ) =
-                    updateFromHttp Displaying
-                        (\docData ->
-                            { updatedSettingsModel
-                                | documents =
-                                    List.map
-                                        (\d ->
-                                            if d.data.document_id == docData.document_id then
-                                                { d | data = docData }
-                                            else
-                                                d
-                                        )
-                                        updatedSettingsModel.documents
-                            }
-                        )
-                        updatedSettingsModel
-                        r
+        AddCategory docID ->
+            let
+                doc =
+                    getDocumentByID docID model.documents
             in
-                ( updatedModel, Cmd.batch [ settingsCommand, command ] )
+                case doc of
+                    Just document ->
+                        let
+                            category =
+                                Settings.Model.getSettingValue document.settings.newCategory ""
+
+                            alreadyInCategory =
+                                document.data.categories
+                                    |> List.filter (\c -> String.toLower c.category_name == String.toLower category)
+                                    |> List.isEmpty
+                                    |> not
+                        in
+                            ( { model
+                                | documents =
+                                    updateDocumentSettings
+                                        (\s ->
+                                            { s
+                                                | newCategory =
+                                                    if alreadyInCategory then
+                                                        Saved
+                                                    else
+                                                        Saving category
+                                            }
+                                        )
+                                        docID
+                                        model.documents
+                              }
+                            , if alreadyInCategory then
+                                Cmd.none
+                              else
+                                Http.send
+                                    (\r -> DocumentListMessage <| CategoriesUpdated docID r)
+                                    (addCategoryRequest model.config.seriatim_server_url docID category)
+                            )
+
+                    Nothing ->
+                        ( model, Cmd.none )
+
+        EditNewCategory docID category ->
+            let
+                newCategory =
+                    if String.trim category /= "" then
+                        Editing category
+                    else
+                        Set
+            in
+                ( { model | documents = updateDocumentSettings (\s -> { s | newCategory = newCategory }) docID model.documents }
+                , Cmd.none
+                )
+
+        RejectCategory docID ->
+            ( { model | documents = updateDocumentSettings (\s -> { s | newCategory = Set }) docID model.documents }, Cmd.none )
+
+        RemoveCategory docID category ->
+            let
+                document =
+                    getDocumentByID docID model.documents
+            in
+                case document of
+                    Just doc ->
+                        let
+                            docData =
+                                doc.data
+
+                            updatedDoc =
+                                { docData | categories = List.filter (\c -> c.category_name /= category) docData.categories }
+                        in
+                            ( { model | documents = updateDocumentData updatedDoc model.documents }
+                            , Http.send
+                                (\r -> DocumentListMessage <| CategoriesUpdated docID r)
+                                (removeCategoryRequest model.config.seriatim_server_url docID category)
+                            )
+
+                    Nothing ->
+                        ( model, Cmd.none )
+
+        CategoriesUpdated docID r ->
+            updateDocumentFromHttp
+                (\s ->
+                    { s
+                        | newCategory =
+                            case s.newCategory of
+                                Saving _ ->
+                                    Saved
+
+                                _ ->
+                                    Set
+                    }
+                )
+                (\s -> { s | newCategory = Set })
+                model
+                docID
+                r
 
         TitleInputChange newTitle ->
             ( { model
@@ -303,6 +394,9 @@ update msg model =
                 Nothing ->
                     ( model, Cmd.none )
 
+        SetFilter f ->
+            ( { model | filter = f }, Cmd.none )
+
         ClearError ->
             ( { model | error = Nothing, status = Displaying }, Cmd.none )
 
@@ -324,11 +418,12 @@ update msg model =
             if isSomething model.selected then
                 case getSelectedDocument model of
                     Just selectedDoc ->
-                        let
-                            updatedModel =
-                                updateDocumentSettings (\s -> { s | visible = False }) model selectedDoc.data.document_id
-                        in
-                            ( { updatedModel | selected = Nothing }, Cmd.none )
+                        ( { model
+                            | selected = Nothing
+                            , documents = updateDocumentSettings (\s -> { s | visible = False }) selectedDoc.data.document_id model.documents
+                          }
+                        , Cmd.none
+                        )
 
                     Nothing ->
                         ( { model | selected = Nothing }, Cmd.none )

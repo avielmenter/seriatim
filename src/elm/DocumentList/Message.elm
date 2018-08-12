@@ -19,6 +19,11 @@ type Msg
     | DocumentRenamed (HttpResult Document)
     | SavePublicViewability DocumentID Bool
     | PublicViewabilitySaved DocumentID (HttpResult Document)
+    | AddCategory DocumentID
+    | EditNewCategory DocumentID String
+    | RejectCategory DocumentID
+    | RemoveCategory DocumentID String
+    | CategoriesUpdated DocumentID (HttpResult Document)
     | FocusOn Document
     | ToggleDocumentSettings Document
     | FocusResult (Result Dom.Error ())
@@ -28,6 +33,7 @@ type Msg
     | Unselect
     | FocusSelected
     | DeleteSelected
+    | SetFilter (Maybe String)
     | ClearError
     | MouseEvent Mouse.Position
     | KeyboardEvent Keyboard.KeyCode

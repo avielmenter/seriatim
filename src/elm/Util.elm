@@ -41,8 +41,12 @@ seriatimDateString currDate d =
             in
                 if yearDiff /= 0 then
                     format "%b %e, %Y" d
-                else if dayDiff /= 0 then
+                else if month curr /= month d then
                     format "%e %B" d
+                else if dayDiff == 1 then
+                    "yesterday"
+                else if dayDiff /= 0 then
+                    (toString dayDiff) ++ " days ago"
                 else if hourDiff == 1 then
                     "1 hour ago"
                 else if hourDiff /= 0 then

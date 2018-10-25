@@ -95,6 +95,11 @@ class ItemEditor extends React.Component<ComponentProps> {
 						&& event.key.toLowerCase() != 'delete'
 						&& event.key != ' ') {	// only update cursor if updateItemText didn't 
 						this.props.actions.item.updateCursor(item, this.getCursorPosition(event));
+					} else if (!event.ctrlKey && item.view.cursorPosition && item.view.cursorPosition.length > 0) { // also update if we need to collapse the selection
+						this.props.actions.item.updateCursor(item, {
+							start: item.view.cursorPosition.start + item.view.cursorPosition.length,
+							length: 0
+						});
 					}
 				}}
 				onClick={(event) => this.props.actions.item.updateCursor(item, this.getCursorPosition(event))}

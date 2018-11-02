@@ -90,7 +90,7 @@ class ItemEditor extends React.Component<ComponentProps> {
 					actions.item.updateItemText(item, event.target.value);
 				}}
 				onKeyUp={(event) => {
-					if ((event.key < 'a' || event.key > 'z')
+					if ((event.key < 'a' || event.key > 'z' || event.ctrlKey)
 						&& event.key.toLowerCase() != 'backspace'
 						&& event.key.toLowerCase() != 'delete'
 						&& event.key != ' ') {	// only update cursor if updateItemText didn't 

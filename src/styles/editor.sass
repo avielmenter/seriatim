@@ -2,6 +2,27 @@
 
 $documentFont: "Helvetica", "Arial", sans-serif
 
+@page
+	@bottom-center
+		content: counter(page)
+		
+
+@media print 
+	body
+		background-color: white !important
+
+	#documentHeader
+		display: none
+
+	#document
+		margin-left: 0 !important
+		box-shadow: none !important
+		background-color: white !important
+		margin: 0 !important
+		padding: 0 !important
+
+
+
 =Unselectable
 	user-select: none
 	-ms-user-select: none

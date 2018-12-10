@@ -1,14 +1,12 @@
 import * as React from 'react';
 import { connect } from 'react-redux';
-import { Map, List } from 'immutable';
+import { List } from 'immutable';
 
 import { Error } from '../../store/data/error';
-import { Document as DocumentData, getLastItem, ItemDictionary, getSelectedItems } from '../../store/data/document';
-import { Item as ItemData, ListItem, ItemID } from '../../store/data/item';
+import { Document as DocumentData, getLastItem } from '../../store/data/document';
 
-import Item from '../item/item';
+import DocumentView from './documentView';
 import DocumentHeader from './documentHeader';
-import LoadingSpinner from '../util/loadingSpinner'
 import ErrorMessage from '../util/errorMessage';
 
 import { DispatchProps, mapDispatchToProps, ApplicationState } from '../../store';
@@ -29,13 +27,11 @@ type AttrProps = {
 type ComponentProps = StateProps & AttrProps & DispatchProps;
 
 class Document extends React.Component<ComponentProps> {
-	documentDiv: React.RefObject<HTMLDivElement>;
 	saveInterval?: number;
 	cmdPressed: boolean = false;
 
 	constructor(props: ComponentProps) {
 		super(props);
-		this.documentDiv = React.createRef<HTMLDivElement>();
 	}
 
 	getTextAreaSelection(): string | undefined {
@@ -314,31 +310,10 @@ class Document extends React.Component<ComponentProps> {
 			});
 	}
 
-	getDocumentList(doc: DocumentData, selectedItems: ItemDictionary, curr: ItemID, indent: number = 0): List<ListItem> {
-		const currItem: ListItem = {
-			item: doc.items.get(curr),
-			focused: doc.focusedItemID == curr,
-			selected: selectedItems.has(curr),
-			itemType: curr == doc.rootItemID
-				? "Title"
-				: (/^#+\s+/.test(doc.items.get(curr).text) ? "Header" : "Item"), // starts with at least one '#', and then at least one space
-			indent
-		};
 
-		const currItemList = List<ListItem>([currItem]);
-
-		return currItem.item.view.collapsed
-			? currItemList
-			: currItem.item.children.reduce(
-				(prev, childID) => prev.concat(this.getDocumentList(doc, selectedItems, childID, indent + 1)).toList(),
-				currItemList
-			);
-	}
 
 	render() {
 		const doc = this.props.document;
-
-		const list = !doc ? undefined : this.getDocumentList(doc, getSelectedItems(doc), doc.rootItemID);
 
 		document.title = !doc ? "..." : doc.title + " | Seriatim";
 
@@ -347,17 +322,10 @@ class Document extends React.Component<ComponentProps> {
 				<DocumentHeader />
 				{this.props.errors.map((error, index) => <ErrorMessage error={error} index={index} key={index} />)}
 				<div id="documentScrollContainer">
-					<div id="document" tabIndex={0} ref={this.documentDiv}>
-						{list ? list.map(i => <Item node={i} key={i.item.itemID} />) : <div id="loadingDocument"><LoadingSpinner /></div>}
-					</div>
+					<DocumentView document={doc} />
 				</div>
 			</main>
 		);
-	}
-
-	componentDidMount() {
-		if (this.documentDiv.current)
-			this.documentDiv.current.focus();
 	}
 
 	componentWillUnmount() {

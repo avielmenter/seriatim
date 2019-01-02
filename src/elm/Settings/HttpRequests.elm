@@ -1,13 +1,13 @@
-module Settings.HttpRequests exposing (..)
+module Settings.HttpRequests exposing (removeLoginRequest, renameUserRequest)
 
+import Data.User exposing (User)
 import Http
 import Json.Encode exposing (encode, object, string)
-import SeriatimHttp exposing (..)
-import Data.User exposing (User)
 import LoginWidget.Model exposing (LoginMethod(..), getMethodString)
+import SeriatimHttp exposing (..)
 
 
-renameUserRequest : String -> String -> Http.Request (SeriatimResult User)
+renameUserRequest : String -> String -> (HttpResult User -> b) -> Cmd b
 renameUserRequest server newName =
     let
         requestBodyJson =
@@ -16,13 +16,13 @@ renameUserRequest server newName =
         requestBody =
             Http.jsonBody requestBodyJson
     in
-        httpRequest POST (server ++ "user/update") requestBody (decodeSeriatimResponse decodeUser)
+    httpRequest POST (server ++ "user/update") requestBody (decodeSeriatimResponse decodeUser)
 
 
-removeLoginRequest : String -> LoginMethod -> Http.Request (SeriatimResult User)
+removeLoginRequest : String -> LoginMethod -> (HttpResult User -> b) -> Cmd b
 removeLoginRequest server method =
     let
         url =
-            server ++ "user/remove_login/" ++ (getMethodString method)
+            server ++ "user/remove_login/" ++ getMethodString method
     in
-        httpRequest POST url Http.emptyBody (decodeSeriatimResponse decodeUser)
+    httpRequest POST url Http.emptyBody (decodeSeriatimResponse decodeUser)

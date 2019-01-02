@@ -1,12 +1,13 @@
-module SeriatimHttp exposing (..)
+module SeriatimHttp exposing (HttpResult, Method(..), SeriatimError, SeriatimErrorCode(..), SeriatimResult, SeriatimSuccess, decodeCategory, decodeCategoryID, decodeDocument, decodeDocumentID, decodeErrorCode, decodeRocketDate, decodeSeriatimResponse, decodeUser, decodeUserID, httpRequest, httpRequestWithHeaders)
 
-import Http
-import Json.Decode exposing (..)
-import Json.Decode.Pipeline exposing (decode, required, optional, custom)
+import Data.Category exposing (Category, CategoryID)
 import Data.Document exposing (Document, DocumentID)
 import Data.User exposing (User, UserID)
-import Data.Category exposing (Category, CategoryID)
-import Date exposing (Date)
+import Debug exposing (log)
+import Http
+import Json.Decode exposing (..)
+import Json.Decode.Pipeline exposing (custom, optional, required)
+import Time exposing (Posix, millisToPosix)
 
 
 type SeriatimErrorCode
@@ -26,7 +27,7 @@ type alias SeriatimError =
 
 type alias SeriatimSuccess a =
     { data : a
-    , timestamp : Date
+    , timestamp : Posix
     }
 
 
@@ -44,35 +45,42 @@ type Method
     | DELETE
 
 
-httpRequestWithHeaders : List Http.Header -> Method -> String -> Http.Body -> Decoder a -> Http.Request a
-httpRequestWithHeaders headers method url body jsonDecoder =
-    Http.request
-        { method = toString method
+methodToString : Method -> String
+methodToString method =
+    case method of
+        GET ->
+            "GET"
+
+        POST ->
+            "POST"
+
+        DELETE ->
+            "DELETE"
+
+
+httpRequestWithHeaders : List Http.Header -> Method -> String -> Http.Body -> Decoder a -> (Result Http.Error a -> b) -> Cmd b
+httpRequestWithHeaders headers method url body jsonDecoder msg =
+    Http.riskyRequest
+        { method = methodToString method
         , headers = headers
         , url = url
         , body = body
-        , expect = Http.expectJson jsonDecoder
+        , expect = Http.expectJson msg jsonDecoder
         , timeout = Nothing
-        , withCredentials = True
+        , tracker = Nothing
         }
 
 
-httpRequest : Method -> String -> Http.Body -> Decoder a -> Http.Request a
+httpRequest : Method -> String -> Http.Body -> Decoder a -> (Result Http.Error a -> b) -> Cmd b
 httpRequest =
     httpRequestWithHeaders []
 
 
-decodeRocketDate : Decoder Date
+decodeRocketDate : Decoder Posix
 decodeRocketDate =
-    (field "secs_since_epoch" int)
+    field "secs_since_epoch" int
         |> andThen
-            (\secs ->
-                secs
-                    * 1000
-                    |> toFloat
-                    |> Date.fromTime
-                    |> succeed
-            )
+            (\secs -> millisToPosix (secs * 1000) |> succeed)
 
 
 decodeDocumentID : Decoder DocumentID
@@ -92,14 +100,14 @@ decodeCategoryID =
 
 decodeCategory : Decoder Category
 decodeCategory =
-    decode Category
+    succeed Category
         |> required "id" decodeCategoryID
         |> required "category_name" string
 
 
 decodeDocument : Decoder Document
 decodeDocument =
-    decode Document
+    succeed Document
         |> required "document_id" decodeDocumentID
         |> required "root_item_id" string
         |> optional "title" string "Untitled Document"
@@ -111,7 +119,7 @@ decodeDocument =
 
 decodeUser : Decoder User
 decodeUser =
-    decode User
+    succeed User
         |> required "user_id" decodeUserID
         |> required "display_name" string
         |> optional "twitter_screen_name" (Json.Decode.map Just string) Nothing
@@ -147,23 +155,23 @@ decodeErrorCode =
 
 decodeSeriatimResponse : Decoder a -> Decoder (SeriatimResult a)
 decodeSeriatimResponse jsonDecoder =
-    (field "status" string)
+    field "status" string
         |> andThen
             (\status ->
                 case status of
                     "error" ->
-                        (field "error" string)
+                        field "error" string
                             |> andThen
                                 (\desc ->
-                                    (field "code" decodeErrorCode)
+                                    field "code" decodeErrorCode
                                         |> andThen (\code -> succeed (Err { code = code, error = desc }))
                                 )
 
                     "success" ->
-                        (field "data" jsonDecoder)
+                        field "data" jsonDecoder
                             |> andThen
                                 (\data ->
-                                    (field "timestamp" decodeRocketDate)
+                                    field "timestamp" decodeRocketDate
                                         |> andThen (\ts -> succeed (Ok { data = data, timestamp = ts }))
                                 )
 

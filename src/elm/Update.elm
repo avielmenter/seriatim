@@ -1,14 +1,17 @@
 module Update exposing (update)
 
-import Routing exposing (..)
-import Message exposing (..)
-import Model exposing (..)
-import DocumentList.Update
+import Browser
+import Browser.Navigation as Nav
 import DocumentList.Message
+import DocumentList.Update
 import LoginWidget.Message
 import LoginWidget.Update
+import Message exposing (..)
+import Model exposing (..)
+import Routing exposing (..)
 import Settings.Message
 import Settings.Update
+import Url
 
 
 updateDocumentList : DocumentList.Message.Msg -> Model -> ( Model, Cmd Msg )
@@ -17,7 +20,7 @@ updateDocumentList dlm model =
         ( updatedDocumentList, command ) =
             DocumentList.Update.update dlm model.documentList
     in
-        ( { model | documentList = updatedDocumentList }, command )
+    ( { model | documentList = updatedDocumentList }, command )
 
 
 updateLogin : LoginWidget.Message.Msg -> Model -> ( Model, Cmd Msg )
@@ -32,16 +35,16 @@ updateLogin lm model =
         updatedSettings =
             { settings | currentUser = updatedLogin.status }
     in
-        ( { model | settings = updatedSettings }, command )
+    ( { model | settings = updatedSettings }, command )
 
 
 updateSettings : Settings.Message.Msg -> Model -> ( Model, Cmd Msg )
 updateSettings sm model =
     let
         ( updatedSettings, command ) =
-            Settings.Update.update sm model.settings
+            Settings.Update.update model.key sm model.settings
     in
-        ( { model | settings = updatedSettings }, command )
+    ( { model | settings = updatedSettings }, command )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -50,20 +53,28 @@ update msg model =
         None ->
             ( model, Cmd.none )
 
-        OnLocationChange location ->
+        UrlChanged url ->
             let
                 settings =
                     model.settings
-
-                updatedSettings =
-                    { settings | visible = location.hash == "#settings" }
             in
-                ( { model
-                    | route = parseLocation location
-                    , settings = updatedSettings
-                  }
-                , Cmd.none
-                )
+            ( { model
+                | route = parseLocation url
+                , settings =
+                    { settings
+                        | visible = parseFragment url == "settings"
+                    }
+              }
+            , Cmd.none
+            )
+
+        UrlRequested urlRequest ->
+            case urlRequest of
+                Browser.Internal url ->
+                    ( model, Nav.pushUrl model.key (Url.toString url) )
+
+                Browser.External href ->
+                    ( model, Nav.load href )
 
         SettingsMessage sm ->
             updateSettings sm model

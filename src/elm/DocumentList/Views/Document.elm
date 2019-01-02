@@ -1,17 +1,17 @@
-module DocumentList.Views.Document exposing (view, inputID, rowID, Model)
+module DocumentList.Views.Document exposing (Model, inputID, rowID, view)
 
-import Html exposing (Html, text, div)
-import Html.Events exposing (onClick, on)
-import Html.Attributes exposing (class)
-import Json.Decode
-import DocumentList.Message exposing (Msg(..))
-import Message exposing (..)
 import Data.Document exposing (Document, DocumentID)
+import DocumentList.Message exposing (Msg(..))
 import DocumentList.Model exposing (ListDocument)
 import DocumentList.Views.DocumentSettings as DocumentSettings
-import Views.MaterialIcon as MaterialIcon
+import Html exposing (Html, div, text)
+import Html.Attributes exposing (class)
+import Html.Events exposing (on, onClick)
+import Json.Decode
+import Message exposing (..)
+import Time exposing (Posix)
 import Util exposing (seriatimDateString)
-import Date exposing (Date)
+import Views.MaterialIcon as MaterialIcon
 
 
 onEnter : Message.Msg -> Html.Attribute Message.Msg
@@ -20,10 +20,11 @@ onEnter msg =
         isEnter code =
             if code == 13 then
                 Json.Decode.succeed msg
+
             else
                 Json.Decode.fail "not ENTER"
     in
-        on "keydown" (Json.Decode.andThen isEnter Html.Events.keyCode)
+    on "keydown" (Json.Decode.andThen isEnter Html.Events.keyCode)
 
 
 inputID : DocumentID -> String
@@ -40,7 +41,7 @@ type alias Model =
     { selected : Bool
     , focusedText : Maybe String
     , doc : ListDocument
-    , loadTime : Maybe Date
+    , loadTime : Maybe Posix
     }
 
 
@@ -60,56 +61,63 @@ view model =
         idStr (Data.Document.DocumentID docID) =
             docID
     in
-        Html.tr
-            ([ Html.Attributes.id (rowID doc.data.document_id)
-             , Html.Events.onWithOptions
-                "click"
-                { stopPropagation = True
-                , preventDefault = False
-                }
+    Html.tr
+        ([ Html.Attributes.id (rowID doc.data.document_id)
+         , Html.Events.custom
+            "click"
+            (Json.Decode.map
+                (\msg ->
+                    { message = msg
+                    , stopPropagation = True
+                    , preventDefault = False
+                    }
+                )
                 (Json.Decode.succeed (DocumentListMessage <| Select doc.data.document_id))
-             ]
-                ++ (if selected then
-                        [ Html.Attributes.class "selected" ]
+            )
+         ]
+            ++ (if selected then
+                    [ Html.Attributes.class "selected" ]
+
+                else
+                    []
+               )
+        )
+        [ Html.td []
+            [ case focusedText of
+                Nothing ->
+                    Html.span [{- onClick (FocusOn doc) -}]
+                        [ Html.a
+                            [ Html.Attributes.href ("/editor/?" ++ idStr doc.data.document_id)
+                            , Html.Attributes.target "_blank"
+                            ]
+                            [ text doc.data.title ]
+                        ]
+
+                Just inputText ->
+                    Html.input
+                        [ Html.Attributes.type_ "text"
+                        , Html.Attributes.id (inputID doc.data.document_id)
+                        , Html.Attributes.value inputText
+                        , Html.Attributes.autofocus True
+                        , Html.Attributes.class "documentName"
+                        , Html.Events.onInput (\s -> DocumentListMessage <| TitleInputChange s)
+                        , Html.Events.onBlur (DocumentListMessage UnfocusTitle)
+                        ]
+                        []
+            ]
+        , Html.td [] [ text <| seriatimDateString model.loadTime doc.data.created_at ]
+        , Html.td [] [ text <| Maybe.withDefault "never" <| Maybe.map (seriatimDateString model.loadTime) doc.data.modified_at ]
+        , Html.td [] <|
+            [ Html.span
+                [ class "documentSettingsIcon"
+                , onClick (DocumentListMessage <| ToggleDocumentSettings doc.data)
+                ]
+                [ MaterialIcon.view "more_vert" ]
+            ]
+                ++ (if doc.settings.visible then
+                        [ DocumentSettings.view doc ]
+
                     else
                         []
                    )
-            )
-            [ Html.td []
-                [ case focusedText of
-                    Nothing ->
-                        Html.span [{- onClick (FocusOn doc) -}]
-                            [ Html.a
-                                [ Html.Attributes.href ("/editor/?" ++ (idStr doc.data.document_id))
-                                , Html.Attributes.target "_blank"
-                                ]
-                                [ text doc.data.title ]
-                            ]
-
-                    Just inputText ->
-                        Html.input
-                            [ Html.Attributes.type_ "text"
-                            , Html.Attributes.id (inputID doc.data.document_id)
-                            , Html.Attributes.value inputText
-                            , Html.Attributes.autofocus True
-                            , Html.Attributes.class "documentName"
-                            , Html.Events.onInput (\s -> DocumentListMessage <| TitleInputChange s)
-                            , Html.Events.onBlur (DocumentListMessage UnfocusTitle)
-                            ]
-                            []
-                ]
-            , Html.td [] [ text <| seriatimDateString model.loadTime doc.data.created_at ]
-            , Html.td [] [ text <| Maybe.withDefault "never" <| Maybe.map (seriatimDateString model.loadTime) doc.data.modified_at ]
-            , Html.td [] <|
-                [ Html.span
-                    [ class "documentSettingsIcon"
-                    , onClick (DocumentListMessage <| ToggleDocumentSettings doc.data)
-                    ]
-                    [ MaterialIcon.view "more_vert" ]
-                ]
-                    ++ (if doc.settings.visible then
-                            [ DocumentSettings.view doc ]
-                        else
-                            []
-                       )
-            ]
+        ]

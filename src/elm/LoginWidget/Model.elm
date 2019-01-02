@@ -1,8 +1,8 @@
-module LoginWidget.Model exposing (..)
+module LoginWidget.Model exposing (LoginMethod(..), LoginStatus(..), Model, getMethodString, getMethodViewName, loginCallback, logoutCallback)
 
 import Data.User exposing (User)
+import Url exposing (percentEncode)
 import Util exposing (Flags)
-import Http exposing (encodeUri)
 
 
 type LoginMethod
@@ -53,13 +53,13 @@ loginCallback : Flags -> LoginMethod -> String
 loginCallback flags method =
     flags.seriatim_server_url
         ++ "login/"
-        ++ (getMethodString method)
+        ++ getMethodString method
         ++ "?url="
-        ++ (encodeUri <| flags.seriatim_client_url ++ "documents")
+        ++ (percentEncode <| flags.seriatim_client_url ++ "documents")
 
 
 logoutCallback : Flags -> String
 logoutCallback flags =
     flags.seriatim_server_url
         ++ "login/logout?url="
-        ++ (encodeUri flags.seriatim_client_url)
+        ++ percentEncode flags.seriatim_client_url

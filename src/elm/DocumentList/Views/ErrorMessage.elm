@@ -1,10 +1,10 @@
-module DocumentList.Views.ErrorMessage exposing (..)
+module DocumentList.Views.ErrorMessage exposing (Model, view)
 
+import DocumentList.Message exposing (Msg(..))
 import Html exposing (..)
 import Html.Attributes exposing (class)
-import Html.Events exposing (onWithOptions)
+import Html.Events exposing (custom)
 import Json.Decode as Json
-import DocumentList.Message exposing (Msg(..))
 import Message exposing (..)
 
 
@@ -18,10 +18,17 @@ view msg =
         [ text msg
         , span
             [ class "removeError"
-            , onWithOptions
+            , custom
                 "click"
-                { stopPropagation = True, preventDefault = True }
-                (Json.succeed <| DocumentListMessage ClearError)
+                (Json.map
+                    (\clickMessage ->
+                        { message = clickMessage
+                        , stopPropagation = True
+                        , preventDefault = True
+                        }
+                    )
+                    (Json.succeed <| DocumentListMessage ClearError)
+                )
             ]
             [ text "x" ]
         ]

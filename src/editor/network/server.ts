@@ -128,6 +128,8 @@ function parseServerDocument(sDoc: ServerDocument): Document | undefined {
 
 		if (curr.parent_id && items.get(curr.parent_id)) {
 			const parent = items.get(curr.parent_id);
+			if (!parent)
+				return;
 
 			items = items.set(parent.itemID, {
 				...parent,
@@ -138,6 +140,9 @@ function parseServerDocument(sDoc: ServerDocument): Document | undefined {
 
 	items.keySeq().toArray().forEach(itemID => { // collapse children arrays if they're for some reason sparse
 		const item = items.get(itemID);
+		if (!item)
+			return;
+
 		items = items.set(itemID, {
 			...item,
 			children: item.children.filter(child => child != undefined).toList()
@@ -239,7 +244,7 @@ async function saveDocumentStructure(documentID: string, currDoc: Document): Pro
 			const order = parent ? parent.children.indexOf(item.itemID) : 0;
 
 			return [item.itemID, toEditItem(item, order)];
-		});
+		}).toArray() as [string, EditItem][];
 
 	const editDoc: EditDocument = {
 		root_item: currDoc.rootItemID,
@@ -248,7 +253,7 @@ async function saveDocumentStructure(documentID: string, currDoc: Document): Pro
 
 	const response = await httpPost('document/' + documentID + '/edit', editDoc);
 	return await parseHttpResponse(response,
-		(raw: { [item_id: string]: string }) => Map<ItemID, ItemID>(raw)
+		(raw: { [item_id: string]: string }) => Map<ItemID, ItemID>(Object.keys(raw).map(k => [k, raw[k]]) as [string, string][])
 	);
 }
 

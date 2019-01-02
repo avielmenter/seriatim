@@ -5,10 +5,12 @@ import './styles/savingSpinner.css'
 import './styles/settings.sass'
 import './styles/login.sass'
 
-var Elm = require('./elm/Main.elm');
+var Elm = require('./elm/Main.elm').Elm;
 var mountNode = document.getElementById('app');
 
-var app = Elm.Main.embed(mountNode, {
-	seriatim_client_url: SERIATIM_CLIENT_URL,
-	seriatim_server_url: SERIATIM_SERVER_URL
+var app = Elm.Main.init({
+	node: mountNode, flags: {
+		seriatim_client_url: SERIATIM_CLIENT_URL,
+		seriatim_server_url: SERIATIM_SERVER_URL
+	}
 });

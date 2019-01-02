@@ -81,6 +81,9 @@ class Document extends React.Component<ComponentProps> {
 
 		const item = focusedItem || lastItem;
 
+		if (!item)	// can't do anything with an empty document
+			return;
+
 		if (!event.ctrlKey && !event.metaKey) {
 			switch (event.key.toLowerCase()) {
 				case 'tab':
@@ -182,7 +185,7 @@ class Document extends React.Component<ComponentProps> {
 					if (focusedItem && !doc.clipboard)
 						preventDefault = false;
 					else
-						actions.paste(focusedItem || lastItem);
+						actions.paste(item);
 
 					break;
 
@@ -225,7 +228,7 @@ class Document extends React.Component<ComponentProps> {
 
 				case 'return':
 				case 'enter':
-					if (event.shiftKey || lastItem.itemID == doc.rootItemID) {
+					if (event.shiftKey || (lastItem && lastItem.itemID == doc.rootItemID)) {
 						actions.addItemToParent(item);
 						if (focusedItem != undefined)
 							actions.incrementFocus(false);

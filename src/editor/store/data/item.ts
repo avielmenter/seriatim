@@ -48,18 +48,24 @@ function refreshIDPool(): void {
 		ID_POOL = ID_POOL.add(__generateItemID());
 }
 
-function generateItemID(): ItemID {
+function generateItemID(): ItemID | undefined {
 	refreshIDPool();
 
-	const newID = ID_POOL.first();
-	ID_POOL = ID_POOL.remove(newID);
+	const newID = ID_POOL.first(undefined);
+	if (!newID)
+		return undefined;
 
+	ID_POOL = ID_POOL.remove(newID);
 	return newID;
 }
 
-export function newItemFromParent(parent: Item): Item {
+export function newItemFromParent(parent: Item): Item | undefined {
+	const itemID = generateItemID();
+	if (!itemID)
+		return undefined;
+
 	return {
-		itemID: generateItemID(),
+		itemID,
 		parentID: parent.itemID,
 		text: "",
 		children: List<ItemID>([]),
@@ -72,7 +78,7 @@ export function newItemFromParent(parent: Item): Item {
 export function regenerateID(item: Item): Item {
 	return {
 		...item,
-		itemID: generateItemID()
+		itemID: generateItemID() || item.itemID
 	}
 }
 

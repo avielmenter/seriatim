@@ -61,7 +61,7 @@ module.exports = (env, argv) => ({
             {
                 test: /\.elm$/,
                 use: {
-                    loader: 'elm-webpack-loader?verbose=true&warn=true'
+                    loader: 'elm-webpack-loader?verbose=true'
                 }
             },
             {

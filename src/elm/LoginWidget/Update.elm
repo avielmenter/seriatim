@@ -1,8 +1,8 @@
 module LoginWidget.Update exposing (update)
 
-import Message
 import LoginWidget.Message exposing (..)
 import LoginWidget.Model exposing (..)
+import Message
 
 
 update : Msg -> Model -> ( Model, Cmd Message.Msg )

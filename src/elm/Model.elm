@@ -1,29 +1,31 @@
-module Model exposing (..)
+module Model exposing (Model, init)
 
-import Routing exposing (..)
-import DocumentList.Message exposing (Msg(..))
-import LoginWidget.Message exposing (Msg(..))
+import Browser.Navigation as Nav
 import DocumentList.HttpRequests exposing (loadDocumentsRequest)
-import LoginWidget.HttpRequests exposing (getLoggedInUser)
-import Http
-import Message exposing (..)
-import Navigation exposing (Location)
+import DocumentList.Message exposing (Msg(..))
 import DocumentList.Model exposing (PageStatus(..))
+import Http
+import LoginWidget.HttpRequests exposing (getLoggedInUser)
+import LoginWidget.Message exposing (Msg(..))
 import LoginWidget.Model exposing (LoginStatus(..))
+import Message exposing (..)
+import Routing exposing (..)
 import Settings.Model exposing (..)
+import Url
 import Util exposing (Flags)
 
 
 type alias Model =
     { documentList : DocumentList.Model.Model
     , config : Flags
+    , key : Nav.Key
     , route : Route
     , settings : Settings.Model.Model
     }
 
 
-init : Flags -> Location -> ( Model, Cmd Message.Msg )
-init flags location =
+init : Flags -> Url.Url -> Nav.Key -> ( Model, Cmd Message.Msg )
+init flags url key =
     let
         initDocList =
             { status = DocumentList.Model.Loading
@@ -43,17 +45,18 @@ init flags location =
             , hasTwitterLogin = Set
             , hasGoogleLogin = Set
             , config = flags
-            , visible = location.hash == "#settings"
+            , visible = parseFragment url == "settings"
             , error = Nothing
             }
     in
-        ( { documentList = initDocList
-          , config = flags
-          , route = parseLocation location
-          , settings = initSettings
-          }
-        , Cmd.batch
-            [ Http.send (\r -> DocumentListMessage <| LoadDocuments r) (loadDocumentsRequest flags.seriatim_server_url)
-            , Http.send (\r -> LoginMessage <| Load r) (getLoggedInUser flags.seriatim_server_url)
-            ]
-        )
+    ( { documentList = initDocList
+      , config = flags
+      , key = key
+      , route = parseLocation url
+      , settings = initSettings
+      }
+    , Cmd.batch
+        [ loadDocumentsRequest flags.seriatim_server_url (\r -> DocumentListMessage <| LoadDocuments r)
+        , getLoggedInUser flags.seriatim_server_url (\r -> LoginMessage <| Load r)
+        ]
+    )

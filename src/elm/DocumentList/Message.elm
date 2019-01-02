@@ -1,12 +1,12 @@
-module DocumentList.Message exposing (..)
+module DocumentList.Message exposing (Msg(..))
 
-import SeriatimHttp exposing (SeriatimResult, HttpResult)
+import Browser.Dom
+import Browser.Events exposing (..)
 import Data.Document exposing (Document, DocumentID)
-import Dom
-import Mouse
-import Keyboard
-import Time exposing (Time)
 import DocumentList.Model exposing (PageStatus)
+import SeriatimHttp exposing (HttpResult, SeriatimResult)
+import Time exposing (Posix)
+import Util exposing (KeyCode, MousePosition)
 
 
 type Msg
@@ -26,7 +26,7 @@ type Msg
     | CategoriesUpdated DocumentID (HttpResult Document)
     | FocusOn Document
     | ToggleDocumentSettings Document
-    | FocusResult (Result Dom.Error ())
+    | FocusResult (Result Browser.Dom.Error ())
     | TitleInputChange String
     | UnfocusTitle
     | Select DocumentID
@@ -35,7 +35,7 @@ type Msg
     | DeleteSelected
     | SetFilter (Maybe String)
     | ClearError
-    | MouseEvent Mouse.Position
-    | KeyboardEvent Keyboard.KeyCode
+    | MouseEvent MousePosition
+    | KeyboardEvent KeyCode
     | Refresh PageStatus
-    | TimedRefresh Time
+    | TimedRefresh Posix

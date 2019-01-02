@@ -1,19 +1,18 @@
-module DocumentList.Update exposing (..)
+module DocumentList.Update exposing (focusOnDocument, getFocusedDocument, getSelectedDocument, initSettings, unfocusAndRename, update, updateDocumentData, updateDocumentFromHttp, updateDocumentSettings, updateFromHttp)
 
-import Http
-import DocumentList.Model exposing (PageStatus)
+import Browser.Dom
 import Data.Document as Data exposing (DocumentID(..), inTrash)
-import DocumentList.Views.Document as Document
 import DocumentList.HttpRequests exposing (..)
-import DocumentList.Model exposing (..)
 import DocumentList.Message exposing (Msg(..))
-import Settings.Model exposing (Setting(..))
+import DocumentList.Model exposing (..)
+import DocumentList.Views.Document as Document
+import Http
 import Message exposing (..)
 import SeriatimHttp exposing (HttpResult)
-import Dom exposing (focus)
+import Settings.Model exposing (Setting(..))
 import Task
-import Util exposing (..)
-import Date
+import Time exposing (Posix, posixToMillis)
+import Util exposing (KeyCode(..), isSomething)
 
 
 updateFromHttp : PageStatus -> (a -> Model) -> Model -> HttpResult a -> ( Model, Cmd Message.Msg )
@@ -32,13 +31,13 @@ updateFromHttp status updateModel model r =
                         updated =
                             updateModel successResponse.data
                     in
-                        ( { updated
-                            | error = Nothing
-                            , status = Displaying
-                            , loadTime = Just successResponse.timestamp
-                          }
-                        , Cmd.none
-                        )
+                    ( { updated
+                        | error = Nothing
+                        , status = Displaying
+                        , loadTime = Just successResponse.timestamp
+                      }
+                    , Cmd.none
+                    )
 
 
 updateDocumentSettings : (DocumentSettings -> DocumentSettings) -> DocumentID -> (List ListDocument -> List ListDocument)
@@ -47,6 +46,7 @@ updateDocumentSettings updateSettings docID =
         (\d ->
             if d.data.document_id == docID then
                 { d | settings = updateSettings d.settings }
+
             else
                 d
         )
@@ -58,6 +58,7 @@ updateDocumentData doc =
         (\d ->
             if d.data.document_id == doc.document_id then
                 { data = doc, settings = d.settings }
+
             else
                 d
         )
@@ -75,25 +76,25 @@ updateDocumentFromHttp onSuccess onError model docID r =
             , Cmd.none
             )
     in
-        case r of
-            Err _ ->
-                updateWithError "Could not contact the server. Please try again in a minute."
+    case r of
+        Err _ ->
+            updateWithError "Could not contact the server. Please try again in a minute."
 
-            Ok responseData ->
-                case responseData of
-                    Err msg ->
-                        updateWithError msg.error
+        Ok responseData ->
+            case responseData of
+                Err msg ->
+                    updateWithError msg.error
 
-                    Ok data ->
-                        let
-                            updatedModel =
-                                { model
-                                    | documents =
-                                        updateDocumentData data.data model.documents
-                                            |> updateDocumentSettings onSuccess data.data.document_id
-                                }
-                        in
-                            ( updatedModel, Cmd.none )
+                Ok data ->
+                    let
+                        updatedModel =
+                            { model
+                                | documents =
+                                    updateDocumentData data.data model.documents
+                                        |> updateDocumentSettings onSuccess data.data.document_id
+                            }
+                    in
+                    ( updatedModel, Cmd.none )
 
 
 unfocusAndRename : Message.Msg -> Model -> ( Model, Cmd Message.Msg )
@@ -101,7 +102,7 @@ unfocusAndRename msg model =
     case model.focused of
         Just ( docID, docTitle ) ->
             ( { model | focused = Nothing }
-            , Http.send (\r -> DocumentListMessage <| DocumentRenamed r) (renameDocumentRequest model.config.seriatim_server_url docID docTitle)
+            , renameDocumentRequest model.config.seriatim_server_url docID docTitle (\r -> DocumentListMessage <| DocumentRenamed r)
             )
 
         Nothing ->
@@ -111,7 +112,7 @@ unfocusAndRename msg model =
 focusOnDocument : Model -> Data.Document -> ( Model, Cmd Message.Msg )
 focusOnDocument model doc =
     ( { model | focused = Just ( doc.document_id, doc.title ) }
-    , Task.attempt (\r -> DocumentListMessage <| FocusResult r) (focus (Document.inputID doc.document_id))
+    , Task.attempt (\r -> DocumentListMessage <| FocusResult r) (Browser.Dom.focus (Document.inputID doc.document_id))
     )
 
 
@@ -149,7 +150,7 @@ update msg model =
 
         CreateDocument ->
             ( { model | status = Loading }
-            , Http.send (\r -> DocumentListMessage <| DocumentCreated r) (createDocumentRequest model.config.seriatim_server_url)
+            , createDocumentRequest model.config.seriatim_server_url (\r -> DocumentListMessage <| DocumentCreated r)
             )
 
         DocumentCreated r ->
@@ -166,11 +167,11 @@ update msg model =
 
         CopyDocument docID ->
             ( { model | status = Loading }
-            , Http.send (\r -> DocumentListMessage <| DocumentCreated r) (copyDocumentRequest model.config.seriatim_server_url docID)
+            , copyDocumentRequest model.config.seriatim_server_url docID (\r -> DocumentListMessage <| DocumentCreated r)
             )
 
         DeleteDocument docID ->
-            ( model, Http.send (\r -> DocumentListMessage <| DocumentDeleted r) (deleteDocumentRequest model.config.seriatim_server_url docID) )
+            ( model, deleteDocumentRequest model.config.seriatim_server_url docID (\r -> DocumentListMessage <| DocumentDeleted r) )
 
         DocumentDeleted r ->
             updateFromHttp Displaying
@@ -179,6 +180,7 @@ update msg model =
                         | documents =
                             if inTrash doc then
                                 List.filter (\d -> d.data.document_id /= doc.document_id) model.documents
+
                             else
                                 updateDocumentData doc model.documents
                     }
@@ -191,7 +193,7 @@ update msg model =
 
         FocusResult result ->
             case result of
-                Err (Dom.NotFound id) ->
+                Err (Browser.Dom.NotFound id) ->
                     ( { model
                         | error = Just "Could not rename the selected document."
                         , focused = Nothing
@@ -215,9 +217,10 @@ update msg model =
 
         SavePublicViewability docID publiclyViewable ->
             ( { model | documents = updateDocumentSettings (\s -> { s | publiclyViewable = Saving publiclyViewable }) docID model.documents }
-            , Http.send
+            , publicViewabilityRequest model.config.seriatim_server_url
+                docID
+                publiclyViewable
                 (\r -> DocumentListMessage <| PublicViewabilitySaved docID r)
-                (publicViewabilityRequest model.config.seriatim_server_url docID publiclyViewable)
             )
 
         PublicViewabilitySaved docID r ->
@@ -233,55 +236,59 @@ update msg model =
                 doc =
                     getDocumentByID docID model.documents
             in
-                case doc of
-                    Just document ->
-                        let
-                            category =
-                                Settings.Model.getSettingValue document.settings.newCategory ""
+            case doc of
+                Just document ->
+                    let
+                        category =
+                            Settings.Model.getSettingValue document.settings.newCategory ""
 
-                            alreadyInCategory =
-                                document.data.categories
-                                    |> List.filter (\c -> String.toLower c.category_name == String.toLower category)
-                                    |> List.isEmpty
-                                    |> not
-                        in
-                            ( { model
-                                | documents =
-                                    updateDocumentSettings
-                                        (\s ->
-                                            { s
-                                                | newCategory =
-                                                    if alreadyInCategory then
-                                                        Saved
-                                                    else
-                                                        Saving category
-                                            }
-                                        )
-                                        docID
-                                        model.documents
-                              }
-                            , if alreadyInCategory then
-                                Cmd.none
-                              else
-                                Http.send
-                                    (\r -> DocumentListMessage <| CategoriesUpdated docID r)
-                                    (addCategoryRequest model.config.seriatim_server_url docID category)
-                            )
+                        alreadyInCategory =
+                            document.data.categories
+                                |> List.filter (\c -> String.toLower c.category_name == String.toLower category)
+                                |> List.isEmpty
+                                |> not
+                    in
+                    ( { model
+                        | documents =
+                            updateDocumentSettings
+                                (\s ->
+                                    { s
+                                        | newCategory =
+                                            if alreadyInCategory then
+                                                Saved
 
-                    Nothing ->
-                        ( model, Cmd.none )
+                                            else
+                                                Saving category
+                                    }
+                                )
+                                docID
+                                model.documents
+                      }
+                    , if alreadyInCategory then
+                        Cmd.none
+
+                      else
+                        addCategoryRequest model.config.seriatim_server_url
+                            docID
+                            category
+                            (\r -> DocumentListMessage <| CategoriesUpdated docID r)
+                    )
+
+                Nothing ->
+                    ( model, Cmd.none )
 
         EditNewCategory docID category ->
             let
                 newCategory =
                     if String.trim category /= "" then
                         Editing category
+
                     else
                         Set
             in
-                ( { model | documents = updateDocumentSettings (\s -> { s | newCategory = newCategory }) docID model.documents }
-                , Cmd.none
-                )
+            ( { model | documents = updateDocumentSettings (\s -> { s | newCategory = newCategory }) docID model.documents }
+            , Cmd.none
+            )
 
         RejectCategory docID ->
             ( { model | documents = updateDocumentSettings (\s -> { s | newCategory = Set }) docID model.documents }, Cmd.none )
@@ -291,23 +298,24 @@ update msg model =
                 document =
                     getDocumentByID docID model.documents
             in
-                case document of
-                    Just doc ->
-                        let
-                            docData =
-                                doc.data
+            case document of
+                Just doc ->
+                    let
+                        docData =
+                            doc.data
 
-                            updatedDoc =
-                                { docData | categories = List.filter (\c -> c.category_name /= category) docData.categories }
-                        in
-                            ( { model | documents = updateDocumentData updatedDoc model.documents }
-                            , Http.send
-                                (\r -> DocumentListMessage <| CategoriesUpdated docID r)
-                                (removeCategoryRequest model.config.seriatim_server_url docID category)
-                            )
+                        updatedDoc =
+                            { docData | categories = List.filter (\c -> c.category_name /= category) docData.categories }
+                    in
+                    ( { model | documents = updateDocumentData updatedDoc model.documents }
+                    , removeCategoryRequest model.config.seriatim_server_url
+                        docID
+                        category
+                        (\r -> DocumentListMessage <| CategoriesUpdated docID r)
+                    )
 
-                    Nothing ->
-                        ( model, Cmd.none )
+                Nothing ->
+                    ( model, Cmd.none )
 
         CategoriesUpdated docID r ->
             updateDocumentFromHttp
@@ -346,26 +354,28 @@ update msg model =
                                 settings =
                                     d.settings
                             in
-                                { d
-                                    | settings =
-                                        { settings
-                                            | visible =
-                                                if d.data.document_id == doc.document_id then
-                                                    not settings.visible
-                                                else
-                                                    False
-                                            , publiclyViewable =
-                                                case settings.publiclyViewable of
-                                                    Saved ->
-                                                        if d.data.document_id == doc.document_id && not settings.visible then
-                                                            Set
-                                                        else
-                                                            Saved
+                            { d
+                                | settings =
+                                    { settings
+                                        | visible =
+                                            if d.data.document_id == doc.document_id then
+                                                not settings.visible
 
-                                                    _ ->
-                                                        settings.publiclyViewable
-                                        }
-                                }
+                                            else
+                                                False
+                                        , publiclyViewable =
+                                            case settings.publiclyViewable of
+                                                Saved ->
+                                                    if d.data.document_id == doc.document_id && not settings.visible then
+                                                        Set
+
+                                                    else
+                                                        Saved
+
+                                                _ ->
+                                                    settings.publiclyViewable
+                                    }
+                            }
                         )
                         model.documents
               }
@@ -389,7 +399,7 @@ update msg model =
         DeleteSelected ->
             case getSelectedDocument model of
                 Just doc ->
-                    ( model, Http.send (\r -> DocumentListMessage <| DocumentDeleted r) (deleteDocumentRequest model.config.seriatim_server_url doc.data.document_id) )
+                    ( model, deleteDocumentRequest model.config.seriatim_server_url doc.data.document_id (\r -> DocumentListMessage <| DocumentDeleted r) )
 
                 Nothing ->
                     ( model, Cmd.none )
@@ -401,7 +411,7 @@ update msg model =
             ( { model | error = Nothing, status = Displaying }, Cmd.none )
 
         Refresh displayStatus ->
-            ( { model | status = displayStatus }, Http.send (\r -> DocumentListMessage <| LoadDocuments r) (loadDocumentsRequest model.config.seriatim_server_url) )
+            ( { model | status = displayStatus }, loadDocumentsRequest model.config.seriatim_server_url (\r -> DocumentListMessage <| LoadDocuments r) )
 
         TimedRefresh refreshTime ->
             case model.loadTime of
@@ -409,8 +419,9 @@ update msg model =
                     update (Refresh Displaying) model
 
                 Just lt ->
-                    if (Date.fromTime refreshTime |> Date.minute) - (Date.minute lt) <= 1 then
+                    if posixToMillis refreshTime - posixToMillis lt > 1000 * 60 then
                         ( model, Cmd.none )
+
                     else
                         update (Refresh Displaying) model
 
@@ -427,27 +438,34 @@ update msg model =
 
                     Nothing ->
                         ( { model | selected = Nothing }, Cmd.none )
+
             else
                 ( model, Cmd.none )
 
         DocumentList.Message.KeyboardEvent keyCode ->
             if isSomething model.focused then
-                if keyCode == 27 || keyCode == 13 then
-                    -- esc or enter key
-                    unfocusAndRename (DocumentListMessage msg) model
-                else
-                    ( model, Cmd.none )
+                case keyCode of
+                    Escape ->
+                        unfocusAndRename (DocumentListMessage msg) model
+
+                    Enter ->
+                        unfocusAndRename (DocumentListMessage msg) model
+
+                    _ ->
+                        ( model, Cmd.none )
+
             else
                 case getSelectedDocument model of
                     Just selectedDoc ->
-                        if keyCode == 27 then
-                            -- esc key
-                            ( { model | selected = Nothing }, Cmd.none )
-                        else if keyCode == 13 then
-                            -- enter key
-                            focusOnDocument model selectedDoc.data
-                        else
-                            ( model, Cmd.none )
+                        case keyCode of
+                            Escape ->
+                                ( { model | selected = Nothing }, Cmd.none )
+
+                            Enter ->
+                                focusOnDocument model selectedDoc.data
+
+                            _ ->
+                                ( model, Cmd.none )
 
                     Nothing ->
                         ( model, Cmd.none )

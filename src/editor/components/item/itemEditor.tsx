@@ -53,8 +53,8 @@ class ItemEditor extends React.Component<ComponentProps> {
 		const length = this.editArea.current.selectionEnd - start;
 
 		return {
-			start,
-			length
+			start: start + length,
+			length: 0
 		};
 	}
 

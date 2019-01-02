@@ -231,8 +231,8 @@ function blockQuote(item: Item, action: BlockQuote): Item | undefined {
 
 	const paragraphIndices = getParagraphIndices(item);
 
-	const startBlockQuote = paragraphIndices.first();
-	const endBlockQuote = paragraphIndices.last();
+	const startBlockQuote = paragraphIndices.first(0);
+	const endBlockQuote = paragraphIndices.last(0);
 
 	const newlineOffset = endBlockQuote == 0 ? 0 : 1;
 
@@ -265,8 +265,8 @@ function unquote(item: Item, action: Unquote): Item | undefined {
 	const blockQuoteMarkdown = '> ';
 	const paragraphIndices = getParagraphIndices(item);
 
-	const startBlockQuote = paragraphIndices.first();
-	const endBlockQuote = paragraphIndices.last();
+	const startBlockQuote = paragraphIndices.first(0);
+	const endBlockQuote = paragraphIndices.last(0);
 
 	const newlineOffset = (endBlockQuote == 0 ? 0 : 1);
 

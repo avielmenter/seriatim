@@ -1,7 +1,7 @@
-module Data.Document exposing (..)
+module Data.Document exposing (Document, DocumentID(..), inTrash)
 
 import Data.Category exposing (Category)
-import Date exposing (Date)
+import Time exposing (Posix)
 
 
 type DocumentID
@@ -12,8 +12,8 @@ type alias Document =
     { document_id : DocumentID
     , root_item_id : String
     , title : String
-    , created_at : Date
-    , modified_at : Maybe Date
+    , created_at : Posix
+    , modified_at : Maybe Posix
     , publicly_viewable : Bool
     , categories : List Category
     }

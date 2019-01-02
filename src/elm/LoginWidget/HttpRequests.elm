@@ -1,10 +1,10 @@
-module LoginWidget.HttpRequests exposing (..)
+module LoginWidget.HttpRequests exposing (getLoggedInUser)
 
+import Data.User exposing (User)
 import Http
 import SeriatimHttp exposing (..)
-import Data.User exposing (User)
 
 
-getLoggedInUser : String -> Http.Request (SeriatimResult User)
+getLoggedInUser : String -> (HttpResult User -> b) -> Cmd b
 getLoggedInUser server =
     httpRequest GET (server ++ "user/current") Http.emptyBody (decodeSeriatimResponse decodeUser)

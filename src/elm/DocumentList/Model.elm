@@ -3,7 +3,7 @@ module DocumentList.Model exposing (..)
 import Data.Document exposing (Document, DocumentID)
 import Settings.Model exposing (Setting)
 import Util exposing (Flags)
-import Date exposing (Date)
+import Time exposing (Posix)
 
 
 type PageStatus
@@ -33,7 +33,7 @@ type alias Model =
     , selected : Maybe DocumentID
     , filter : Maybe String
     , documents : List ListDocument
-    , loadTime : Maybe Date
+    , loadTime : Maybe Posix
     }
 
 

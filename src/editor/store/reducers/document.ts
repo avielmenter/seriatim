@@ -267,13 +267,18 @@ function removeItem(document: Document.Document | null, action: RemoveItem): Doc
 	const nextItem = Document.getNextItem(document, item);
 	const prevSibling = Document.getPrevSibling(document, item);
 
-	const children = item.children.map(childID => document.items.get(childID));
+	const children = item.children
+		.map(childID => document.items.get(childID))
+		.filter(child => child != undefined) as List<Item.Item>;
 
 	let newDocument = { ...document, editedSinceSave: true };
 
 	if (prevSibling) {
 		newDocument = children.reduce((prev, curr) => {
 			const newParent = prev.items.get(prevSibling.itemID);
+			if (!newParent)
+				return prev;
+
 			return Document.moveItem(prev, newParent, Infinity, curr).document
 		}, newDocument);
 	} else {
@@ -299,12 +304,15 @@ function setFocus(document: Document.Document | null, action: SetFocus): Documen
 function incrementFocus(document: Document.Document | null, action: IncrementFocus): Document.Document | null {
 	if (!document)
 		return null;
-	if (!document.focusedItemID || !document.items.get(document.focusedItemID))
+	
+	const focusedItem = document.items.get(document.focusedItemID || "");
+	if (!focusedItem)
 		return setFocus(document, { type: "SetFocus", data: { item: document.items.get(document.rootItemID) } });
 
 	const { createNewItem } = action.data;
-	const focusedItem = document.items.get(document.focusedItemID);
-	const focusedParent = (focusedItem.itemID == document.rootItemID ? { ...focusedItem } : document.items.get(focusedItem.parentID));
+	const focusedParent = focusedItem.itemID == document.rootItemID ? 
+							{ ...focusedItem } : 
+							(document.items.get(focusedItem.parentID) || { ...focusedItem });
 
 	const nextItem = Document.getNextItem(document, focusedItem, true);
 	if (nextItem != undefined) {
@@ -326,10 +334,11 @@ function incrementFocus(document: Document.Document | null, action: IncrementFoc
 function decrementFocus(document: Document.Document | null, action: DecrementFocus): Document.Document | null {
 	if (!document)
 		return null;
-	if (!document.focusedItemID || !document.items.get(document.focusedItemID))
+	
+	const focusedItem = Document.getFocusedItem(document);
+	if (!focusedItem)
 		return setFocus(document, { type: "SetFocus", data: { item: Document.getLastItem(document, document.items.get(document.rootItemID), true) } });
 
-	const focusedItem = document.items.get(document.focusedItemID);
 	if (focusedItem.itemID == document.rootItemID)
 		return setFocus(document, { type: "SetFocus", data: { item: undefined } });
 
@@ -350,8 +359,9 @@ function indentItem(document: Document.Document | null, action: IndentItem): Doc
 	let newDocument = { ...indentation.document, editedSinceSave: true };
 	const indented = indentation.moved;
 
-	if (indented.parentID == item.parentID)
-		return indentItem(newDocument, { type: "IndentItem", data: { item: newDocument.items.get(item.parentID) } });
+	const indentedParent = newDocument.items.get(item.parentID);
+	if (indentedParent && indentedParent.itemID == item.parentID)
+		return indentItem(newDocument, { type: "IndentItem", data: { item: indentedParent } });
 	return newDocument;
 }
 
@@ -388,7 +398,7 @@ function makeHeader(document: Document.Document | null, action: MakeHeader): Doc
 	if (item.itemID == document.rootItemID)
 		return document;
 
-	function getPreviousHeaderLevel(doc: Document.Document, curr: Item.Item): number {
+	function getPreviousHeaderLevel(doc: Document.Document, curr: Item.Item | undefined): number {
 		if (!curr || !curr.parentID || curr.itemID == doc.rootItemID)
 			return 0;
 
@@ -455,9 +465,9 @@ function copyItem(document: Document.Document | null, action: CopyItem): Documen
 				start: item.itemID,
 				end: item.itemID
 			},
-			items: Map<Item.ItemID, Item.Item>({
-				[item.itemID]: item
-			}),
+			items: Map<Item.ItemID, Item.Item>([
+				[item.itemID, item]
+			])	,
 			clipboard: undefined
 		}
 	};
@@ -519,10 +529,12 @@ function removeSelection(document: Document.Document | null, action: RemoveSelec
 
 	const selectionRange = Document.getSelectionRange(document);
 	const newDocument = selectionRange.reduce((prev: Document.Document | null, selected) => {
+		const item = !prev ? undefined : prev.items.get(selected.itemID);
+
 		if (!prev)
 			return null;
-		else if (prev.items.has(selected.itemID))
-			return removeItem(prev, { type: "RemoveItem", data: { item: prev.items.get(selected.itemID) } });
+		else if (item)
+			return removeItem(prev, { type: "RemoveItem", data: { item } });
 		else
 			return prev;
 	}, document);
@@ -563,7 +575,7 @@ function indentSelection(document: Document.Document | null, action: IndentSelec
 	}
 
 	return {
-		...itemsToIndent.reduce((prev, curr) => Document.indentItem(prev, prev.items.get(curr.itemID)).document, document),
+		...itemsToIndent.reduce((prev, curr) => Document.indentItem(prev, prev.items.get(curr.itemID) || curr).document, document),
 		editedSinceSave: true
 	};
 }
@@ -598,7 +610,7 @@ function unindentSelection(document: Document.Document | null, action: UnindentS
 	}
 
 	return {
-		...itemsToUnindent.reduce((prev, curr) => Document.unindentItem(prev, prev.items.get(curr.itemID)).document, document),
+		...itemsToUnindent.reduce((prev, curr) => Document.unindentItem(prev, prev.items.get(curr.itemID) || curr).document, document),
 		editedSinceSave: true
 	};
 }
@@ -621,6 +633,9 @@ function paste(document: Document.Document | null, action: Paste): Document.Docu
 
 	const addToParent = (item.children.count() > 0 && !item.view.collapsed) || item.itemID == document.rootItemID;
 	const pasteBelow = !addToParent ? item : Item.newItemFromParent(item);
+	if (!pasteBelow)
+		return document;
+
 	if (addToParent)
 		newDocument = Document.addItem(newDocument, item, 0, pasteBelow);
 
@@ -640,6 +655,9 @@ function paste(document: Document.Document | null, action: Paste): Document.Docu
 
 		if (!prevSel || prevSel.itemID != curr.parentID) {
 			const prevParent = newDocument.items.get(prevDoc.parentID);
+			if (!prevParent)
+				continue;
+
 			const prevIndex = prevParent.children.indexOf(prevDoc.itemID);
 
 			newItem = { ...curr, parentID: prevParent.itemID, children: List<Item.ItemID>() };
@@ -743,7 +761,7 @@ function updateSelection(document: Document.Document | null, action: UpdateSelec
 		return document;
 
 	const selection = Document.getSelectionRange(document);
-	const focused = !document.focusedItemID ? undefined : document.items.get(document.focusedItemID);
+	const focused = !document.focusedItemID ? undefined : Document.getFocusedItem(document);
 
 	const unfocusedDocument = !focused ? document : {
 		...Document.updateItems(document, { ...focused, view: { ...focused.view, cursorPosition: undefined } }),

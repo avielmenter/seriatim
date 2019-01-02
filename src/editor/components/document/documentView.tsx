@@ -26,13 +26,17 @@ class DocumentView extends React.PureComponent<ComponentProps> {
 	}
 
 	getDocumentList(doc: Document, selectedItems: ItemDictionary, curr: ItemID, indent: number = 0): List<ListItem> {
+		const currDocItem = doc.items.get(curr);
+		if (!currDocItem)
+			return List<ListItem>();
+
 		const currItem: ListItem = {
-			item: doc.items.get(curr),
+			item: currDocItem,
 			focused: doc.focusedItemID == curr,
 			selected: selectedItems.has(curr),
 			itemType: curr == doc.rootItemID
 				? "Title"
-				: (/^#+\s+/.test(doc.items.get(curr).text) ? "Header" : "Item"), // starts with at least one '#', and then at least one space
+				: (/^#+\s+/.test(currDocItem.text) ? "Header" : "Item"), // starts with at least one '#', and then at least one space
 			indent
 		};
 

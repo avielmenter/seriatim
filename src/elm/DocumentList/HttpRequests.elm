@@ -1,28 +1,29 @@
-module DocumentList.HttpRequests exposing (..)
+module DocumentList.HttpRequests exposing (addCategoryRequest, copyDocumentRequest, createDocumentRequest, deleteDocumentRequest, loadDocumentsRequest, publicViewabilityRequest, removeCategoryRequest, renameDocumentRequest)
 
+import Data.Document exposing (Document, DocumentID(..))
 import Http
 import Json.Decode exposing (list)
-import Json.Encode exposing (encode, object, string, bool)
+import Json.Encode exposing (bool, encode, object, string)
 import SeriatimHttp exposing (..)
-import Data.Document exposing (Document, DocumentID(..))
+import Url exposing (percentEncode)
 
 
-loadDocumentsRequest : String -> Http.Request (SeriatimResult (List Document))
+loadDocumentsRequest : String -> (HttpResult (List Document) -> b) -> Cmd b
 loadDocumentsRequest server =
     httpRequest GET (server ++ "user/documents") Http.emptyBody (decodeSeriatimResponse (list decodeDocument))
 
 
-createDocumentRequest : String -> Http.Request (SeriatimResult Document)
+createDocumentRequest : String -> (HttpResult Document -> b) -> Cmd b
 createDocumentRequest server =
     httpRequest POST (server ++ "document/create") Http.emptyBody (decodeSeriatimResponse decodeDocument)
 
 
-deleteDocumentRequest : String -> DocumentID -> Http.Request (SeriatimResult Document)
+deleteDocumentRequest : String -> DocumentID -> (HttpResult Document -> b) -> Cmd b
 deleteDocumentRequest server (DocumentID docID) =
     httpRequest DELETE (server ++ "document/" ++ docID) Http.emptyBody (decodeSeriatimResponse decodeDocument)
 
 
-renameDocumentRequest : String -> DocumentID -> String -> Http.Request (SeriatimResult Document)
+renameDocumentRequest : String -> DocumentID -> String -> (HttpResult Document -> b) -> Cmd b
 renameDocumentRequest server (DocumentID docID) newName =
     let
         requestBodyJson =
@@ -31,10 +32,10 @@ renameDocumentRequest server (DocumentID docID) newName =
         requestBody =
             Http.jsonBody requestBodyJson
     in
-        httpRequest POST (server ++ "document/" ++ docID ++ "/rename") requestBody (decodeSeriatimResponse decodeDocument)
+    httpRequest POST (server ++ "document/" ++ docID ++ "/rename") requestBody (decodeSeriatimResponse decodeDocument)
 
 
-publicViewabilityRequest : String -> DocumentID -> Bool -> Http.Request (SeriatimResult Document)
+publicViewabilityRequest : String -> DocumentID -> Bool -> (HttpResult Document -> b) -> Cmd b
 publicViewabilityRequest server (DocumentID docID) publiclyViewable =
     let
         requestBodyJson =
@@ -43,15 +44,15 @@ publicViewabilityRequest server (DocumentID docID) publiclyViewable =
         requestBody =
             Http.jsonBody requestBodyJson
     in
-        httpRequest POST (server ++ "document/" ++ docID ++ "/public_viewability") requestBody (decodeSeriatimResponse decodeDocument)
+    httpRequest POST (server ++ "document/" ++ docID ++ "/public_viewability") requestBody (decodeSeriatimResponse decodeDocument)
 
 
-copyDocumentRequest : String -> DocumentID -> Http.Request (SeriatimResult Document)
+copyDocumentRequest : String -> DocumentID -> (HttpResult Document -> b) -> Cmd b
 copyDocumentRequest server (DocumentID docID) =
     httpRequest POST (server ++ "document/" ++ docID ++ "/copy") Http.emptyBody (decodeSeriatimResponse decodeDocument)
 
 
-addCategoryRequest : String -> DocumentID -> String -> Http.Request (SeriatimResult Document)
+addCategoryRequest : String -> DocumentID -> String -> (HttpResult Document -> b) -> Cmd b
 addCategoryRequest server (DocumentID docID) category_name =
     let
         requestBodyJson =
@@ -60,13 +61,13 @@ addCategoryRequest server (DocumentID docID) category_name =
         requestBody =
             Http.jsonBody requestBodyJson
     in
-        httpRequest POST (server ++ "document/" ++ docID ++ "/categories") requestBody (decodeSeriatimResponse decodeDocument)
+    httpRequest POST (server ++ "document/" ++ docID ++ "/categories") requestBody (decodeSeriatimResponse decodeDocument)
 
 
-removeCategoryRequest : String -> DocumentID -> String -> Http.Request (SeriatimResult Document)
+removeCategoryRequest : String -> DocumentID -> String -> (HttpResult Document -> b) -> Cmd b
 removeCategoryRequest server (DocumentID docID) category_name =
     httpRequest
         DELETE
-        (server ++ "document/" ++ docID ++ "/categories/" ++ (Http.encodeUri category_name))
+        (server ++ "document/" ++ docID ++ "/categories/" ++ percentEncode category_name)
         Http.emptyBody
         (decodeSeriatimResponse decodeDocument)

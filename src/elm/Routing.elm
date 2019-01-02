@@ -1,7 +1,7 @@
-module Routing exposing (..)
+module Routing exposing (Route(..), matchers, parseFragment, parseLocation)
 
-import Navigation exposing (Location)
-import UrlParser exposing (..)
+import Url
+import Url.Parser exposing (..)
 
 
 type Route
@@ -16,11 +16,11 @@ matchers =
         ]
 
 
-parseLocation : Location -> Route
+parseLocation : Url.Url -> Route
 parseLocation location =
-    case (parsePath matchers location) of
-        Just route ->
-            route
+    Maybe.withDefault NotFoundRoute (parse matchers location)
 
-        Nothing ->
-            NotFoundRoute
+
+parseFragment : Url.Url -> String
+parseFragment location =
+    Maybe.withDefault "" location.fragment

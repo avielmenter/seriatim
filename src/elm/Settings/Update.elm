@@ -1,12 +1,12 @@
 module Settings.Update exposing (update)
 
-import Settings.Model exposing (..)
-import Settings.Message exposing (..)
-import Message exposing (..)
-import LoginWidget.Model exposing (LoginStatus(..), LoginMethod(..))
-import Navigation exposing (newUrl)
+import Browser.Navigation exposing (Key, pushUrl)
 import Http
-import Settings.HttpRequests exposing (renameUserRequest, removeLoginRequest)
+import LoginWidget.Model exposing (LoginMethod(..), LoginStatus(..))
+import Message exposing (..)
+import Settings.HttpRequests exposing (removeLoginRequest, renameUserRequest)
+import Settings.Message exposing (..)
+import Settings.Model exposing (..)
 
 
 resetSettings : Model -> Model
@@ -19,40 +19,41 @@ resetSettings model =
     }
 
 
-update : Settings.Message.Msg -> Model -> ( Model, Cmd Message.Msg )
-update msg model =
+update : Browser.Navigation.Key -> Settings.Message.Msg -> Model -> ( Model, Cmd Message.Msg )
+update key msg model =
     case msg of
         LoadUser r ->
             let
                 resetModel =
                     resetSettings model
             in
-                case r of
-                    Ok (Ok u) ->
-                        ( { resetModel
-                            | currentUser = LoggedInAs u.data
-                            , displayName =
-                                case model.displayName of
-                                    Saving _ ->
-                                        Saved
+            case r of
+                Ok (Ok u) ->
+                    ( { resetModel
+                        | currentUser = LoggedInAs u.data
+                        , displayName =
+                            case model.displayName of
+                                Saving _ ->
+                                    Saved
 
-                                    _ ->
-                                        Set
-                          }
-                        , Cmd.none
-                        )
+                                _ ->
+                                    Set
+                      }
+                    , Cmd.none
+                    )
 
-                    Ok (Err e) ->
-                        ( { resetModel | error = Just e.error }, Cmd.none )
+                Ok (Err e) ->
+                    ( { resetModel | error = Just e.error }, Cmd.none )
 
-                    Err _ ->
-                        ( { resetModel | error = Just "There was an error contacting the server." }, Cmd.none )
+                Err _ ->
+                    ( { resetModel | error = Just "There was an error contacting the server." }, Cmd.none )
 
         ToggleSettings ->
             let
                 newHash =
                     if model.visible then
                         "#"
+
                     else
                         "#settings"
 
@@ -61,13 +62,14 @@ update msg model =
                         Saved ->
                             if not model.visible then
                                 Set
+
                             else
                                 model.displayName
 
                         _ ->
                             model.displayName
             in
-                ( { model | visible = not model.visible, displayName = updatedDisplayName }, newUrl newHash )
+            ( { model | visible = not model.visible, displayName = updatedDisplayName }, pushUrl key newHash )
 
         EditName s ->
             let
@@ -82,16 +84,17 @@ update msg model =
                 updatedDisplayName =
                     if origValue == s then
                         Set
+
                     else
                         Editing s
             in
-                ( { model | displayName = updatedDisplayName }, Cmd.none )
+            ( { model | displayName = updatedDisplayName }, Cmd.none )
 
         SaveName ->
             case model.displayName of
                 Editing curr ->
                     ( { model | displayName = Saving curr }
-                    , Http.send (\r -> SettingsMessage <| LoadUser r) (renameUserRequest model.config.seriatim_server_url curr)
+                    , renameUserRequest model.config.seriatim_server_url curr (\r -> SettingsMessage <| LoadUser r)
                     )
 
                 _ ->
@@ -105,32 +108,32 @@ update msg model =
                 LoggedInAs u ->
                     let
                         command =
-                            Http.send (\r -> SettingsMessage <| LoadUser r) (removeLoginRequest model.config.seriatim_server_url method)
+                            removeLoginRequest model.config.seriatim_server_url method (\r -> SettingsMessage <| LoadUser r)
                     in
-                        case method of
-                            Facebook ->
-                                case u.facebook_id of
-                                    Just _ ->
-                                        ( { model | hasFacebookLogin = Saving False }, command )
+                    case method of
+                        Facebook ->
+                            case u.facebook_id of
+                                Just _ ->
+                                    ( { model | hasFacebookLogin = Saving False }, command )
 
-                                    Nothing ->
-                                        ( { model | hasFacebookLogin = Set }, Cmd.none )
+                                Nothing ->
+                                    ( { model | hasFacebookLogin = Set }, Cmd.none )
 
-                            Google ->
-                                case u.google_id of
-                                    Just _ ->
-                                        ( { model | hasGoogleLogin = Saving False }, command )
+                        Google ->
+                            case u.google_id of
+                                Just _ ->
+                                    ( { model | hasGoogleLogin = Saving False }, command )
 
-                                    Nothing ->
-                                        ( { model | hasGoogleLogin = Set }, Cmd.none )
+                                Nothing ->
+                                    ( { model | hasGoogleLogin = Set }, Cmd.none )
 
-                            Twitter ->
-                                case u.twitter_screen_name of
-                                    Just _ ->
-                                        ( { model | hasTwitterLogin = Saving False }, command )
+                        Twitter ->
+                            case u.twitter_screen_name of
+                                Just _ ->
+                                    ( { model | hasTwitterLogin = Saving False }, command )
 
-                                    Nothing ->
-                                        ( { model | hasTwitterLogin = Set }, Cmd.none )
+                                Nothing ->
+                                    ( { model | hasTwitterLogin = Set }, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )

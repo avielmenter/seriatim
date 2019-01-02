@@ -1,17 +1,17 @@
 module LoginWidget.View exposing (view)
 
 import Html exposing (..)
-import Html.Attributes exposing (href, id, class)
-import Message exposing (Msg(..))
+import Html.Attributes exposing (class, href, id)
 import LoginWidget.Model exposing (..)
+import Message exposing (Msg(..))
 import Views.LoadingSpinner as LoadingSpinner
 
 
 view : Model -> Html Msg
 view model =
-    case model.status of
-        NotLoggedIn ->
-            div []
+    div [ id "login" ]
+        (case model.status of
+            NotLoggedIn ->
                 [ p [] [ text "Access Seriatim using your preferred social media account:" ]
                 , a
                     [ href <| loginCallback model.flags Twitter
@@ -33,8 +33,7 @@ view model =
                     [ text "Login via Facebook" ]
                 ]
 
-        LoggedInAs u ->
-            div []
+            LoggedInAs u ->
                 [ p [] [ text <| "Welcome, " ++ u.display_name ++ "!" ]
                 , a [ href "/documents", id "viewDocuments", class "login" ]
                     [ text "View Your Documents" ]
@@ -49,5 +48,6 @@ view model =
                     ]
                 ]
 
-        _ ->
-            LoadingSpinner.view
+            _ ->
+                [ LoadingSpinner.view ]
+        )

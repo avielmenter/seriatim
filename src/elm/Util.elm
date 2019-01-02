@@ -1,7 +1,17 @@
-module Util exposing (..)
+module Util exposing (Flags, KeyCode(..), MousePosition, isNothing, isSomething, seriatimDateString)
 
-import Date exposing (..)
-import Date.Format exposing (format)
+import DateFormat exposing (..)
+import Time exposing (..)
+
+
+type alias MousePosition =
+    ()
+
+
+type KeyCode
+    = Enter
+    | Escape
+    | Other String
 
 
 isNothing : Maybe a -> Bool
@@ -19,44 +29,68 @@ isSomething m =
     not <| isNothing m
 
 
-seriatimDateString : Maybe Date -> Date -> String
+seriatimDateString : Maybe Posix -> Posix -> String
 seriatimDateString currDate d =
     case currDate of
         Nothing ->
-            format "%b %e, %Y %l:%M:%S %p" d
+            format
+                [ monthNameFull
+                , text " "
+                , dayOfMonthNumber
+                , text ", "
+                , yearNumber
+                , text " "
+                , hourNumber
+                , text ":"
+                , minuteFixed
+                , text ":"
+                , secondFixed
+                , text " "
+                , amPmUppercase
+                ]
+                utc
+                d
 
         Just curr ->
             let
                 yearDiff =
-                    year curr - year d
+                    toYear utc curr - toYear utc d
 
                 dayDiff =
-                    day curr - day d
+                    toDay utc curr - toDay utc d
 
                 hourDiff =
-                    hour curr - hour d
+                    toHour utc curr - toHour utc d
 
                 minuteDiff =
-                    minute curr - minute d
+                    toMinute utc curr - toMinute utc d
             in
-                if yearDiff /= 0 then
-                    format "%b %e, %Y" d
-                else if month curr /= month d then
-                    format "%e %B" d
-                else if dayDiff == 1 then
-                    "yesterday"
-                else if dayDiff /= 0 then
-                    (toString dayDiff) ++ " days ago"
-                else if hourDiff == 1 then
-                    "1 hour ago"
-                else if hourDiff /= 0 then
-                    (toString hourDiff) ++ " hours ago"
-                else if minuteDiff == 1 then
-                    "1 minute ago"
-                else if minuteDiff /= 0 then
-                    (toString minuteDiff) ++ " minutes ago"
-                else
-                    "Just now"
+            if yearDiff /= 0 then
+                format [ monthNameFull, text " ", dayOfMonthNumber, text ", ", yearNumber ] utc d
+
+            else if toMonth utc curr /= toMonth utc d then
+                format [ monthNameFull, text " ", dayOfMonthNumber ] utc d
+
+            else if dayDiff == 1 then
+                "yesterday"
+
+            else if dayDiff /= 0 then
+                String.fromInt dayDiff ++ " days ago"
+
+            else if hourDiff == 1 then
+                "1 hour ago"
+
+            else if hourDiff /= 0 then
+                String.fromInt hourDiff ++ " hours ago"
+
+            else if minuteDiff == 1 then
+                "1 minute ago"
+
+            else if minuteDiff /= 0 then
+                String.fromInt minuteDiff ++ " minutes ago"
+
+            else
+                "Just now"
 
 
 type alias Flags =

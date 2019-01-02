@@ -7,14 +7,14 @@ import DocumentList.Views.DocumentTableHeader as TableHeader
 import Html exposing (Html, text)
 import Html.Attributes exposing (id)
 import Message exposing (..)
-import Date exposing (Date)
+import Time exposing (Posix)
 
 
 type alias Model =
     { focused : Maybe ( DocumentID, String )
     , selected : Maybe DocumentID
     , documents : List ListDocument
-    , loadTime : Maybe Date
+    , loadTime : Maybe Posix
     }
 
 
@@ -28,7 +28,8 @@ view model =
                     case model.focused of
                         Just ( docID, docTitle ) ->
                             if docID == doc.data.document_id then
-                                (Just docTitle)
+                                Just docTitle
+
                             else
                                 Nothing
 
@@ -43,9 +44,9 @@ view model =
                         Nothing ->
                             False
             in
-                Document.view { focusedText = focusedText, selected = selected, doc = doc, loadTime = model.loadTime }
+            Document.view { focusedText = focusedText, selected = selected, doc = doc, loadTime = model.loadTime }
     in
-        Html.table [ id "documents" ]
-            ([ TableHeader.view ]
-                ++ (List.map viewDocument model.documents)
-            )
+    Html.table [ id "documents" ]
+        ([ TableHeader.view ]
+            ++ List.map viewDocument model.documents
+        )

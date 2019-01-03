@@ -12,20 +12,6 @@ import * as Server from '../../network/server';
 import SavingSpinner from '../util/savingSpinner';
 import FriendlyDate from '../util/friendlyDate';
 
-/*
-			"NoRedInk/elm-decode-pipeline": "3.0.0",
-            "elm-lang/core": "5.1.1",
-            "elm-lang/dom": "1.1.1",
-            "elm-lang/html": "2.0.0",
-            "elm-lang/http": "1.0.0",
-            "elm-lang/keyboard": "1.0.1",
-            "elm-lang/mouse": "1.0.1",
-            "elm-lang/navigation": "2.1.0",
-            "evancz/url-parser": "2.0.1",
-            "mgold/elm-date-format": "1.6.0",
-            "rtfeldman/elm-css": "14.0.0"
-*/
-
 type StateProps = {
 	state: ApplicationState | undefined
 }

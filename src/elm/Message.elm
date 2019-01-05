@@ -42,4 +42,4 @@ keyDecoder =
 
 mouseDecoder : Decode.Decoder Msg
 mouseDecoder =
-    Decode.map (\_ -> MouseEvent ()) Decode.string
+    Decode.succeed (MouseEvent ())

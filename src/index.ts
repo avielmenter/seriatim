@@ -3,6 +3,7 @@ import './styles/login.sass';
 import './styles/spinner.css';
 
 var Elm = require('./elm/LoginWidget/Main.elm').Elm;
+
 var mountNode = document.getElementById('login');
 
 var app = Elm.LoginWidget.Main.init({

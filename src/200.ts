@@ -6,6 +6,7 @@ import './styles/settings.sass'
 import './styles/login.sass'
 
 var Elm = require('./elm/Main.elm').Elm;
+
 var mountNode = document.getElementById('app');
 
 var app = Elm.Main.init({

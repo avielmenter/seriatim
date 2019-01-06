@@ -61,7 +61,11 @@ module.exports = (env, argv) => ({
             {
                 test: /\.elm$/,
                 use: {
-                    loader: 'elm-webpack-loader?verbose=true'
+                    loader: 'elm-webpack-loader',
+                    options: {
+                        verbose: true,
+                        optimize: argv.mode == 'production'
+                    }
                 }
             },
             {

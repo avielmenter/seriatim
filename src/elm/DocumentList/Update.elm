@@ -443,13 +443,31 @@ update msg model =
                 ( model, Cmd.none )
 
         DocumentList.Message.KeyboardEvent keyCode ->
+            let
+                addCategoryToSelected selected otherwise =
+                    case selected of
+                        Just doc ->
+                            case doc.settings.newCategory of
+                                Editing _ ->
+                                    if doc.settings.visible then
+                                        update (AddCategory doc.data.document_id) model
+
+                                    else
+                                        otherwise
+
+                                _ ->
+                                    otherwise
+
+                        _ ->
+                            otherwise
+            in
             if isSomething model.focused then
                 case keyCode of
                     Escape ->
                         unfocusAndRename (DocumentListMessage msg) model
 
                     Enter ->
-                        unfocusAndRename (DocumentListMessage msg) model
+                        addCategoryToSelected (getSelectedDocument model) (unfocusAndRename (DocumentListMessage msg) model)
 
                     _ ->
                         ( model, Cmd.none )
@@ -459,10 +477,26 @@ update msg model =
                     Just selectedDoc ->
                         case keyCode of
                             Escape ->
-                                ( { model | selected = Nothing }, Cmd.none )
+                                ( { model
+                                    | selected = Nothing
+                                    , documents =
+                                        updateDocumentSettings
+                                            (\s ->
+                                                case s.newCategory of
+                                                    Editing _ ->
+                                                        { s | newCategory = Set }
+
+                                                    _ ->
+                                                        { s | visible = False }
+                                            )
+                                            selectedDoc.data.document_id
+                                            model.documents
+                                  }
+                                , Cmd.none
+                                )
 
                             Enter ->
-                                focusOnDocument model selectedDoc.data
+                                addCategoryToSelected (Just selectedDoc) (focusOnDocument model selectedDoc.data)
 
                             _ ->
                                 ( model, Cmd.none )

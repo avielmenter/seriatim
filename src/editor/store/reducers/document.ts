@@ -644,7 +644,8 @@ function addTableOfContents(document: Document.Document | null, action: AddTable
 			...Item.changeStyle(item, { property: "lineHeight", value: 2, unit: "em" }),
 			text
 		}),
-		tableOfContentsItemID: item.itemID
+		tableOfContentsItemID: item.itemID,
+		editedSinceSave: true
 	};
 }
 

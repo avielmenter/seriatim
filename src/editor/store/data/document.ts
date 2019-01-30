@@ -1,5 +1,6 @@
-import { Item, ItemID, newItemFromParent, regenerateID } from './item';
-import { Map, List } from 'immutable';
+import Style from './style';
+import { Item, ListItem, ItemID, newItemFromParent, regenerateID, getHeaderLevel } from './item';
+import { Map, List, Range } from 'immutable';
 
 export type ItemDictionary = Map<ItemID, Item>;
 export type DocumentID = string;
@@ -15,6 +16,7 @@ export interface Document {
 	readonly title: string,
 	readonly editedSinceSave: boolean,
 	readonly rootItemID: ItemID,
+	readonly tableOfContentsItemID: ItemID | undefined,
 	readonly focusedItemID: ItemID | undefined,
 	readonly selection: SelectionRange | undefined,
 	readonly items: ItemDictionary,
@@ -23,9 +25,11 @@ export interface Document {
 
 export function copySubtree(d: Document, root: Item): ItemDictionary {
 	const childSubtrees = root.children
-		.map(childID => d.items.get(childID))
-		.filter(child => child != undefined)
-		.map(child => copySubtree(d, child as Item));
+		.flatMap(childID => {
+			const child = d.items.get(childID);
+			return child ? [child] : [];
+		})
+		.map(child => copySubtree(d, child));
 
 	const subtree = Map<ItemID, Item>([
 		[root.itemID, root]
@@ -41,7 +45,7 @@ export function regenerateIDs(d: Document, curr: Item | undefined = d.items.get(
 	const newID = newIDs && newIDs.get(curr.itemID);
 
 	let newItem = newID
-		? { ...curr, itemID:newID }
+		? { ...curr, itemID: newID }
 		: regenerateID(curr);
 
 	let newSelection = d.selection ? { start: d.selection.start, end: d.selection.end } : undefined;
@@ -74,9 +78,9 @@ export function regenerateIDs(d: Document, curr: Item | undefined = d.items.get(
 	newItems = newItem.children.reduce((prev, i) => {
 		const curr = prev.get(i);
 
-		return curr ? 
-				prev.set(i, { ...curr, parentID: newItem.itemID }) :
-				prev;
+		return curr ?
+			prev.set(i, { ...curr, parentID: newItem.itemID }) :
+			prev;
 	}, newItems);
 
 	if (newParent)
@@ -89,6 +93,7 @@ export function regenerateIDs(d: Document, curr: Item | undefined = d.items.get(
 		selection: newSelection,
 		focusedItemID: newFocus,
 		rootItemID: newRoot,
+		tableOfContentsItemID: d.tableOfContentsItemID,
 		items: newItems,
 		title: d.title,
 		clipboard: d.clipboard
@@ -107,6 +112,7 @@ export function getEmptyDocument(): Document {
 		text: "Untitled Document",
 		parentID: "",
 		children: List<ItemID>(),
+		styles: Map<string, Style>(),
 		view: {
 			collapsed: false
 		}
@@ -119,6 +125,7 @@ export function getEmptyDocument(): Document {
 		title: "Untitled Document",
 		rootItemID: "root",
 		focusedItemID: "root",
+		tableOfContentsItemID: undefined,
 		selection: undefined,
 		items: Map<ItemID, Item>([
 			["root", rootItem]
@@ -200,7 +207,7 @@ export function getPrevSibling(document: Document, curr: Item): Item | undefined
 	return document.items.get(childID);
 }
 
-export function getFirstItem(document: Document): Item | undefined{
+export function getFirstItem(document: Document): Item | undefined {
 	return document.items.get(document.rootItemID);
 }
 
@@ -219,11 +226,13 @@ export function removeItem(document: Document, item: Item, cascade: boolean = tr
 	if (cascade) {
 		newItems = newItems.merge(
 			item.children
-				.map(childID => document.items.get(childID))
-				.filter(child => child != undefined)
+				.flatMap(childID => {
+					const child = document.items.get(childID);
+					return child ? [child] : [];
+				})
 				.reduce((prev, curr) => ({
 					...prev,
-					items: prev.items.merge(removeItem(prev, curr as Item, cascade).items)
+					items: prev.items.merge(removeItem(prev, curr, cascade).items)
 				}), document)
 				.items
 		);
@@ -318,7 +327,7 @@ export function getSelectedItems(document: Document): ItemDictionary {
 		!item ? '' : item.itemID,
 		item
 	]).toArray() as [string, Item][];
-	
+
 	return Map<ItemID, Item>(kvp);
 }
 
@@ -380,7 +389,7 @@ export function unindentItem(document: Document, item: Item): { document: Docume
 
 			if (!prevItem || !newItem || !curr)
 				return prev;
-			
+
 			return {
 				...prev,
 				items: moveItem(prev, prevItem, newItem.children.count(), curr).document.items
@@ -427,3 +436,41 @@ export function getFocusedItem(document: Document): Item | undefined {
 
 	return document.items.get(document.focusedItemID);
 }
+
+export function getItemList(doc: Document, selectedItems: ItemDictionary, curr: ItemID, indent: number = 0): List<ListItem> {
+	const currDocItem = doc.items.get(curr);
+	if (!currDocItem)
+		return List<ListItem>();
+
+	const currItem: ListItem = {
+		item: currDocItem,
+		focused: doc.focusedItemID == curr,
+		selected: selectedItems.has(curr),
+		itemType: curr == doc.rootItemID
+			? "Title"
+			: (/^#+\s+/.test(currDocItem.text) ? "Header" : "Item"), // starts with at least one '#', and then at least one space
+		indent
+	};
+
+	const currItemList = List<ListItem>([currItem]);
+
+	return currItem.item.view.collapsed
+		? currItemList
+		: currItem.item.children.reduce(
+			(prev, childID) => prev.concat(getItemList(doc, selectedItems, childID, indent + 1)).toList(),
+			currItemList
+		);
+}
+
+export const getTableOfContentsText = (document: Document): string =>
+	getItemList(document, getSelectedItems(document), document.rootItemID)
+		.filter(i => i.itemType == "Header" && document.tableOfContentsItemID != i.item.itemID)
+		.map(h => {
+			const headerLevel = getHeaderLevel(h.item);
+			const markup = headerLevel == 1 ? "**" : "";
+			const indent = Range(1, headerLevel).map(_ => "    ").reduce((p, c) => p + c, "");
+			const text = h.item.text.substr(headerLevel + 1);
+
+			return indent + "* " + markup + text + markup;
+		})
+		.reduce((prev, curr) => prev + "\n\n" + curr, "# Table of Contents");

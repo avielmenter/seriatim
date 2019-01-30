@@ -132,6 +132,11 @@ type UnindentSelection = {
 	data: {}
 }
 
+type AddTableOfContents = {
+	type: "AddTableOfContents",
+	data: {}
+}
+
 type CopySelection = {
 	type: "CopySelection",
 	data: {}
@@ -196,6 +201,7 @@ export type Action
 	| RemoveSelection
 	| IndentSelection
 	| UnindentSelection
+	| AddTableOfContents
 	| CopySelection
 	| MultiSelect
 	| UpdateItem
@@ -268,8 +274,10 @@ function removeItem(document: Document.Document | null, action: RemoveItem): Doc
 	const prevSibling = Document.getPrevSibling(document, item);
 
 	const children = item.children
-		.map(childID => document.items.get(childID))
-		.filter(child => child != undefined) as List<Item.Item>;
+		.flatMap(childID => {
+			const child = document.items.get(childID);
+			return child ? [child] : []
+		});
 
 	let newDocument = { ...document, editedSinceSave: true };
 
@@ -286,6 +294,9 @@ function removeItem(document: Document.Document | null, action: RemoveItem): Doc
 	}
 
 	newDocument = Document.removeItem(newDocument, item, false);
+	if (item.itemID == newDocument.tableOfContentsItemID)
+		newDocument.tableOfContentsItemID = undefined;
+
 	return (newDocument.focusedItemID == item.itemID) ? setFocus(newDocument, { type: "SetFocus", data: { item: nextItem } }) : newDocument;
 }
 
@@ -304,15 +315,15 @@ function setFocus(document: Document.Document | null, action: SetFocus): Documen
 function incrementFocus(document: Document.Document | null, action: IncrementFocus): Document.Document | null {
 	if (!document)
 		return null;
-	
+
 	const focusedItem = document.items.get(document.focusedItemID || "");
 	if (!focusedItem)
 		return setFocus(document, { type: "SetFocus", data: { item: document.items.get(document.rootItemID) } });
 
 	const { createNewItem } = action.data;
-	const focusedParent = focusedItem.itemID == document.rootItemID ? 
-							{ ...focusedItem } : 
-							(document.items.get(focusedItem.parentID) || { ...focusedItem });
+	const focusedParent = focusedItem.itemID == document.rootItemID ?
+		{ ...focusedItem } :
+		(document.items.get(focusedItem.parentID) || { ...focusedItem });
 
 	const nextItem = Document.getNextItem(document, focusedItem, true);
 	if (nextItem != undefined) {
@@ -334,7 +345,7 @@ function incrementFocus(document: Document.Document | null, action: IncrementFoc
 function decrementFocus(document: Document.Document | null, action: DecrementFocus): Document.Document | null {
 	if (!document)
 		return null;
-	
+
 	const focusedItem = Document.getFocusedItem(document);
 	if (!focusedItem)
 		return setFocus(document, { type: "SetFocus", data: { item: Document.getLastItem(document, document.items.get(document.rootItemID), true) } });
@@ -467,7 +478,7 @@ function copyItem(document: Document.Document | null, action: CopyItem): Documen
 			},
 			items: Map<Item.ItemID, Item.Item>([
 				[item.itemID, item]
-			])	,
+			]),
 			clipboard: undefined
 		}
 	};
@@ -612,6 +623,28 @@ function unindentSelection(document: Document.Document | null, action: UnindentS
 	return {
 		...itemsToUnindent.reduce((prev, curr) => Document.unindentItem(prev, prev.items.get(curr.itemID) || curr).document, document),
 		editedSinceSave: true
+	};
+}
+
+function addTableOfContents(document: Document.Document | null, action: AddTableOfContents): Document.Document | null {
+	if (!document)
+		return null;
+
+	const rootItem = document.items.get(document.rootItemID);
+	if (!rootItem)
+		return document;
+
+	const text = Document.getTableOfContentsText(document);
+	const item = Item.newItemFromParent(rootItem);
+	if (!item)
+		return null;
+
+	return {
+		...Document.addItem(document, rootItem, 0, {
+			...Item.changeStyle(item, { property: "lineHeight", value: 2, unit: "em" }),
+			text
+		}),
+		tableOfContentsItemID: item.itemID
 	};
 }
 
@@ -832,6 +865,8 @@ function undoableReducer(document: Document.Document | undefined | null, anyActi
 			return indentSelection(doc, action);
 		case "UnindentSelection":
 			return unindentSelection(doc, action);
+		case "AddTableOfContents":
+			return addTableOfContents(doc, action);
 		case "CopySelection":
 			return copySelection(doc, action);
 		case "Paste":
@@ -942,6 +977,10 @@ export const creators = (dispatch: Dispatch) => ({
 		type: "UnindentSelection",
 		data: {}
 	}),
+	addTableOfContents: () => dispatch({
+		type: "AddTableOfContents",
+		data: {}
+	}),
 	copySelection: () => dispatch({
 		type: "CopySelection",
 		data: {}
@@ -982,6 +1021,7 @@ export type DispatchProps = {
 	removeSelection: () => void,
 	indentSelection: () => void,
 	unindentSelection: () => void,
+	addTableOfContents: () => void,
 	copySelection: () => void,
 	paste: (item: Item.Item) => void,
 	updateItemIDs: (newIDs: Map<Item.ItemID, Item.ItemID>) => void,

@@ -6,7 +6,7 @@ import * as classNames from 'classnames';
 
 import { DispatchProps, mapDispatchToProps, ApplicationState } from '../../store';
 
-import { ListItem, ItemID } from '../../store/data/item';
+import { ListItem, ItemID, getReactStyles } from '../../store/data/item';
 
 import ItemEditor from './itemEditor';
 
@@ -54,9 +54,13 @@ class ItemContent extends React.Component<ComponentProps> {
 			"selectedItem": node.selected
 		});
 
+		const styles = getReactStyles(item);
+
+		console.log({ text: item.text, style: styles });
+
 		return (
 			<div className={classes} id={getContentDivId(item.itemID)} onClick={(event) => handleContentClick(event, props)}>
-				<div onClick={(event) => handleContentClick(event, props)}>
+				<div onClick={(event) => handleContentClick(event, props)} style={styles}>
 					{node.itemType != "Title" ?
 						<ReactMarkdown
 							source={textWithoutHeader.length == 0 ? "New Item" : item.text}
@@ -74,7 +78,8 @@ class ItemContent extends React.Component<ComponentProps> {
 		return this.props.node.item.text != nextProps.node.item.text ||
 			this.props.node.focused != nextProps.node.focused ||
 			this.props.node.indent != nextProps.node.indent ||
-			this.props.node.selected != nextProps.node.selected;
+			this.props.node.selected != nextProps.node.selected ||
+			this.props.node.item.styles != nextProps.node.item.styles;
 	}
 }
 

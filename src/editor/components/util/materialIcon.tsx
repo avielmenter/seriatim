@@ -5,16 +5,19 @@ type StateProps = {
 }
 
 type AttrProps = {
-	icon?: string
+	icon?: string,
+	iconColor?: string
 }
 
 type ComponentProps = StateProps & AttrProps;
 
 const MaterialIcon: React.SFC<ComponentProps> = (props) => {
-	const { icon } = props;
+	const { icon, iconColor } = props;
 
 	return (
-		<i className='material-icons'>{icon != undefined && icon.trim() != '' ? icon : ''}</i>
+		<i className='material-icons' style={{ color: iconColor }}>
+			{icon != undefined && icon.trim() != '' ? icon : ''}
+		</i>
 	);
 }
 

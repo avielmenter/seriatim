@@ -6,10 +6,12 @@ import MaterialIcon from '../util/materialIcon';
 
 type StateProps = {
 	canEdit: boolean,
+	children?: React.ReactNode
 }
 
 type AttrProps = {
 	icon?: string,
+	iconColor?: string,
 	ID?: string,
 	text: string,
 	shortcut?: string,
@@ -21,7 +23,7 @@ type AttrProps = {
 type ComponentProps = StateProps & AttrProps & DispatchProps;
 
 const MenuItem: React.SFC<ComponentProps> = (props) => {
-	const { icon, text, shortcut, callback, enabled, ID } = props;
+	const { icon, iconColor, text, shortcut, callback, enabled, ID } = props;
 
 	const platformShortcut = navigator.platform.toLowerCase().indexOf('mac') >= 0 // if user is on a mac
 		? (shortcut && shortcut.replace(/ctrl/i, '⌘'))
@@ -33,9 +35,15 @@ const MenuItem: React.SFC<ComponentProps> = (props) => {
 	return (
 		<li className={itemEnabled ? "ddMenuItem" : "ddMenuItemDisabled"} id={ID ? ID : ""}
 			onClick={itemEnabled ? (event) => callback(event) : () => { }}>
-			<MaterialIcon icon={icon} />
-			{text}
-			{shortcut && <span className="shortcut">({platformShortcut})</span>}
+			<div className="menuItemContent">
+				<MaterialIcon icon={icon} iconColor={iconColor} />
+				{text}
+				{shortcut && <span className="shortcut">({platformShortcut})</span>}
+			</div>
+			{props.children != undefined && <div className="subMenuItems">
+				<MaterialIcon icon='play_arrow' />
+				{props.children}
+			</div>}
 		</li>
 	)
 }

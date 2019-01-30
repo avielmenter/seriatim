@@ -1,8 +1,10 @@
 import * as React from 'react';
 import { connect } from 'react-redux';
+import { List } from 'immutable';
 
-import { Document, getLastItem, getEmptyDocument } from '../../store/data/document';
+import { Document, getLastItem, getEmptyDocument, updateItems } from '../../store/data/document';
 import { Item } from '../../store/data/item';
+import Style from '../../store/data/style';
 
 import { DispatchProps, mapDispatchToProps, ApplicationState, handleClick } from '../../store';
 
@@ -63,6 +65,34 @@ const DocumentHeader: React.SFC<ComponentProps> = (props) => {
 		? "Untitled Document..."
 		: (document.title.length > 64 ? document.title.substr(0, 61) + "..." : document.title);
 
+	const updateItemStyle = (style: Style) => (
+		(event: React.MouseEvent<HTMLLIElement>) => handleClick(event, () => {
+			return document.selection ?
+				itemActions.updateSelectionStyles(style) :
+				focused && itemActions.updateStyle(focused, style);
+		}
+		));
+
+	const formattingColors = List<string[]>([
+		["Black", "black"],
+		["White", "white"],
+		["Silver", "silver"],
+		["Gray", "gray"],
+		["Red", "red"],
+		["Maroon", "maroon"],
+		["Yellow", "yellow"],
+		["Olive", "olive"],
+		["Lime", "lime"],
+		["Green", "green"],
+		["Aqua", "aqua"],
+		["Teal", "teal"],
+		["Blue", "blue"],
+		["Navy", "navy"],
+		["Fuchsia", "fuchsia"],
+		["Purple", "purple"],
+		["No Color", "transparent"]
+	]);
+
 	return (
 		<div id="documentHeader">
 			<div id="headerContents">
@@ -105,10 +135,6 @@ const DocumentHeader: React.SFC<ComponentProps> = (props) => {
 					<div className="menuItem">
 						Edit
 						<ul>
-							<MenuItem text="Add Item" icon="add" shortcut="Ctrl-⏎" ID="addSibling"
-								callback={(event: React.MouseEvent<HTMLLIElement>) => handleClick(event, addSibling)} />
-							<MenuItem text="Add Sub-Item" icon="subdirectory_arrow_right" shortcut="Ctrl-⇧-⏎" ID="addChild"
-								callback={(event: React.MouseEvent<HTMLLIElement>) => handleClick(event, () => actions.addItemToParent(focused || lastItem))} />
 							<MenuItem text="Indent" icon="format_indent_increase" shortcut="Ctrl-]" enabled={focused != undefined || document.selection != undefined} ID="indentItem"
 								callback={(event: React.MouseEvent<HTMLLIElement>) => handleClick(event, () => document.selection ? actions.indentSelection() : actions.indentItem(focused || lastItem))} />
 							<MenuItem text="Unindent" icon="format_indent_decrease" shortcut="Ctrl-[" enabled={focused != undefined || document.selection != undefined} ID="unindentItem"
@@ -132,6 +158,21 @@ const DocumentHeader: React.SFC<ComponentProps> = (props) => {
 								callback={(event: React.MouseEvent<HTMLLIElement>) => handleClick(event, () => actions.undo())} />
 							<MenuItem text="Redo" icon="redo" shortcut="Ctrl-⇧-Z" ID="redo" enabled={state.document.future.length > 0}
 								callback={(event: React.MouseEvent<HTMLLIElement>) => handleClick(event, () => actions.redo())} />
+						</ul>
+					</div>
+					<div className="menuItem">
+						Insert
+						<ul>
+							<MenuItem text="Add Item" icon="add" shortcut="Ctrl-⏎" ID="addSibling"
+								callback={(event: React.MouseEvent<HTMLLIElement>) => handleClick(event, addSibling)} />
+							<MenuItem text="Add Sub-Item" icon="subdirectory_arrow_right" shortcut="Ctrl-⇧-⏎" ID="addChild"
+								callback={(event: React.MouseEvent<HTMLLIElement>) => handleClick(event, () => actions.addItemToParent(focused || lastItem))} />
+							<MenuItem text="Add Table of Contents" icon="toc" ID="addTOC" enabled={!document.tableOfContentsItemID}
+								callback={(event: React.MouseEvent<HTMLLIElement>) => handleClick(event, () => actions.addTableOfContents())} />
+							<MenuItem text="Add Link" icon="link" shortcut="Ctrl-K" ID="addURL" enabled={focused != undefined}
+								callback={(event: React.MouseEvent<HTMLLIElement>) => handleClick(event, () => focused && itemActions.addURL(focused))} />
+							<MenuItem text="Add Image" icon="insert_photo" shortcut="Ctrl-⇧-I" ID="addImage" enabled={focused != undefined}
+								callback={(event: React.MouseEvent<HTMLLIElement>) => handleClick(event, () => focused && itemActions.addImage(focused))} />
 							<MenuItem text="Remove" icon="clear" shortcut="Ctrl-⌫" ID="removeItem"
 								enabled={!(focused && focused.itemID == document.rootItemID) && lastItem.itemID != document.rootItemID}
 								callback={(event: React.MouseEvent<HTMLLIElement>) => handleClick(event, () => document.selection ? actions.removeSelection() : actions.removeItem(focused || lastItem))} />
@@ -168,14 +209,40 @@ const DocumentHeader: React.SFC<ComponentProps> = (props) => {
 								callback={(event: React.MouseEvent<HTMLLIElement>) => handleClick(event, () => document.selection ? itemActions.emboldenSelection() : (focused && itemActions.emboldenItem(focused)))} />
 							<MenuItem text="Italicize" icon="I" shortcut="Ctrl-I" ID="italicize" enabled={focused != undefined || document.selection != undefined}
 								callback={(event: React.MouseEvent<HTMLLIElement>) => handleClick(event, () => document.selection ? itemActions.italicizeSelection() : (focused && itemActions.italicizeItem(focused)))} />
-							<MenuItem text="Add Link" icon="link" shortcut="Ctrl-K" ID="addURL" enabled={focused != undefined}
-								callback={(event: React.MouseEvent<HTMLLIElement>) => handleClick(event, () => focused && itemActions.addURL(focused))} />
-							<MenuItem text="Add Image" icon="insert_photo" shortcut="Ctrl-⇧-I" ID="addImage" enabled={focused != undefined}
-								callback={(event: React.MouseEvent<HTMLLIElement>) => handleClick(event, () => focused && itemActions.addImage(focused))} />
 							<MenuItem text="Block Quote" icon="format_quote" shortcut="Ctrl-⇧-B" ID="blockQuote" enabled={focused != undefined || document.selection != undefined}
 								callback={(event: React.MouseEvent<HTMLLIElement>) => handleClick(event, () => document.selection ? itemActions.blockQuoteSelection() : (focused && itemActions.blockQuote(focused)))} />
 							<MenuItem text="Unquote" icon="" ID="unquote" enabled={focused != undefined || document.selection != undefined}
 								callback={(event: React.MouseEvent<HTMLLIElement>) => handleClick(event, () => document.selection ? itemActions.unquoteSelection() : (focused && itemActions.unquote(focused)))} />
+							<MenuItem text="Line Spacing" icon="format_line_spacing" callback={() => { }}>
+								<ul>
+									<MenuItem text="Single" callback={updateItemStyle({ property: "lineHeight", value: 1, unit: "em" })} />
+									<MenuItem text="1.5" callback={updateItemStyle({ property: "lineHeight", value: 1.5, unit: "em" })} />
+									<MenuItem text="Double" callback={updateItemStyle({ property: "lineHeight", value: 2, unit: "em" })} />
+								</ul>
+							</MenuItem>
+							<MenuItem text="Font Size" icon="format_size" callback={() => { }}>
+								<ul>
+									{List<number>([6, 8, 10, 12, 14, 16, 18, 24, 28, 36, 48, 72])
+										.map(n => <MenuItem text={n + " pt"} callback={updateItemStyle({ property: "fontSize", value: n, unit: "pt" })} key={"__font_size_pt_" + n} />)
+									}
+								</ul>
+							</MenuItem>
+							<MenuItem text="Text Color" icon="format_color_text" callback={() => { }}>
+								<ul>
+									{formattingColors.map(c =>
+										<MenuItem text={c[0]} icon="format_color_text" iconColor={c[1]} key={"__format_text_color_" + c[1]}
+											callback={updateItemStyle({ property: "color", value: c[1] })} />
+									)}
+								</ul>
+							</MenuItem>
+							<MenuItem text="Background Color" icon="format_color_fill" callback={() => { }}>
+								<ul>
+									{formattingColors.map(c =>
+										<MenuItem text={c[0]} icon="format_color_fill" iconColor={c[1]} key={"__format_bg_color_" + c[1]}
+											callback={updateItemStyle({ property: "backgroundColor", value: c[1] })} />
+									)}
+								</ul>
+							</MenuItem>
 							<MenuItem text="Clear Format" icon="format_clear" ID="clearFormatting" enabled={focused != undefined || document.selection != undefined}
 								callback={(event: React.MouseEvent<HTMLLIElement>) => handleClick(event, () => document.selection ? itemActions.clearSelectionFormatting() : (focused && itemActions.clearFormatting(focused)))} />
 						</ul>

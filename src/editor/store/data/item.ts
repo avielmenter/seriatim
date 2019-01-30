@@ -1,4 +1,6 @@
-import { List, Set } from 'immutable';
+import Style, { toValueString } from './style';
+
+import { List, Set, Map } from 'immutable';
 
 export type ItemID = string;
 export type ItemType = "Header" | "Item" | "Title";
@@ -13,6 +15,7 @@ export type Item = {
 	readonly parentID: ItemID,
 	readonly text: string,
 	readonly children: List<ItemID>,
+	readonly styles: Map<string, Style>,
 	readonly view: {
 		readonly collapsed: boolean,
 		readonly cursorPosition?: CursorPosition
@@ -31,7 +34,7 @@ const ID_POOL_SIZE = 1000;
 let ID_POOL = Set<ItemID>();
 
 function __generateItemID(): ItemID { 	// copied from https://stackoverflow.com/a/105074 
-	function s4(): string {			// NOT GUARANTEED TO BE GLOBALLY UNIQUE
+	function s4(): string {				// NOT GUARANTEED TO BE GLOBALLY UNIQUE
 		return Math.floor((1 + Math.random()) * 0x10000)
 			.toString(16)
 			.substring(1);
@@ -69,6 +72,7 @@ export function newItemFromParent(parent: Item): Item | undefined {
 		parentID: parent.itemID,
 		text: "",
 		children: List<ItemID>([]),
+		styles: Map<string, Style>(),
 		view: {
 			collapsed: false
 		}
@@ -91,3 +95,13 @@ export function getHeaderLevel(item: Item): number {
 		? numHashes
 		: 0;
 }
+
+export const changeStyle = (item: Item, style: Style): Item => ({
+	...item,
+	styles: item.styles.set(style.property, style)
+});
+
+export const getReactStyles = (item: Item): React.CSSProperties => item.styles.reduce((prev, curr) => ({
+	...prev,
+	[curr.property]: toValueString(curr)
+}), {});

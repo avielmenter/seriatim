@@ -1,7 +1,8 @@
 import { AnyAction } from 'redux';
-import { List } from 'immutable';
+import { List, Map } from 'immutable';
 
-import { Item, CursorPosition, getHeaderLevel } from '../data/item';
+import Style from '../data/style';
+import { Item, CursorPosition, getHeaderLevel, changeStyle } from '../data/item';
 
 // UTILITY
 
@@ -174,6 +175,20 @@ type UpdateCursor = {
 	}
 }
 
+type UpdateStyle = {
+	type: "UpdateStyle",
+	data: {
+		style: Style
+	}
+}
+
+type ClearStyle = {
+	type: "ClearStyle",
+	data: {
+		style: string
+	}
+}
+
 export type Action
 	= UpdateItemText
 	| EmboldenItem
@@ -183,7 +198,9 @@ export type Action
 	| BlockQuote
 	| Unquote
 	| ClearFormatting
-	| UpdateCursor;
+	| UpdateCursor
+	| UpdateStyle
+	| ClearStyle;
 
 // REDUCERS
 
@@ -308,7 +325,8 @@ function clearFormatting(item: Item, action: ClearFormatting): Item | undefined 
 
 		return {
 			...item,
-			text: newText
+			text: newText,
+			styles: Map<string, Style>()
 		}
 	} else if (cursorPosition.length == 0) {
 		const cursor = cursorPosition.start;
@@ -334,6 +352,7 @@ function clearFormatting(item: Item, action: ClearFormatting): Item | undefined 
 		return {
 			...item,
 			text: newText,
+			styles: Map<string, Style>(),
 			view: {
 				...item.view,
 				cursorPosition: {
@@ -352,6 +371,7 @@ function clearFormatting(item: Item, action: ClearFormatting): Item | undefined 
 		return {
 			...item,
 			text: newText,
+			styles: Map<string, Style>(),
 			view: {
 				...item.view,
 				cursorPosition: {
@@ -371,6 +391,17 @@ function updateCursor(item: Item, action: UpdateCursor): Item | undefined {
 			cursorPosition: action.data.cursorPosition
 		}
 	}
+}
+
+function updateStyle(item: Item, action: UpdateStyle): Item | undefined {
+	return changeStyle(item, action.data.style);
+}
+
+function clearStyle(item: Item, action: ClearStyle): Item | undefined {
+	return {
+		...item,
+		styles: item.styles.remove(action.data.style)
+	};
 }
 
 export function reducer(item: Item, anyAction: AnyAction): Item | undefined {
@@ -395,6 +426,10 @@ export function reducer(item: Item, anyAction: AnyAction): Item | undefined {
 			return clearFormatting(item, action);
 		case "UpdateCursor":
 			return updateCursor(item, action);
+		case "UpdateStyle":
+			return updateStyle(item, action);
+		case "ClearStyle":
+			return clearStyle(item, action);
 		default:
 			return undefined;
 	}
@@ -497,6 +532,26 @@ export const creators = (dispatch: Dispatch) => {
 				}
 			}
 		),
+		updateStyle: (item: Item, style: Style) => itemDispatch(
+			item, {
+				type: "UpdateStyle",
+				data: { style }
+			}
+		),
+		updateSelectionStyles: (style: Style) => selectionDispatch({
+			type: "UpdateStyle",
+			data: { style }
+		}),
+		clearStyle: (item: Item, style: string) => itemDispatch(
+			item, {
+				type: "ClearStyle",
+				data: { style }
+			}
+		),
+		clearSelectionStyles: (style: string) => selectionDispatch({
+			type: "ClearStyle",
+			data: { style }
+		})
 	}
 };
 
@@ -515,4 +570,8 @@ export type DispatchProps = {
 	clearFormatting: (item: Item) => void,
 	clearSelectionFormatting: () => void,
 	updateCursor: (item: Item, cursorPosition?: CursorPosition) => void,
+	updateStyle: (item: Item, style: Style) => void,
+	updateSelectionStyles: (style: Style) => void,
+	clearStyle: (item: Item, style: string) => void,
+	clearSelectionStyles: (style: string) => void,
 }

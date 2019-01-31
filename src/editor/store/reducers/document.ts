@@ -137,6 +137,11 @@ type AddTableOfContents = {
 	data: {}
 }
 
+type RefreshTableOfContents = {
+	type: "RefreshTableOfContents",
+	data: {}
+}
+
 type CopySelection = {
 	type: "CopySelection",
 	data: {}
@@ -202,6 +207,7 @@ export type Action
 	| IndentSelection
 	| UnindentSelection
 	| AddTableOfContents
+	| RefreshTableOfContents
 	| CopySelection
 	| MultiSelect
 	| UpdateItem
@@ -649,6 +655,25 @@ function addTableOfContents(document: Document.Document | null, action: AddTable
 	};
 }
 
+function refreshTableOfContents(document: Document.Document | null, action: RefreshTableOfContents): Document.Document | null {
+	if (!document)
+		return null;
+
+	const tocItem = !document.tableOfContentsItemID ?
+		undefined :
+		document.items.get(document.tableOfContentsItemID);
+
+	if (!tocItem)
+		return document;
+
+	const text = Document.getTableOfContentsText(document);
+
+	return {
+		...Document.updateItems(document, { ...tocItem, text }),
+		editedSinceSave: true
+	};
+}
+
 function paste(document: Document.Document | null, action: Paste): Document.Document | null {
 	if (!document)
 		return null;
@@ -868,6 +893,8 @@ function undoableReducer(document: Document.Document | undefined | null, anyActi
 			return unindentSelection(doc, action);
 		case "AddTableOfContents":
 			return addTableOfContents(doc, action);
+		case "RefreshTableOfContents":
+			return refreshTableOfContents(doc, action);
 		case "CopySelection":
 			return copySelection(doc, action);
 		case "Paste":
@@ -982,6 +1009,10 @@ export const creators = (dispatch: Dispatch) => ({
 		type: "AddTableOfContents",
 		data: {}
 	}),
+	refreshTableOfContents: () => dispatch({
+		type: "RefreshTableOfContents",
+		data: {}
+	}),
 	copySelection: () => dispatch({
 		type: "CopySelection",
 		data: {}
@@ -1023,6 +1054,7 @@ export type DispatchProps = {
 	indentSelection: () => void,
 	unindentSelection: () => void,
 	addTableOfContents: () => void,
+	refreshTableOfContents: () => void,
 	copySelection: () => void,
 	paste: (item: Item.Item) => void,
 	updateItemIDs: (newIDs: Map<Item.ItemID, Item.ItemID>) => void,

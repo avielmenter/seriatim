@@ -446,6 +446,7 @@ export function getItemList(doc: Document, selectedItems: ItemDictionary, curr: 
 		item: currDocItem,
 		focused: doc.focusedItemID == curr,
 		selected: selectedItems.has(curr),
+		isTableOfContents: doc.tableOfContentsItemID == currDocItem.itemID,
 		itemType: curr == doc.rootItemID
 			? "Title"
 			: (/^#+\s+/.test(currDocItem.text) ? "Header" : "Item"), // starts with at least one '#', and then at least one space

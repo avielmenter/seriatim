@@ -4,11 +4,12 @@ import * as ReactMarkdown from 'react-markdown';
 
 import * as classNames from 'classnames';
 
-import { DispatchProps, mapDispatchToProps, ApplicationState } from '../../store';
+import { DispatchProps, mapDispatchToProps, ApplicationState, handleClick } from '../../store';
 
 import { ListItem, ItemID, getReactStyles } from '../../store/data/item';
 
 import ItemEditor from './itemEditor';
+import MaterialIcon from '../util/materialIcon';
 
 type StateProps = {
 	canEdit: boolean
@@ -60,6 +61,12 @@ class ItemContent extends React.Component<ComponentProps> {
 
 		return (
 			<div className={classes} id={getContentDivId(item.itemID)} onClick={(event) => handleContentClick(event, props)}>
+				{node.isTableOfContents &&
+					<div id="tocRefresh"
+						onClick={(event) => handleClick(event, () => actions.document.refreshTableOfContents())}>
+						<MaterialIcon icon="refresh" iconColor="#0AF" />
+					</div>
+				}
 				<div onClick={(event) => handleContentClick(event, props)} style={styles}>
 					{node.itemType != "Title" ?
 						<ReactMarkdown

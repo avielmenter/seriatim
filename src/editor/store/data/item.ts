@@ -28,6 +28,7 @@ export type ListItem = {
 	readonly selected: boolean,
 	readonly indent: number,
 	readonly itemType: ItemType,
+	readonly isTableOfContents: boolean
 }
 
 const ID_POOL_SIZE = 1000;

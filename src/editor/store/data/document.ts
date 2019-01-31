@@ -51,6 +51,7 @@ export function regenerateIDs(d: Document, curr: Item | undefined = d.items.get(
 	let newSelection = d.selection ? { start: d.selection.start, end: d.selection.end } : undefined;
 	let newFocus = d.focusedItemID;
 	let newRoot = d.rootItemID;
+	let newTOC = d.tableOfContentsItemID;
 
 	if (d.selection && newSelection && curr.itemID == d.selection.start)
 		newSelection.start = newItem.itemID;
@@ -60,6 +61,8 @@ export function regenerateIDs(d: Document, curr: Item | undefined = d.items.get(
 		newFocus = newItem.itemID;
 	if (d.rootItemID == curr.itemID)
 		newRoot = newItem.itemID;
+	if (d.tableOfContentsItemID == curr.itemID)
+		newTOC = newItem.itemID;
 
 	let newParent = parent;
 
@@ -93,7 +96,7 @@ export function regenerateIDs(d: Document, curr: Item | undefined = d.items.get(
 		selection: newSelection,
 		focusedItemID: newFocus,
 		rootItemID: newRoot,
-		tableOfContentsItemID: d.tableOfContentsItemID,
+		tableOfContentsItemID: newTOC,
 		items: newItems,
 		title: d.title,
 		clipboard: d.clipboard

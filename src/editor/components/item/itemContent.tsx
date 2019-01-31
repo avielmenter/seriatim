@@ -57,8 +57,6 @@ class ItemContent extends React.Component<ComponentProps> {
 
 		const styles = getReactStyles(item);
 
-		console.log({ text: item.text, style: styles });
-
 		return (
 			<div className={classes} id={getContentDivId(item.itemID)} onClick={(event) => handleContentClick(event, props)}>
 				{node.isTableOfContents &&

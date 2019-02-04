@@ -114,6 +114,7 @@ decodeDocument =
         |> required "created_at" decodeRocketDate
         |> optional "modified_at" (Json.Decode.map Just decodeRocketDate) Nothing
         |> required "publicly_viewable" bool
+        |> optional "toc_item_id" (Json.Decode.map Just string) Nothing
         |> required "categories" (list decodeCategory)
 
 

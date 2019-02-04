@@ -15,6 +15,7 @@ type alias Document =
     , created_at : Posix
     , modified_at : Maybe Posix
     , publicly_viewable : Bool
+    , toc_item_id : Maybe String
     , categories : List Category
     }
 

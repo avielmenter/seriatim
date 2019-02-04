@@ -42,7 +42,7 @@ view doc =
                     [ type_ "checkbox"
                     , checked doc.data.publicly_viewable
                     , id <| publiclyViewableCheckboxID doc.data.document_id
-                    , onCheck (\b -> DocumentListMessage <| SavePublicViewability doc.data.document_id b)
+                    , onCheck (\b -> DocumentListMessage <| SavePublicViewability doc.data.document_id (not b))
                     ]
                     []
                 , Html.label [ for <| publiclyViewableCheckboxID doc.data.document_id ] [ text "Let anyone with a link view this document" ]

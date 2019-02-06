@@ -41,7 +41,7 @@ class Item extends React.PureComponent<ComponentProps> {
 				{Range(0, node.indent).map(i => <div className="itemIndent" key={"itemIndent_" + item.itemID + "_" + i} />)}
 				<div className="collapseExpand">
 					{itemType != "Title" && item.children.count() > 0 && <button className={item.view.collapsed ? "expandButton" : "collapseButton"}
-						onClick={(event) => handleClick(event, () => actions.toggleItemCollapse(item))}>
+						onClick={handleClick(() => actions.toggleItemCollapse(item))}>
 						<MaterialIcon icon={item.view.collapsed ? "arrow_right" : "arrow_drop_down"} />
 					</button>}
 				</div>

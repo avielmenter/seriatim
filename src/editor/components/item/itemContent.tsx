@@ -61,7 +61,7 @@ class ItemContent extends React.Component<ComponentProps> {
 			<div className={classes} id={getContentDivId(item.itemID)} onClick={(event) => handleContentClick(event, props)}>
 				{node.isTableOfContents && props.canEdit &&
 					<div id="tocRefresh"
-						onClick={(event) => handleClick(event, () => actions.document.refreshTableOfContents())}>
+						onClick={handleClick(() => actions.document.refreshTableOfContents())}>
 						<MaterialIcon icon="refresh" iconColor="#0AF" />
 					</div>
 				}

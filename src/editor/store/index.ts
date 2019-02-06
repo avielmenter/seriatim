@@ -51,7 +51,9 @@ export const mapDispatchToProps = (dispatch: Dispatch) => ({
     }
 });
 
-export function handleClick<HTMLElement>(event: React.MouseEvent<HTMLElement>, callback: () => void): void {
-    event.stopPropagation();
-    callback();
+export function handleClick<HTMLElement>(callback: (event: React.MouseEvent<HTMLElement>) => void) {
+    return (event: React.MouseEvent<HTMLElement>) => {
+        event.stopPropagation();
+        callback(event);
+    };
 }

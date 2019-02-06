@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { connect } from 'react-redux';
-import { ApplicationState, DispatchProps, mapDispatchToProps } from '../../store';
+import { ApplicationState, DispatchProps, mapDispatchToProps, handleClick } from '../../store';
 
 import MaterialIcon from '../util/materialIcon';
 
@@ -34,7 +34,7 @@ const MenuItem: React.SFC<ComponentProps> = (props) => {
 
 	return (
 		<li className={itemEnabled ? "ddMenuItem" : "ddMenuItemDisabled"} id={ID ? ID : ""}
-			onClick={itemEnabled ? (event) => callback(event) : () => { }}>
+			onClick={handleClick((event) => { if (itemEnabled) callback(event); })}>
 			<div className="menuItemContent">
 				<MaterialIcon icon={icon} iconColor={iconColor} />
 				{text}

@@ -25,7 +25,8 @@ function getCursorPosition(
 
 	return {
 		start: start + length,
-		length: 0
+		length: 0,
+		synced: true
 	};
 }
 
@@ -37,6 +38,16 @@ function resizeTextArea(editArea: React.RefObject<HTMLTextAreaElement>) {
 	textArea.style.height = 'auto';
 	textArea.style.height = (25 + textArea.scrollHeight) + 'px';
 }
+
+function setEditorSelection(editArea: HTMLTextAreaElement, position: CursorPosition, isEmptyTitle: boolean) {
+	const selectionEnd = editArea.value.length;
+	const selectionStart = isEmptyTitle ? 0 : selectionEnd;
+
+	const start = !position ? selectionStart : position.start;
+	const length = !position ? selectionEnd - selectionStart : position.length;
+
+	editArea.setSelectionRange(start, start + length);
+};
 
 function shouldCursorUpdate(event: React.KeyboardEvent<HTMLTextAreaElement>): boolean {
 	return (event.key < 'a' || event.key > 'z' || event.ctrlKey)
@@ -51,16 +62,35 @@ const ItemEditor: React.SFC<ComponentProps> = (props) => {
 
 	const editArea: React.RefObject<HTMLTextAreaElement> = React.useRef<HTMLTextAreaElement>(null);
 
-	React.useEffect(() => {
+	const onFocus = () => {
 		if (props.node.focused && editArea.current)
 			editArea.current.focus();
 
 		resizeTextArea(editArea);
+	}
 
-		return () => {
-			actions.item.updateCursor(item, undefined);
-		}
+	const onUnfocus = () => { actions.item.updateCursor(item, undefined); };
+
+	React.useEffect(() => {
+		onFocus();
+		return onUnfocus();
 	}, [props.node.focused]);
+
+	React.useEffect(() => {
+		const position = props.node.item.view.cursorPosition;
+
+		if (!editArea.current ||
+			!position ||
+			position.synced)
+			return;
+
+		console.log({
+			editAreaStart: editArea.current.selectionStart,
+			cursorStart: position.start
+		});
+
+		setEditorSelection(editArea.current, position, props.node.itemType == "Title" && item.text == "Untitled Document");
+	}, [item.view.cursorPosition]);
 
 	return (
 		<textarea id={'__edit__' + item.itemID} className="editArea"
@@ -74,7 +104,8 @@ const ItemEditor: React.SFC<ComponentProps> = (props) => {
 				} else if (!event.ctrlKey && item.view.cursorPosition && item.view.cursorPosition.length > 0) { // also update if we need to collapse the selection
 					props.actions.item.updateCursor(item, {
 						start: item.view.cursorPosition.start + item.view.cursorPosition.length,
-						length: 0
+						length: 0,
+						synced: true
 					});
 				}
 			}}

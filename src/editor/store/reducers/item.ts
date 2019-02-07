@@ -50,7 +50,8 @@ function applyMarkdownToSubstr(item: Item, opening: string, closing: string, sta
 			...item.view,
 			cursorPosition: cursorPosition && {
 				start: cursorPosition.start + cursorStartChange,
-				length: cursorPosition.length + cursorLengthChange
+				length: cursorPosition.length + cursorLengthChange,
+				synced: false,
 			}
 		}
 	};
@@ -218,6 +219,7 @@ function updateItemText(item: Item, action: UpdateItemText): Item | undefined {
 			cursorPosition: cursorPosition && {
 				...cursorPosition,
 				start: Math.min(newText.length, Math.max(0, cursorPosition.start + charsAdded)),
+				synced: true
 			}
 		}
 	};
@@ -270,7 +272,8 @@ function blockQuote(item: Item, action: BlockQuote): Item | undefined {
 			...item.view,
 			cursorPosition: cursorPosition && {
 				start: cursorPosition.start + blockQuoteMarkdown.length,
-				length: cursorPosition.length + cursorLengthChange
+				length: cursorPosition.length + cursorLengthChange,
+				synced: false
 			}
 		}
 	}
@@ -304,7 +307,8 @@ function unquote(item: Item, action: Unquote): Item | undefined {
 			...item.view,
 			cursorPosition: (!cursorPosition || !cursorStart) ? undefined : {
 				start: cursorStart,
-				length: cursorPosition.length - cursorLengthChange
+				length: cursorPosition.length - cursorLengthChange,
+				synced: false
 			}
 		}
 	}
@@ -357,7 +361,8 @@ function clearFormatting(item: Item, action: ClearFormatting): Item | undefined 
 				...item.view,
 				cursorPosition: {
 					start: cursorPosition.start - startChange,
-					length: 0
+					length: 0,
+					synced: false
 				}
 			}
 		}
@@ -376,7 +381,8 @@ function clearFormatting(item: Item, action: ClearFormatting): Item | undefined 
 				...item.view,
 				cursorPosition: {
 					start: cursorPosition.start,
-					length: cursorPosition.length - (formatted.length - unformatted.length)
+					length: cursorPosition.length - (formatted.length - unformatted.length),
+					synced: false
 				}
 			}
 		}

@@ -7,7 +7,8 @@ export type ItemType = "Header" | "Item" | "Title";
 
 export type CursorPosition = {
 	start: number,
-	length: number
+	length: number,
+	synced: boolean,
 }
 
 export type Item = {

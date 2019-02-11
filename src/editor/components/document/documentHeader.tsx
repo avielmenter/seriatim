@@ -9,6 +9,7 @@ import Style from '../../store/data/style';
 import { DispatchProps, mapDispatchToProps, ApplicationState, handleClick } from '../../store';
 
 import MenuItem from './menuItem';
+import ErrorMessage from '../util/errorMessage';
 
 import * as Server from '../../network/server';
 import SavingSpinner from '../util/savingSpinner';
@@ -38,6 +39,8 @@ const DocumentHeader: React.SFC<ComponentProps> = (props) => {
 	const itemActions = props.actions.item;
 	const focused = !document || !document.focusedItemID ? undefined : document.items.get(document.focusedItemID);
 	const lastItem = getLastItem(document, document.items.get(document.rootItemID));
+
+	const errors = state.errors;
 
 	if (!lastItem)
 		return (<div />);
@@ -247,6 +250,7 @@ const DocumentHeader: React.SFC<ComponentProps> = (props) => {
 					</div>
 				</div>
 			</div>
+			{errors.map((error, index) => <ErrorMessage error={error} index={index} key={index} />)}
 		</div>
 	);
 }

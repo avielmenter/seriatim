@@ -7,7 +7,6 @@ import { Document as DocumentData, getLastItem } from '../../store/data/document
 
 import DocumentView from './documentView';
 import DocumentHeader from './documentHeader';
-import ErrorMessage from '../util/errorMessage';
 
 import { DispatchProps, mapDispatchToProps, ApplicationState } from '../../store';
 
@@ -323,7 +322,6 @@ class Document extends React.Component<ComponentProps> {
 		return (
 			<main onClick={(event) => this.handleMainClick(event)}>
 				<DocumentHeader />
-				{this.props.errors.map((error, index) => <ErrorMessage error={error} index={index} key={index} />)}
 				<div id="documentScrollContainer">
 					<DocumentView document={doc} />
 				</div>

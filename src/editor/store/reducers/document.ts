@@ -376,7 +376,7 @@ function indentItem(document: Document.Document | null, action: IndentItem): Doc
 	let newDocument = { ...indentation.document, editedSinceSave: true };
 	const indented = indentation.moved;
 
-	const indentedParent = newDocument.items.get(item.parentID);
+	const indentedParent = newDocument.items.get(indented.parentID);
 	if (indentedParent && indentedParent.itemID == item.parentID)
 		return indentItem(newDocument, { type: "IndentItem", data: { item: indentedParent } });
 	return newDocument;

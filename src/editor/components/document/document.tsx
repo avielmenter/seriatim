@@ -259,7 +259,7 @@ class Document extends React.Component<ComponentProps> {
 			event.preventDefault();
 	}
 
-	handleMainClick(event: React.MouseEvent<HTMLMainElement>) {
+	handleMainClick(event: React.MouseEvent<HTMLElement, MouseEvent>) {
 		const actions = this.props.actions.document;
 		const doc = this.props.document;
 

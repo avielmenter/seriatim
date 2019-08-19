@@ -11,7 +11,7 @@ import DocumentHeader from './documentHeader';
 import { DispatchProps, mapDispatchToProps, ApplicationState } from '../../store';
 
 import * as Server from '../../network/server';
-import { Permissions } from '../../store/data/permissions';
+import { Permissions } from '../../../server';
 
 type StateProps = {
 	errors: List<Error>,

@@ -1,7 +1,10 @@
 module LoginWidget.View exposing (view)
 
+import Data.Login exposing (LoginMethod(..))
 import Html exposing (..)
 import Html.Attributes exposing (class, href, id)
+import Html.Events exposing (onClick)
+import LoginWidget.Message exposing (Msg(..))
 import LoginWidget.Model exposing (..)
 import Message exposing (Msg(..))
 import Views.LoadingSpinner as LoadingSpinner
@@ -14,19 +17,19 @@ view model =
             NotLoggedIn ->
                 [ p [] [ text "Access Seriatim using your preferred social media account:" ]
                 , a
-                    [ href <| loginCallback model.flags Twitter
+                    [ onClick <| LoginMessage (GetLoginURL Twitter)
                     , id "loginTwitter"
                     , class "login"
                     ]
                     [ text "Login via Twitter" ]
                 , a
-                    [ href <| loginCallback model.flags Google
+                    [ onClick <| LoginMessage (GetLoginURL Google)
                     , id "loginGoogle"
                     , class "login"
                     ]
                     [ text "Login via Google" ]
                 , a
-                    [ href <| loginCallback model.flags Facebook
+                    [ onClick <| LoginMessage (GetLoginURL Facebook)
                     , id "loginFacebook"
                     , class "login"
                     ]
@@ -39,9 +42,9 @@ view model =
                     [ text "View Your Documents" ]
                 , p [ id "logoutMessage" ]
                     [ text "Not you? "
-                    , a
-                        [ href <| logoutCallback model.flags
-                        , id "logout"
+                    , span
+                        [ onClick <| LoginMessage Logout
+                        , id "logoutLink"
                         ]
                         [ text "log out" ]
                     , text "."

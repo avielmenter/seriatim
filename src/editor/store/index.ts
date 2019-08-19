@@ -12,7 +12,7 @@ import * as StateReducers from './reducers';
 
 import * as Document from './data/document';
 import { Error } from './data/error';
-import { Permissions } from './data/permissions';
+import { Permissions } from '../../server';
 
 export type ApplicationState = {
     errors: List<Error>,

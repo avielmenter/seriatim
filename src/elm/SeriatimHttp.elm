@@ -1,7 +1,8 @@
-module SeriatimHttp exposing (HttpResult, Method(..), SeriatimError, SeriatimErrorCode(..), SeriatimResult, SeriatimSuccess, decodeCategory, decodeCategoryID, decodeDocument, decodeDocumentID, decodeErrorCode, decodeRocketDate, decodeSeriatimResponse, decodeUser, decodeUserID, httpRequest, httpRequestWithHeaders)
+module SeriatimHttp exposing (HttpResult, Method(..), SeriatimError, SeriatimErrorCode(..), SeriatimResult, SeriatimSuccess, decodeCategory, decodeCategoryID, decodeDocument, decodeDocumentID, decodeErrorCode, decodeRedirectURL, decodeRocketDate, decodeSeriatimResponse, decodeUser, decodeUserID, httpRequest, httpRequestWithHeaders)
 
 import Data.Category exposing (Category, CategoryID)
 import Data.Document exposing (Document, DocumentID)
+import Data.Login exposing (RedirectURL)
 import Data.User exposing (User, UserID)
 import Debug exposing (log)
 import Http
@@ -116,6 +117,12 @@ decodeDocument =
         |> required "publicly_viewable" bool
         |> optional "toc_item_id" (Json.Decode.map Just string) Nothing
         |> required "categories" (list decodeCategory)
+
+
+decodeRedirectURL : Decoder RedirectURL
+decodeRedirectURL =
+    succeed RedirectURL
+        |> required "url" string
 
 
 decodeUser : Decoder User

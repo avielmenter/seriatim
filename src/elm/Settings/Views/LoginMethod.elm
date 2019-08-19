@@ -1,12 +1,13 @@
 module Settings.Views.LoginMethod exposing (view)
 
+import Data.Login exposing (..)
 import Html exposing (Html, text)
-import Html.Attributes exposing (class, id, href)
+import Html.Attributes exposing (class, href, id)
 import Html.Events exposing (onClick)
+import LoginWidget.Model exposing (..)
 import Message exposing (Msg(..))
 import Settings.Message exposing (Msg(..))
 import Settings.Model exposing (..)
-import LoginWidget.Model exposing (..)
 import Settings.Views.SettingIcons as SettingIcons
 import Util exposing (Flags)
 
@@ -22,8 +23,8 @@ view model =
         ]
         ([ SettingIcons.view { onConfirm = None, onReject = None, setting = Tuple.second model.onAccount }
          , Html.span
-            [ id <| "loginMethod_" ++ (getMethodString model.loginMethod), class "loginMethodName" ]
-            [ text (getMethodViewName model.loginMethod) ]
+            [ id <| "loginMethod_" ++ getLoginMethodString model.loginMethod, class "loginMethodName" ]
+            [ text (getLoginMethodViewName model.loginMethod) ]
          ]
             ++ (case model.onAccount of
                     ( True, _ ) ->
@@ -35,9 +36,9 @@ view model =
                         ]
 
                     ( False, _ ) ->
-                        [ Html.a
+                        [ Html.span
                             [ class "loginMethodLink"
-                            , href <| (loginCallback model.config model.loginMethod) ++ "%23settings&merge=true"
+                            , onClick (SettingsMessage <| AddLoginMethod model.loginMethod)
                             ]
                             [ text "(add to account)" ]
                         ]

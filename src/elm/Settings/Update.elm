@@ -1,8 +1,10 @@
 module Settings.Update exposing (update)
 
-import Browser.Navigation exposing (Key, pushUrl)
+import Browser.Navigation exposing (Key, load, pushUrl)
+import Data.Login exposing (LoginMethod(..))
 import Http
-import LoginWidget.Model exposing (LoginMethod(..), LoginStatus(..))
+import LoginWidget.HttpRequests exposing (getRedirectURL, logOut)
+import LoginWidget.Model exposing (LoginStatus(..))
 import Message exposing (..)
 import Settings.HttpRequests exposing (removeLoginRequest, renameUserRequest)
 import Settings.Message exposing (..)
@@ -103,6 +105,41 @@ update key msg model =
         RejectName ->
             ( { model | displayName = Set }, Cmd.none )
 
+        AddLoginMethod method ->
+            let
+                updatedModel =
+                    case method of
+                        Facebook ->
+                            { model | hasFacebookLogin = Saving False }
+
+                        Google ->
+                            { model | hasGoogleLogin = Saving False }
+
+                        Twitter ->
+                            { model | hasTwitterLogin = Saving False }
+
+                returnURL =
+                    model.config.seriatim_client_url ++ "documents#settings"
+            in
+            ( updatedModel, getRedirectURL model.config.seriatim_server_url method returnURL True (\r -> SettingsMessage <| LoginRedirect r) )
+
+        LoginRedirect (Ok (Ok u)) ->
+            ( model, load u.data.url )
+
+        LoginRedirect (Ok (Err e)) ->
+            let
+                resetModel =
+                    resetSettings model
+            in
+            ( { resetModel | error = Just e.error }, Cmd.none )
+
+        LoginRedirect _ ->
+            let
+                resetModel =
+                    resetSettings model
+            in
+            ( { resetModel | error = Just "There was an error contacting the server." }, Cmd.none )
+
         RemoveLoginMethod method ->
             case model.currentUser of
                 LoggedInAs u ->
@@ -137,6 +174,12 @@ update key msg model =
 
                 _ ->
                     ( model, Cmd.none )
+
+        Logout ->
+            ( model, logOut model.config.seriatim_server_url (\r -> Message.SettingsMessage <| LoggedOut r) )
+
+        LoggedOut _ ->
+            ( model, load model.config.seriatim_client_url )
 
         ClearError ->
             ( { model | error = Nothing }, Cmd.none )

@@ -3,7 +3,7 @@ import { StateWithHistory } from 'redux-undo';
 
 import { List } from 'immutable';
 
-import { SeriatimSuccess, SeriatimError } from '../../network/server';
+import { SeriatimSuccess, SeriatimError } from '../../../server';
 
 import * as Document from '../data/document';
 

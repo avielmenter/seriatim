@@ -1,46 +1,10 @@
 import { List, Map } from 'immutable';
 
+import * as Server from '../../server';
+
 import { Item, ItemID } from '../store/data/item';
-import { Document, ItemDictionary, updateItemIDs } from '../store/data/document';
+import { Document } from '../store/data/document';
 import Style, { LengthUnit } from '../store/data/style';
-import { Permissions } from '../store/data/permissions';
-import { string } from 'prop-types';
-
-export type SeriatimSuccess<T> = {
-	status: "success",
-	permissions?: Permissions,
-	timestamp: Date,
-	data: T
-}
-
-export type SeriatimErrorCode
-	= "INSUFFICIENT_PERMISSIONS"
-	| "NOT_LOGGED_IN"
-	| "TOO_FEW_LOGIN_METHODS"
-	| "NOT_FOUND"
-	| "DATABASE_ERROR"
-	| "OTHER_ERROR";
-
-export type SeriatimError = {
-	status: "error",
-	code: SeriatimErrorCode,
-	error: string
-}
-
-export type SeriatimResponse<T> = SeriatimSuccess<T> | SeriatimError;
-
-type SeriatimSuccessRaw<T> = {
-	status: "success",
-	permissions?: ServerPermissions,
-	timestamp?: ServerDate,
-	data: T
-}
-
-type SeriatimResponseRaw<T> = SeriatimSuccessRaw<T> | SeriatimError;
-
-type ServerDate = {
-	secs_since_epoch: number
-}
 
 type ServerStyle = {
 	property?: string,
@@ -65,13 +29,9 @@ type ServerDocument = {
 	parent_id?: string,
 	root_item_id?: string,
 	toc_item_id?: string | null,
-	created_at?: ServerDate,
-	modified_at?: ServerDate,
+	created_at?: Server.ServerDate,
+	modified_at?: Server.ServerDate,
 	items?: { [item_id: string]: ServerItem }
-}
-
-type ServerPermissions = {
-	edit?: boolean
 }
 
 function parseServerStyle(sStyle: ServerStyle): Style | undefined {
@@ -133,26 +93,13 @@ function parseServerItem(sItem: ServerItem, root_id: string): Item | undefined {
 	}
 }
 
-function parseServerPermissions(sPermissions: ServerPermissions): Permissions | undefined {
-	if (sPermissions.edit === undefined)
-		return undefined;
-
-	return {
-		edit: sPermissions.edit
-	}
-}
-
-function parseServerDate(sDate: ServerDate | undefined): Date | undefined {
-	return !sDate || !sDate.secs_since_epoch ? undefined : new Date(sDate.secs_since_epoch * 1000);
-}
-
 function parseServerDocument(sDoc: ServerDocument): Document | undefined {
 	let serverItems = sDoc.items || {};
 
 	const rootItemID = sDoc.root_item_id;
 	const title = sDoc.title || "";
 
-	const created_at = parseServerDate(sDoc.created_at);
+	const created_at = Server.parseServerDate(sDoc.created_at);
 
 	if (!rootItemID || !sDoc.document_id || !created_at)
 		return undefined;
@@ -203,7 +150,7 @@ function parseServerDocument(sDoc: ServerDocument): Document | undefined {
 
 	return {
 		documentID: sDoc.document_id,
-		lastModified: parseServerDate(sDoc.modified_at) || created_at,
+		lastModified: Server.parseServerDate(sDoc.modified_at) || created_at,
 		editedSinceSave: false,
 		clipboard: undefined,
 		selection: undefined,
@@ -215,54 +162,9 @@ function parseServerDocument(sDoc: ServerDocument): Document | undefined {
 	}
 }
 
-function httpGet(url: string): Promise<Response> {
-	return fetch(SERIATIM_SERVER_URL + url, {
-		credentials: 'include',
-		method: 'GET',
-		mode: 'cors'
-	});
-}
-
-function httpPost(url: string, body: any): Promise<Response> {
-	return fetch(SERIATIM_SERVER_URL + url, {
-		credentials: 'include',
-		method: 'POST',
-		mode: 'cors',
-		headers: !body ? undefined : {
-			'Content-Type': 'application/json'
-		},
-		body: !body ? undefined : JSON.stringify(body)
-	});
-}
-
-async function parseHttpResponse<TParsed, TRaw>(response: Response, parse: (raw: TRaw) => TParsed | undefined): Promise<SeriatimResponse<TParsed>> {
-	const responseJson = await response.json() as SeriatimResponseRaw<TRaw>;
-
-	if (responseJson.status == "error")
-		return responseJson as SeriatimError;
-
-	const parsed = parse(responseJson.data);
-	const timestamp = parseServerDate(responseJson.timestamp);
-
-	if (!parsed || !timestamp) {
-		return {
-			status: "error",
-			code: "OTHER_ERROR",
-			error: "Could not parse response from server."
-		}
-	}
-
-	return {
-		status: "success",
-		permissions: responseJson.permissions ? parseServerPermissions(responseJson.permissions) : undefined,
-		timestamp,
-		data: parsed
-	}
-}
-
-export async function fetchDocument(documentID: string): Promise<SeriatimResponse<Document>> {
-	const response = await httpGet('document/' + documentID);
-	const parsed = await parseHttpResponse(response, parseServerDocument);
+export async function fetchDocument(documentID: string): Promise<Server.SeriatimResponse<Document>> {
+	const response = await Server.httpGet('document/' + documentID);
+	const parsed = await Server.parseHttpResponse(response, parseServerDocument);
 
 	return parsed;
 }
@@ -309,7 +211,7 @@ function toEditItem(item: Item, child_order: number): EditItem {
 	}
 }
 
-async function saveDocumentStructure(documentID: string, currDoc: Document): Promise<SeriatimResponse<Map<ItemID, ItemID>>> {
+async function saveDocumentStructure(documentID: string, currDoc: Document): Promise<Server.SeriatimResponse<Map<ItemID, ItemID>>> {
 	const editItems = currDoc.items.valueSeq()
 		.map(item => {
 			const parent = item.parentID ? currDoc.items.get(item.parentID) : undefined;
@@ -324,24 +226,24 @@ async function saveDocumentStructure(documentID: string, currDoc: Document): Pro
 		items: Map<string, EditItem>(editItems).toObject()
 	};
 
-	const response = await httpPost('document/' + documentID + '/edit', editDoc);
+	const response = await Server.httpPost('document/' + documentID + '/edit', editDoc);
 
-	return await parseHttpResponse(response,
+	return await Server.parseHttpResponse(response,
 		(raw: { [item_id: string]: string }) => Map<ItemID, ItemID>(Object.keys(raw).map(k => [k, raw[k]]) as [string, string][])
 	);
 }
 
-async function saveDocumentText(documentID: string, currDoc: Document): Promise<SeriatimResponse<any>> {
+async function saveDocumentText(documentID: string, currDoc: Document): Promise<Server.SeriatimResponse<any>> {
 	const textChanges = currDoc.items.valueSeq()
 		.map(item => [item.itemID, item.text])
 		.reduce((prev, curr) => prev.set(curr[0], curr[1]), Map<ItemID, string>())
 		.toObject();
 
-	const response = await httpPost('document/' + documentID + '/edit_text', textChanges);
-	return await parseHttpResponse(response, (raw: any) => ({}));
+	const response = await Server.httpPost('document/' + documentID + '/edit_text', textChanges);
+	return await Server.parseHttpResponse(response, (raw: any) => ({}));
 }
 
-export async function saveDocument(documentID: string, state: Document): Promise<SeriatimResponse<Map<ItemID, ItemID>>> {
+export async function saveDocument(documentID: string, state: Document): Promise<Server.SeriatimResponse<Map<ItemID, ItemID>>> {
 	const structureResponse = await saveDocumentStructure(documentID, state);
 
 	if (structureResponse.status == "error")
@@ -350,7 +252,7 @@ export async function saveDocument(documentID: string, state: Document): Promise
 	return structureResponse;
 }
 
-export async function makeCopy(documentID: string): Promise<SeriatimResponse<Document>> {
-	const response = await httpPost('document/' + documentID + '/copy', undefined);
-	return await parseHttpResponse(response, parseServerDocument);
+export async function makeCopy(documentID: string): Promise<Server.SeriatimResponse<Document>> {
+	const response = await Server.httpPost('document/' + documentID + '/copy', undefined);
+	return await Server.parseHttpResponse(response, parseServerDocument);
 }

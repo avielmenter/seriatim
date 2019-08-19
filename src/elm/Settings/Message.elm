@@ -1,8 +1,8 @@
-module Settings.Message exposing (..)
+module Settings.Message exposing (Msg(..))
 
-import SeriatimHttp exposing (HttpResult)
+import Data.Login exposing (LoginMethod, RedirectURL)
 import Data.User exposing (User)
-import LoginWidget.Model exposing (LoginMethod)
+import SeriatimHttp exposing (HttpResult)
 
 
 type Msg
@@ -11,5 +11,9 @@ type Msg
     | EditName String
     | SaveName
     | RejectName
+    | AddLoginMethod LoginMethod
+    | LoginRedirect (HttpResult RedirectURL)
     | RemoveLoginMethod LoginMethod
+    | Logout
+    | LoggedOut (HttpResult RedirectURL)
     | ClearError

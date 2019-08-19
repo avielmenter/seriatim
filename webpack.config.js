@@ -9,13 +9,14 @@ require('dotenv').config();
 
 module.exports = (env, argv) => ({
     entry: {
-        'main': './src/index.ts',
-        'app': './src/200.ts',
+        'main': './src/index.tsx',
+        'app': './src/200.tsx',
         'editor/editor': './src/editor/index.tsx',
-        'privacy/privacy': './src/privacy/index.ts',
+        'privacy/privacy': './src/privacy/index.ts'
     },
     output: {
-        path: path.join(__dirname, argv.mode === 'production' ? 'dist' : 'dist_dev')
+        path: path.join(__dirname, argv.mode === 'production' ? 'dist' : 'dist_dev'),
+        publicPath: '/'
     },
     devServer: {
         contentBase: argv.mode === 'production' ? './dist' : './dist_dev',
@@ -87,7 +88,9 @@ module.exports = (env, argv) => ({
     plugins: [
         new webpack.DefinePlugin({
             SERIATIM_SERVER_URL: JSON.stringify(argv.mode == 'production' ? process.env.PROD_SERVER_URL : process.env.DEV_SERVER_URL),
-            SERIATIM_CLIENT_URL: JSON.stringify(argv.mode == 'production' ? process.env.PROD_CLIENT_URL : process.env.DEV_CLIENT_URL)
+            SERIATIM_CLIENT_URL: JSON.stringify(argv.mode == 'production' ? process.env.PROD_CLIENT_URL : process.env.DEV_CLIENT_URL),
+            SERIATIM_TWITTER_KEY: process.env.SERIATIM_TWITTER_KEY,
+            SERIATIM_TWITTER_SECRET: process.env.SERIATIM_TWITTER_SECRET,
         }),
         new HtmlWebPackPlugin({
             template: './src/index.html',

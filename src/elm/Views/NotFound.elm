@@ -1,7 +1,7 @@
 module Views.NotFound exposing (view)
 
 import Html exposing (Html, text)
-import Html.Attributes exposing (id, class, href)
+import Html.Attributes exposing (href, id)
 import Message exposing (Msg(..))
 
 
@@ -10,7 +10,7 @@ type alias Model =
 
 
 view : Model -> Html Msg
-view model =
+view _ =
     Html.div
         [ id "msg404" ]
         [ Html.h2 []

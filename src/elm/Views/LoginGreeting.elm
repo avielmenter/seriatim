@@ -4,11 +4,11 @@ import Html exposing (Html, text)
 import Html.Attributes exposing (id)
 import Html.Events exposing (onClick)
 import LoginWidget.Model exposing (LoginStatus(..))
+import Message exposing (Msg(..))
+import Model exposing (Model)
+import Settings.Message exposing (Msg(..))
 import Views.LoadingSpinner as LoadingSpinner
 import Views.MaterialIcon as MaterialIcon
-import Model exposing (..)
-import Message exposing (..)
-import Settings.Message exposing (..)
 
 
 view : Model -> Html Message.Msg
@@ -21,6 +21,7 @@ view model =
                         "userSettingsIcon"
                             ++ (if model.settings.visible then
                                     "Active"
+
                                 else
                                     ""
                                )

@@ -2,8 +2,8 @@ module LoginWidget.Update exposing (update)
 
 import Browser.Navigation exposing (load)
 import LoginWidget.HttpRequests exposing (getRedirectURL, logOut)
-import LoginWidget.Message exposing (..)
-import LoginWidget.Model exposing (..)
+import LoginWidget.Message exposing (Msg(..))
+import LoginWidget.Model exposing (LoginStatus(..), Model)
 import Message
 
 

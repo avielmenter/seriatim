@@ -3,7 +3,7 @@ module LoginWidget.HttpRequests exposing (getLoggedInUser, getRedirectURL, logOu
 import Data.Login exposing (LoginMethod(..), RedirectURL, getLoginMethodString)
 import Data.User exposing (User)
 import Http
-import SeriatimHttp exposing (..)
+import SeriatimHttp exposing (HttpResult, Method(..), decodeRedirectURL, decodeSeriatimResponse, decodeUser, httpRequest)
 import Url exposing (percentEncode)
 
 

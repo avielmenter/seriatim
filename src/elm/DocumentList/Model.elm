@@ -1,9 +1,9 @@
-module DocumentList.Model exposing (..)
+module DocumentList.Model exposing (DocumentSettings, ListDocument, Model, PageStatus(..), getDocumentByID)
 
 import Data.Document exposing (Document, DocumentID)
 import Settings.Model exposing (Setting)
-import Util exposing (Flags)
 import Time exposing (Posix)
+import Util exposing (Flags)
 
 
 type PageStatus

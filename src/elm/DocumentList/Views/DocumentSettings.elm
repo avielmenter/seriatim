@@ -1,15 +1,15 @@
 module DocumentList.Views.DocumentSettings exposing (view)
 
-import Html exposing (Html, text)
-import Html.Attributes exposing (class, type_, checked, id, for, maxlength, value)
-import Html.Events exposing (onClick, onCheck, onInput)
-import Message exposing (Msg(..))
+import Data.Document exposing (DocumentID(..))
 import DocumentList.Message exposing (Msg(..))
 import DocumentList.Model exposing (ListDocument)
-import Data.Document exposing (DocumentID(..))
+import DocumentList.Views.Category as CategoryView
+import Html exposing (Html, text)
+import Html.Attributes exposing (checked, class, for, id, maxlength, type_, value)
+import Html.Events exposing (onCheck, onClick, onInput)
+import Message exposing (Msg(..))
 import Settings.Model exposing (getSettingValue)
 import Settings.Views.SettingIcons as SettingIcons
-import DocumentList.Views.Category as CategoryView
 
 
 type alias Model =
@@ -50,16 +50,16 @@ view doc =
                 , Html.ul [ class "categorySettings" ]
                     (if List.isEmpty doc.data.categories then
                         [ Html.li [ class "noCategories" ] [ text "None" ] ]
+
                      else
-                        (List.filter (\c -> c.category_name /= "Trash") doc.data.categories
+                        List.filter (\c -> c.category_name /= "Trash") doc.data.categories
                             |> List.map
                                 (\c -> CategoryView.view { document_id = doc.data.document_id, category = c })
-                        )
                     )
                 , Html.h4 [] [ text "Add Category:" ]
                 , SettingIcons.view
-                    { onConfirm = (DocumentListMessage <| AddCategory doc.data.document_id)
-                    , onReject = (DocumentListMessage <| RejectCategory doc.data.document_id)
+                    { onConfirm = DocumentListMessage <| AddCategory doc.data.document_id
+                    , onReject = DocumentListMessage <| RejectCategory doc.data.document_id
                     , setting = doc.settings.newCategory
                     }
                 , Html.input

@@ -1,17 +1,37 @@
-module DocumentList.Update exposing (focusOnDocument, getFocusedDocument, getSelectedDocument, initSettings, unfocusAndRename, update, updateDocumentData, updateDocumentFromHttp, updateDocumentSettings, updateFromHttp)
+module DocumentList.Update exposing
+    ( focusOnDocument
+    , getFocusedDocument
+    , getSelectedDocument
+    , initSettings
+    , unfocusAndRename
+    , update
+    , updateDocumentData
+    , updateDocumentFromHttp
+    , updateDocumentSettings
+    , updateFromHttp
+    )
 
 import Browser.Dom
 import Data.Document as Data exposing (DocumentID(..), inTrash)
-import DocumentList.HttpRequests exposing (..)
+import DocumentList.HttpRequests
+    exposing
+        ( addCategoryRequest
+        , copyDocumentRequest
+        , createDocumentRequest
+        , deleteDocumentRequest
+        , loadDocumentsRequest
+        , publicViewabilityRequest
+        , removeCategoryRequest
+        , renameDocumentRequest
+        )
 import DocumentList.Message exposing (Msg(..))
-import DocumentList.Model exposing (..)
+import DocumentList.Model exposing (DocumentSettings, ListDocument, Model, PageStatus(..), getDocumentByID)
 import DocumentList.Views.Document as Document
-import Http
-import Message exposing (..)
+import Message exposing (Msg(..))
 import SeriatimHttp exposing (HttpResult)
 import Settings.Model exposing (Setting(..))
 import Task
-import Time exposing (Posix, posixToMillis)
+import Time exposing (posixToMillis)
 import Util exposing (KeyCode(..), isSomething)
 
 
@@ -98,7 +118,7 @@ updateDocumentFromHttp onSuccess onError model docID r =
 
 
 unfocusAndRename : Message.Msg -> Model -> ( Model, Cmd Message.Msg )
-unfocusAndRename msg model =
+unfocusAndRename _ model =
     case model.focused of
         Just ( docID, docTitle ) ->
             ( { model | focused = Nothing }
@@ -193,7 +213,7 @@ update msg model =
 
         FocusResult result ->
             case result of
-                Err (Browser.Dom.NotFound id) ->
+                Err (Browser.Dom.NotFound _) ->
                     ( { model
                         | error = Just "Could not rename the selected document."
                         , focused = Nothing
@@ -425,7 +445,7 @@ update msg model =
                     else
                         update (Refresh Displaying) model
 
-        DocumentList.Message.MouseEvent position ->
+        DocumentList.Message.MouseEvent _ ->
             if isSomething model.selected then
                 case getSelectedDocument model of
                     Just selectedDoc ->

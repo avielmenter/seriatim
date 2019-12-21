@@ -1,10 +1,19 @@
-module DocumentList.HttpRequests exposing (addCategoryRequest, copyDocumentRequest, createDocumentRequest, deleteDocumentRequest, loadDocumentsRequest, publicViewabilityRequest, removeCategoryRequest, renameDocumentRequest)
+module DocumentList.HttpRequests exposing
+    ( addCategoryRequest
+    , copyDocumentRequest
+    , createDocumentRequest
+    , deleteDocumentRequest
+    , loadDocumentsRequest
+    , publicViewabilityRequest
+    , removeCategoryRequest
+    , renameDocumentRequest
+    )
 
 import Data.Document exposing (Document, DocumentID(..))
 import Http
 import Json.Decode exposing (list)
-import Json.Encode exposing (bool, encode, object, string)
-import SeriatimHttp exposing (..)
+import Json.Encode exposing (bool, object, string)
+import SeriatimHttp exposing (HttpResult, Method(..), decodeDocument, decodeSeriatimResponse, httpRequest)
 import Url exposing (percentEncode)
 
 

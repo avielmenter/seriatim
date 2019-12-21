@@ -1,14 +1,13 @@
 module Settings.Update exposing (update)
 
-import Browser.Navigation exposing (Key, load, pushUrl)
+import Browser.Navigation exposing (load, pushUrl)
 import Data.Login exposing (LoginMethod(..))
-import Http
 import LoginWidget.HttpRequests exposing (getRedirectURL, logOut)
 import LoginWidget.Model exposing (LoginStatus(..))
-import Message exposing (..)
+import Message exposing (Msg(..))
 import Settings.HttpRequests exposing (removeLoginRequest, renameUserRequest)
-import Settings.Message exposing (..)
-import Settings.Model exposing (..)
+import Settings.Message exposing (Msg(..))
+import Settings.Model exposing (Model, Setting(..))
 
 
 resetSettings : Model -> Model

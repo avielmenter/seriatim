@@ -9,6 +9,7 @@ type LoginMethod
 
 type alias RedirectURL =
     { url : String
+    , dummy: String
     }
 
 

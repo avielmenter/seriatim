@@ -3,8 +3,8 @@ module Settings.HttpRequests exposing (removeLoginRequest, renameUserRequest)
 import Data.Login exposing (LoginMethod(..), getLoginMethodString)
 import Data.User exposing (User)
 import Http
-import Json.Encode exposing (encode, object, string)
-import SeriatimHttp exposing (..)
+import Json.Encode exposing (object, string)
+import SeriatimHttp exposing (HttpResult, Method(..), decodeSeriatimResponse, decodeUser, httpRequest)
 
 
 renameUserRequest : String -> String -> (HttpResult User -> b) -> Cmd b

@@ -4,10 +4,9 @@ import Data.Category exposing (Category, CategoryID)
 import Data.Document exposing (Document, DocumentID)
 import Data.Login exposing (RedirectURL)
 import Data.User exposing (User, UserID)
-import Debug exposing (log)
 import Http
-import Json.Decode exposing (..)
-import Json.Decode.Pipeline exposing (custom, optional, required)
+import Json.Decode exposing (Decoder, andThen, bool, fail, field, int, list, string, succeed)
+import Json.Decode.Pipeline exposing (optional, required)
 import Time exposing (Posix, millisToPosix)
 
 
@@ -123,6 +122,7 @@ decodeRedirectURL : Decoder RedirectURL
 decodeRedirectURL =
     succeed RedirectURL
         |> required "url" string
+        |> optional "dummy" string ""
 
 
 decodeUser : Decoder User

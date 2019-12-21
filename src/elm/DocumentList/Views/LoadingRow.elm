@@ -1,8 +1,8 @@
-module DocumentList.Views.LoadingRow exposing (..)
+module DocumentList.Views.LoadingRow exposing (view)
 
-import Html exposing (..)
+import Html exposing (Html, span, td, text, tr)
 import Html.Attributes exposing (id)
-import Message exposing (..)
+import Message exposing (Msg)
 
 
 view : Html Msg

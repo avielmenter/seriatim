@@ -4,9 +4,9 @@ import Data.Document exposing (DocumentID)
 import DocumentList.Model exposing (ListDocument)
 import DocumentList.Views.Document as Document
 import DocumentList.Views.DocumentTableHeader as TableHeader
-import Html exposing (Html, text)
+import Html exposing (Html)
 import Html.Attributes exposing (id)
-import Message exposing (..)
+import Message exposing (Msg(..))
 import Time exposing (Posix)
 
 
@@ -25,16 +25,17 @@ view model =
         viewDocument doc =
             let
                 focusedText =
-                    case model.focused of
-                        Just ( docID, docTitle ) ->
-                            if docID == doc.data.document_id then
-                                Just docTitle
+                    Maybe.withDefault Nothing
+                        (Maybe.map
+                            (\( docID, docTitle ) ->
+                                if docID == doc.data.document_id then
+                                    Just docTitle
 
-                            else
-                                Nothing
-
-                        Nothing ->
-                            Nothing
+                                else
+                                    Nothing
+                            )
+                            model.focused
+                        )
 
                 selected =
                     case model.selected of
@@ -47,6 +48,6 @@ view model =
             Document.view { focusedText = focusedText, selected = selected, doc = doc, loadTime = model.loadTime }
     in
     Html.table [ id "documents" ]
-        ([ TableHeader.view ]
-            ++ List.map viewDocument model.documents
+        (TableHeader.view
+            :: List.map viewDocument model.documents
         )

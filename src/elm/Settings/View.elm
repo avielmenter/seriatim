@@ -2,13 +2,13 @@ module Settings.View exposing (view)
 
 import Data.Login exposing (LoginMethod(..))
 import Html exposing (Html, text)
-import Html.Attributes exposing (class, href, id, maxlength, type_, value)
+import Html.Attributes exposing (class, id, maxlength, type_, value)
 import Html.Events exposing (onClick, onInput)
-import LoginWidget.Model exposing (LoginStatus(..), logoutCallback)
+import LoginWidget.Model exposing (LoginStatus(..))
 import LoginWidget.View
-import Message exposing (..)
+import Message exposing (Msg(..))
 import Settings.Message exposing (Msg(..))
-import Settings.Model exposing (..)
+import Settings.Model exposing (Model, Setting(..), getSettingValue)
 import Settings.Views.ErrorMessage as ErrorMessage
 import Settings.Views.LoginMethod as LoginMethod
 import Settings.Views.SettingIcons as SettingIcons
@@ -55,8 +55,8 @@ view model =
                                 []
                             , Html.span [ class "headerCaption" ] [ text " (This name may be visible to others) " ]
                             , Html.div [ id "loginMethodsOnAccount" ]
-                                ([ Html.h4 [] [ text "Ways to Log In to Your Account" ] ]
-                                    ++ (if isSomething u.twitter_screen_name then
+                                (Html.h4 [] [ text "Ways to Log In to Your Account" ]
+                                    :: (if isSomething u.twitter_screen_name then
                                             [ LoginMethod.view { loginMethod = Twitter, onAccount = ( True, model.hasTwitterLogin ), config = model.config } ]
 
                                         else
@@ -77,8 +77,8 @@ view model =
                                 )
                             , if isNothing u.twitter_screen_name || isNothing u.google_id || isNothing u.facebook_id then
                                 Html.div [ id "loginMethodsNotOnAccount" ]
-                                    ([ Html.h4 [] [ text "Other Ways to Log In" ] ]
-                                        ++ (if isNothing u.twitter_screen_name then
+                                    (Html.h4 [] [ text "Other Ways to Log In" ]
+                                        :: (if isNothing u.twitter_screen_name then
                                                 [ LoginMethod.view { loginMethod = Twitter, onAccount = ( False, model.hasTwitterLogin ), config = model.config } ]
 
                                             else

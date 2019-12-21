@@ -1,19 +1,22 @@
 module Settings.Views.LoginMethod exposing (view)
 
-import Data.Login exposing (..)
+import Data.Login exposing (LoginMethod, getLoginMethodString, getLoginMethodViewName)
 import Html exposing (Html, text)
-import Html.Attributes exposing (class, href, id)
+import Html.Attributes exposing (class, id)
 import Html.Events exposing (onClick)
-import LoginWidget.Model exposing (..)
+import LoginWidget.Model exposing (Model)
 import Message exposing (Msg(..))
 import Settings.Message exposing (Msg(..))
-import Settings.Model exposing (..)
+import Settings.Model exposing (Model, Setting)
 import Settings.Views.SettingIcons as SettingIcons
 import Util exposing (Flags)
 
 
 type alias Model =
-    { loginMethod : LoginMethod, onAccount : ( Bool, Setting Bool ), config : Flags }
+    { loginMethod : LoginMethod
+    , onAccount : ( Bool, Setting Bool )
+    , config : Flags
+    }
 
 
 view : Model -> Html Message.Msg

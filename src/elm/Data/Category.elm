@@ -1,4 +1,4 @@
-module Data.Category exposing (..)
+module Data.Category exposing (Category, CategoryID(..))
 
 
 type CategoryID

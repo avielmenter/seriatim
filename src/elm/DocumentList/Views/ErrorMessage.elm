@@ -1,11 +1,11 @@
 module DocumentList.Views.ErrorMessage exposing (Model, view)
 
 import DocumentList.Message exposing (Msg(..))
-import Html exposing (..)
+import Html exposing (Html, div, text, span)
 import Html.Attributes exposing (class)
 import Html.Events exposing (custom)
 import Json.Decode as Json
-import Message exposing (..)
+import Message exposing (Msg(..))
 
 
 type alias Model =

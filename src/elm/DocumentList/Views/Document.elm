@@ -1,30 +1,17 @@
 module DocumentList.Views.Document exposing (Model, inputID, rowID, view)
 
-import Data.Document exposing (Document, DocumentID)
+import Data.Document exposing (DocumentID)
 import DocumentList.Message exposing (Msg(..))
 import DocumentList.Model exposing (ListDocument)
 import DocumentList.Views.DocumentSettings as DocumentSettings
-import Html exposing (Html, div, text)
+import Html exposing (Html, text)
 import Html.Attributes exposing (class)
-import Html.Events exposing (on, onClick)
+import Html.Events exposing (onClick)
 import Json.Decode
-import Message exposing (..)
+import Message exposing (Msg(..))
 import Time exposing (Posix)
 import Util exposing (seriatimDateString)
 import Views.MaterialIcon as MaterialIcon
-
-
-onEnter : Message.Msg -> Html.Attribute Message.Msg
-onEnter msg =
-    let
-        isEnter code =
-            if code == 13 then
-                Json.Decode.succeed msg
-
-            else
-                Json.Decode.fail "not ENTER"
-    in
-    on "keydown" (Json.Decode.andThen isEnter Html.Events.keyCode)
 
 
 inputID : DocumentID -> String

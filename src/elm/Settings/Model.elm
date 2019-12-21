@@ -1,7 +1,7 @@
-module Settings.Model exposing (..)
+module Settings.Model exposing (Model, Setting(..), getSettingValue)
 
-import Util exposing (Flags)
 import LoginWidget.Model exposing (LoginStatus)
+import Util exposing (Flags)
 
 
 type Setting a

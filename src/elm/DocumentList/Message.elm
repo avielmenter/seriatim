@@ -1,10 +1,9 @@
 module DocumentList.Message exposing (Msg(..))
 
 import Browser.Dom
-import Browser.Events exposing (..)
 import Data.Document exposing (Document, DocumentID)
 import DocumentList.Model exposing (PageStatus)
-import SeriatimHttp exposing (HttpResult, SeriatimResult)
+import SeriatimHttp exposing (HttpResult)
 import Time exposing (Posix)
 import Util exposing (KeyCode, MousePosition)
 

@@ -2,26 +2,24 @@ module Main exposing (main, subscriptions, view)
 
 import Browser
 import Browser.Events
-import Browser.Navigation as Nav
 import DocumentList.Message exposing (Msg(..))
 import DocumentList.View
-import Html exposing (Html, text)
-import Html.Attributes exposing (alt, class, href, id, src)
-import Json.Decode as Decode
-import Message exposing (..)
-import Model exposing (..)
-import Routing exposing (..)
+import Html
+import Html.Attributes exposing (class)
+import Message exposing (Msg(..), keyDecoder, mouseDecoder)
+import Model exposing (Model, init)
+import Routing exposing (Route(..))
 import Settings.View
 import Time
-import Update exposing (..)
-import Util exposing (Flags, KeyCode(..), MousePosition)
+import Update exposing (update)
+import Util exposing (Flags, KeyCode(..))
 import Views.LoginGreeting as LoginGreeting
 import Views.Logo as Logo
 import Views.NotFound as NotFound
 
 
 subscriptions : Model -> Sub Message.Msg
-subscriptions model =
+subscriptions _ =
     Sub.batch
         [ Browser.Events.onClick mouseDecoder
         , Browser.Events.onKeyDown keyDecoder

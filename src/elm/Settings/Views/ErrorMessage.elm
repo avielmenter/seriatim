@@ -1,10 +1,10 @@
-module Settings.Views.ErrorMessage exposing (..)
+module Settings.Views.ErrorMessage exposing (Model, view)
 
-import Message exposing (Msg(..))
-import Settings.Message exposing (Msg(..))
-import Html exposing (Html, div, text, span)
+import Html exposing (Html, div, span, text)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
+import Message exposing (Msg(..))
+import Settings.Message exposing (Msg(..))
 
 
 type alias Model =

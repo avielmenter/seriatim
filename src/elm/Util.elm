@@ -1,7 +1,7 @@
 module Util exposing (Flags, KeyCode(..), MousePosition, isNothing, isSomething, seriatimDateString)
 
-import DateFormat exposing (..)
-import Time exposing (..)
+import DateFormat exposing (amPmUppercase, dayOfMonthNumber, format, hourNumber, minuteFixed, monthNameFull, secondFixed, text, yearNumber)
+import Time exposing (Posix, toDay, toHour, toMinute, toMonth, toYear, utc)
 
 
 type alias MousePosition =

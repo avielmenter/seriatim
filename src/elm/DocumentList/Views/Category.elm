@@ -1,12 +1,12 @@
 module DocumentList.Views.Category exposing (view)
 
+import Data.Category exposing (Category)
+import Data.Document exposing (DocumentID(..))
+import DocumentList.Message exposing (Msg(..))
 import Html exposing (Html, text)
-import Html.Attributes exposing (class, type_, checked, id, for)
+import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Message exposing (Msg(..))
-import DocumentList.Message exposing (Msg(..))
-import Data.Document exposing (DocumentID(..))
-import Data.Category exposing (Category)
 import Views.MaterialIcon as MaterialIcon
 
 

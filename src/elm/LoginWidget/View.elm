@@ -1,11 +1,11 @@
 module LoginWidget.View exposing (view)
 
 import Data.Login exposing (LoginMethod(..))
-import Html exposing (..)
+import Html exposing (Html, a, div, p, span, text)
 import Html.Attributes exposing (class, href, id)
 import Html.Events exposing (onClick)
 import LoginWidget.Message exposing (Msg(..))
-import LoginWidget.Model exposing (..)
+import LoginWidget.Model exposing (LoginStatus(..), Model)
 import Message exposing (Msg(..))
 import Views.LoadingSpinner as LoadingSpinner
 

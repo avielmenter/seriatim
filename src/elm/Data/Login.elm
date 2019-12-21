@@ -9,7 +9,7 @@ type LoginMethod
 
 type alias RedirectURL =
     { url : String
-    , dummy: String
+    , dummy : String -- this is here just to get rid of an error regarding single-member records
     }
 
 

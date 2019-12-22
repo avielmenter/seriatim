@@ -292,7 +292,7 @@ class Document extends React.Component<ComponentProps> {
 							this.saveDocument();
 					}, 5 * 60 * 1000);
 
-					window.onbeforeunload = (event) => {
+					window.onbeforeunload = (event: BeforeUnloadEvent) => {
 						const msg = this.props.document && this.props.document.editedSinceSave
 							? "Are you sure you want to leave this page? You have unsaved changes which will be lost."
 							: undefined;

@@ -41,52 +41,41 @@ function getContentDivId(itemID: ItemID) {
 	return '__content__' + itemID;
 }
 
-class ItemContent extends React.Component<ComponentProps> {
-	render() {
-		const props = this.props;
-		const node = props.node;
-		const item = props.node.item;
-		const actions = props.actions;
+const ItemContent: React.MemoExoticComponent<React.SFC<ComponentProps>> = React.memo((props: ComponentProps) => {
+	const node = props.node;
+	const item = props.node.item;
+	const actions = props.actions;
 
-		const textWithoutHeader = item.text.replace(/(^#+\s+)?/, '');
+	const textWithoutHeader = item.text.replace(/(^#+\s+)?/, '');
 
-		const classes = classNames({
-			"itemContent": true,
-			"selectedItem": node.selected
-		});
+	const classes = classNames({
+		"itemContent": true,
+		"selectedItem": node.selected
+	});
 
-		const styles = getReactStyles(item);
+	const styles = getReactStyles(item);
 
-		return (
-			<div className={classes} id={getContentDivId(item.itemID)} onClick={(event) => handleContentClick(event, props)}>
-				{node.isTableOfContents && props.canEdit &&
-					<div id="tocRefresh"
-						onClick={handleClick(() => actions.document.refreshTableOfContents())}>
-						<MaterialIcon icon="refresh" iconColor="#0AF" />
-					</div>
-				}
-				<div onClick={(event) => handleContentClick(event, props)} style={styles}>
-					{node.itemType != "Title" ?
-						<ReactMarkdown
-							source={textWithoutHeader.length == 0 ? "New Item" : item.text}
-							className={textWithoutHeader.length == 0 ? "itemContentRenderedEmpty" : "itemContentRendered"}
-						/> :
-						<h1 className={item.text.length == 0 ? "titleEmpty" : "title"}>{item.text.length == 0 ? "Untitled Document..." : item.text}</h1>
-					}
+	return (
+		<div className={classes} id={getContentDivId(item.itemID)} onClick={(event) => handleContentClick(event, props)}>
+			{node.isTableOfContents && props.canEdit &&
+				<div id="tocRefresh"
+					onClick={handleClick(() => actions.document.refreshTableOfContents())}>
+					<MaterialIcon icon="refresh" iconColor="#0AF" />
 				</div>
-				{node.focused && <ItemEditor node={node} />}
+			}
+			<div onClick={(event) => handleContentClick(event, props)} style={styles}>
+				{node.itemType != "Title" ?
+					<ReactMarkdown
+						source={textWithoutHeader.length == 0 ? "New Item" : item.text}
+						className={textWithoutHeader.length == 0 ? "itemContentRenderedEmpty" : "itemContentRendered"}
+					/> :
+					<h1 className={item.text.length == 0 ? "titleEmpty" : "title"}>{item.text.length == 0 ? "Untitled Document..." : item.text}</h1>
+				}
 			</div>
-		);
-	}
-
-	shouldComponentUpdate(nextProps: AttrProps, nextState: StateProps) {
-		return this.props.node.item.text != nextProps.node.item.text ||
-			this.props.node.focused != nextProps.node.focused ||
-			this.props.node.indent != nextProps.node.indent ||
-			this.props.node.selected != nextProps.node.selected ||
-			this.props.node.item.styles != nextProps.node.item.styles;
-	}
-}
+			{node.focused && <ItemEditor node={node} />}
+		</div>
+	);
+});
 
 const mapStateToProps = (state: ApplicationState | {}) => {
 	let canEdit = false;

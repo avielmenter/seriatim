@@ -39,7 +39,7 @@ function resizeTextArea(editArea: React.RefObject<HTMLTextAreaElement>) {
 	textArea.style.height = (25 + textArea.scrollHeight) + 'px';
 }
 
-function setEditorSelection(editArea: HTMLTextAreaElement, position: CursorPosition, isEmptyTitle: boolean) {
+function setEditorSelection(editArea: HTMLTextAreaElement, position: CursorPosition | undefined, isEmptyTitle: boolean) {
 	const selectionEnd = editArea.value.length;
 	const selectionStart = isEmptyTitle ? 0 : selectionEnd;
 
@@ -60,13 +60,17 @@ const ItemEditor: React.SFC<ComponentProps> = (props) => {
 	const { item } = props.node;
 	const { actions } = props;
 
+	const isEmptyTitle = props.node.itemType == "Title" && item.text == "Untitled Document";
+
 	const editArea: React.RefObject<HTMLTextAreaElement> = React.useRef<HTMLTextAreaElement>(null);
 
 	const onFocus = () => {
-		if (props.node.focused && editArea.current)
-			editArea.current.focus();
-
 		resizeTextArea(editArea);
+
+		if (props.node.focused && editArea.current) {
+			editArea.current.focus();
+			setEditorSelection(editArea.current, props.node.item.view.cursorPosition, isEmptyTitle);
+		}
 	}
 
 	const onUnfocus = () => { actions.item.updateCursor(item, undefined); };
@@ -79,17 +83,15 @@ const ItemEditor: React.SFC<ComponentProps> = (props) => {
 	React.useEffect(() => {
 		const position = props.node.item.view.cursorPosition;
 
+		console.log(position);
+		console.log();
+
 		if (!editArea.current ||
 			!position ||
 			position.synced)
 			return;
 
-		console.log({
-			editAreaStart: editArea.current.selectionStart,
-			cursorStart: position.start
-		});
-
-		setEditorSelection(editArea.current, position, props.node.itemType == "Title" && item.text == "Untitled Document");
+		setEditorSelection(editArea.current, position, isEmptyTitle);
 	}, [item.view.cursorPosition]);
 
 	return (

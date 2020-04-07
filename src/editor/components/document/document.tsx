@@ -269,8 +269,7 @@ class Document extends React.Component<ComponentProps> {
 			actions.multiSelect(undefined);
 	}
 
-	componentWillMount() {
-		const actions = this.props.actions.document;
+	componentDidMount() {
 		const errors = this.props.actions.errors;
 
 		document.addEventListener('keydown', this.handleKeyDown);
@@ -303,7 +302,7 @@ class Document extends React.Component<ComponentProps> {
 					}
 				}
 			})
-			.catch(response => {
+			.catch(_response => {
 				errors.addError({
 					status: "error",
 					code: "OTHER_ERROR",
@@ -311,8 +310,6 @@ class Document extends React.Component<ComponentProps> {
 				});
 			});
 	}
-
-
 
 	render() {
 		const doc = this.props.document;

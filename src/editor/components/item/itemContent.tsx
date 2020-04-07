@@ -41,7 +41,14 @@ function getContentDivId(itemID: ItemID) {
 	return '__content__' + itemID;
 }
 
-const ItemContent: React.MemoExoticComponent<React.SFC<ComponentProps>> = React.memo((props: ComponentProps) => {
+const areComponentsEqual = (prevProps: ComponentProps, nextProps: ComponentProps) =>
+	prevProps.node.item.text == nextProps.node.item.text &&
+	prevProps.node.focused == nextProps.node.focused &&
+	prevProps.node.indent == nextProps.node.indent &&
+	prevProps.node.selected == nextProps.node.selected &&
+	prevProps.node.item.styles == nextProps.node.item.styles;
+
+const ItemContent: React.NamedExoticComponent<ComponentProps> = React.memo((props) => {
 	const node = props.node;
 	const item = props.node.item;
 	const actions = props.actions;
@@ -75,7 +82,7 @@ const ItemContent: React.MemoExoticComponent<React.SFC<ComponentProps>> = React.
 			{node.focused && <ItemEditor node={node} />}
 		</div>
 	);
-});
+}, areComponentsEqual);
 
 const mapStateToProps = (state: ApplicationState | {}) => {
 	let canEdit = false;

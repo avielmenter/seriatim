@@ -101,13 +101,13 @@ const DocumentHeader: React.SFC<ComponentProps> = (props) => {
 					onClick={() => canEdit && actions.setFocus(document.items.get(document.rootItemID))}>
 					{isLoading ? "Loading..." : displayTitle}
 					<SavingSpinner visible={state.saving} />
-					{!canEdit && !isLoading && <span id="readOnlyMessage">
-						You are viewing this document in read only mode. To edit it, <span id="copyDocument" onClick={makeCopy}>copy it</span> onto your account.
-					</span>}
-					{canEdit && !isLoading && <span id="readOnlyMessage">
-						Last saved: <FriendlyDate date={document.lastModified} />
-					</span>}
 				</h1>
+				{!canEdit && !isLoading && <span id="readOnlyMessage">
+					You are viewing this document in read only mode. To edit it, <span id="copyDocument" onClick={makeCopy}>copy it</span> onto your account.
+				</span>}
+				{canEdit && !isLoading && <span id="readOnlyMessage">
+					Last saved: <FriendlyDate date={document.lastModified} />
+				</span>}
 				<div id="documentMenu">
 					<div className="menuItem">
 						File

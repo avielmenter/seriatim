@@ -11,53 +11,48 @@ type AttrProps = {
 
 type ComponentProps = StateProps & AttrProps;
 
-class FriendlyDate extends React.Component<ComponentProps> {
-	refreshInternal?: number;
+function getFriendlyDateString(date?: Date): string {
+	if (!date)
+		return "never";
 
-	getFriendlyDateString(date?: Date): string {
-		if (!date)
-			return "never";
+	const now = new Date();
 
-		const now = new Date();
+	const minutes = (now.getTime() - date.getTime()) / 1000 / 60;
+	const hours = minutes / 60;
 
-		if (now.getFullYear() != date.getFullYear())
-			return dateFormat(date, 'mmm d, yyyy');
-		else if (now.getMonth() != date.getMonth())
-			return dateFormat(date, 'd mmmm');
-		else if (now.getDate() - date.getDate() == 1)
-			return 'yesterday';
-		else if (now.getDate() != date.getDate())
-			return (now.getDate() - date.getDate()) + ' days ago';
-		else if (now.getHours() - date.getHours() == 1)
-			return '1 hour ago';
-		else if (now.getHours() != date.getHours())
-			return (now.getHours() - date.getHours()) + ' hours ago';
-		else if (now.getMinutes() - date.getMinutes() == 1)
-			return '1 minute ago';
-		else if (now.getMinutes() != date.getMinutes())
-			return (now.getMinutes() - date.getMinutes()) + ' minutes ago';
-		else
-			return 'Just now';
-	}
-
-	componentDidMount() {
-		this.refreshInternal = window.setInterval(() => this.setState({
-			date: this.props.date
-		}), 60 * 1000);
-	}
-
-	componentWillUnmount() {
-		if (this.refreshInternal !== undefined)
-			clearInterval(this.refreshInternal);
-	}
-
-	render() {
-		const { date } = this.props;
-
-		return (
-			<span className="friendlyDate">{this.getFriendlyDateString(date)}</span>
-		);
-	}
+	if (minutes < 1)
+		return 'Just now';
+	else if (minutes < 2)
+		return '1 minute ago';
+	else if (hours < 1)
+		return Math.floor(minutes) + ' minutes ago';
+	else if (hours < 2)
+		return '1 hour ago';
+	else if (hours < 24)
+		return Math.floor(hours) + ' hours ago';
+	else if (now.getFullYear() != date.getFullYear())
+		return dateFormat(date, 'mmm d, yyyy');
+	else if (now.getMonth() != date.getMonth())
+		return dateFormat(date, 'd mmmm');
+	else if (now.getDate() - date.getDate() == 1)
+		return 'yesterday';
+	else
+		return (now.getDate() - date.getDate()) + ' days ago';
 }
+
+const FriendlyDate: React.SFC<ComponentProps> = (props) => {
+	const [friendlyDateString, setFriendlyDateString] = React.useState<string>(getFriendlyDateString(props.date));
+
+	React.useEffect(() => {
+		let interval = setInterval(() => setFriendlyDateString(getFriendlyDateString(props.date)), 1000 * 60);
+		return () => clearInterval(interval);
+	});
+
+	return (
+		<span className="friendlyDate" title={props.date?.toString()}>
+			{friendlyDateString}
+		</span>
+	);
+};
 
 export default FriendlyDate;

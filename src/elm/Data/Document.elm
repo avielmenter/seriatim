@@ -1,4 +1,4 @@
-module Data.Document exposing (Document, DocumentID(..), inTrash)
+module Data.Document exposing (Document, DocumentID(..), inArchive, inTrash)
 
 import Data.Category exposing (Category)
 import Time exposing (Posix)
@@ -24,3 +24,11 @@ inTrash : Document -> Bool
 inTrash doc =
     List.filter (\c -> c.category_name == "Trash") doc.categories
         |> List.isEmpty
+        |> not
+
+
+inArchive : Document -> Bool
+inArchive doc =
+    List.filter (\c -> c.category_name == "Archive") doc.categories
+        |> List.isEmpty
+        |> not

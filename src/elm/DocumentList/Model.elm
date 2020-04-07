@@ -32,6 +32,7 @@ type alias Model =
     , focused : Maybe ( DocumentID, String )
     , selected : Maybe DocumentID
     , filter : Maybe String
+    , showArchive : Bool
     , documents : List ListDocument
     , loadTime : Maybe Posix
     }

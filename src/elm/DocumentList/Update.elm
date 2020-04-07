@@ -424,6 +424,30 @@ update msg model =
                 Nothing ->
                     ( model, Cmd.none )
 
+        ArchiveSelected ->
+            case getSelectedDocument model of
+                Just doc ->
+                    let
+                        alreadyArchived =
+                            not <| List.isEmpty <| List.filter (\c -> c.category_name == "Archive") doc.data.categories
+                    in
+                    if alreadyArchived then
+                        ( model, Cmd.none )
+
+                    else
+                        ( model
+                        , addCategoryRequest model.config.seriatim_server_url
+                            doc.data.document_id
+                            "Archive"
+                            (\r -> DocumentListMessage <| CategoriesUpdated doc.data.document_id r)
+                        )
+
+                Nothing ->
+                    ( model, Cmd.none )
+
+        SetShowArchive s ->
+            ( { model | showArchive = s }, Cmd.none )
+
         SetFilter f ->
             ( { model | filter = f }, Cmd.none )
 

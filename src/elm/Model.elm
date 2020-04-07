@@ -33,6 +33,7 @@ init flags url key =
             , focused = Nothing
             , selected = Nothing
             , filter = Nothing
+            , showArchive = False
             , documents = []
             , loadTime = Nothing
             }

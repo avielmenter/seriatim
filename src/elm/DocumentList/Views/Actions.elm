@@ -13,6 +13,7 @@ import Views.MaterialIcon as MaterialIcon
 type alias Model =
     { documentSelected : Maybe DocumentID
     , inTrash : Bool
+    , inArchive : Bool
     }
 
 
@@ -41,6 +42,37 @@ view model =
             , text "Rename"
             ]
          ]
+            ++ (if not model.inArchive then
+                    [ Html.button
+                        (class "archiveDocument"
+                            :: (if isSomething model.documentSelected then
+                                    [ onClick <| DocumentListMessage ArchiveSelected ]
+
+                                else
+                                    [ class "disabled" ]
+                               )
+                        )
+                        [ MaterialIcon.view "archive"
+                        , text "Archive"
+                        ]
+                    ]
+
+                else
+                    [ Html.button
+                        (class "archiveDocument"
+                            :: (case model.documentSelected of
+                                    Just docID ->
+                                        [ onClick <| DocumentListMessage (RemoveCategory docID "Archive") ]
+
+                                    Nothing ->
+                                        [ class "disabled" ]
+                               )
+                        )
+                        [ MaterialIcon.view "unarchive"
+                        , text "Unarchive"
+                        ]
+                    ]
+               )
             ++ (if not model.inTrash then
                     [ Html.button
                         (class "copyDocument"

@@ -70,6 +70,10 @@
 			button.categorySelected .material-icons
 				color: red
 
+		.archiveButtonContainer
+			button.categorySelected .material-icons
+				color: orange
+
 	#actions
 		width: 2.5in
 
@@ -97,7 +101,13 @@
 			i
 				color: red
 			&:hover
-				background: #FF000011
+				background: transparentize(red, 0.9)
+
+		button.archiveDocument
+			i
+				color: orange
+			&:hover
+				background: transparentize(orange, 0.9)
 
 		button.disabled
 			i

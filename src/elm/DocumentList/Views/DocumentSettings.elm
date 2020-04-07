@@ -52,7 +52,7 @@ view doc =
                         [ Html.li [ class "noCategories" ] [ text "None" ] ]
 
                      else
-                        List.filter (\c -> c.category_name /= "Trash") doc.data.categories
+                        List.filter (\c -> c.category_name /= "Trash" && c.category_name /= "Archive") doc.data.categories
                             |> List.map
                                 (\c -> CategoryView.view { document_id = doc.data.document_id, category = c })
                     )

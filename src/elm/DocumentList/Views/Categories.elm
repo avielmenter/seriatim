@@ -11,6 +11,7 @@ import Views.MaterialIcon as MaterialIcon
 type alias Model =
     { categories : List String
     , filter : Maybe String
+    , showArchive : Bool
     }
 
 
@@ -56,9 +57,25 @@ view model =
         [ Html.h3 [] [ text "Categories" ]
         , Html.div []
             (model.categories
-                |> List.filter (\c -> c /= "Trash")
+                |> List.filter (\c -> c /= "Trash" && c /= "Archive")
                 |> List.map (\c -> categoryView c (Maybe.withDefault "" model.filter == c))
             )
+        , Html.div [ class "archiveButtonContainer" ]
+            [ Html.button
+                [ class <|
+                    "categoryButton"
+                        ++ (if model.showArchive then
+                                " categorySelected"
+
+                            else
+                                ""
+                           )
+                , onClick (DocumentListMessage <| SetShowArchive (not model.showArchive))
+                ]
+                [ MaterialIcon.view "description"
+                , text "All Documents"
+                ]
+            ]
         , Html.div [ class "trashButtonContainer" ]
             [ categoryView "Trash" (Maybe.withDefault "" model.filter == "Trash") ]
         ]

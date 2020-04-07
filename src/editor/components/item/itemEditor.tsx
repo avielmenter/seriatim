@@ -83,9 +83,6 @@ const ItemEditor: React.SFC<ComponentProps> = (props) => {
 	React.useEffect(() => {
 		const position = props.node.item.view.cursorPosition;
 
-		console.log(position);
-		console.log();
-
 		if (!editArea.current ||
 			!position ||
 			position.synced)

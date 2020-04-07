@@ -1,5 +1,6 @@
 module DocumentList.View exposing (view)
 
+import Data.Document exposing (inTrash)
 import DocumentList.Message exposing (Msg(..))
 import DocumentList.Model exposing (ListDocument, PageStatus(..))
 import DocumentList.Views.Actions as ActionsView
@@ -20,6 +21,8 @@ import Views.MaterialIcon as MaterialIcon
 getCategories : Model -> List String
 getCategories model =
     model.documentList.documents
+        |> List.filter (\d -> inTrash d.data)
+        -- [Document]   -> [Document]
         |> List.map (\d -> d.data.categories)
         -- [Document]   -> [[Category]]
         |> List.foldl (++) []

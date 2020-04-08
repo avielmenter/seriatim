@@ -3,7 +3,7 @@ module Model exposing (Model, init)
 import Browser.Navigation as Nav
 import DocumentList.HttpRequests exposing (loadDocumentsRequest)
 import DocumentList.Message exposing (Msg(..))
-import DocumentList.Model exposing (PageStatus(..))
+import DocumentList.Model exposing (PageStatus(..), SpecialFilter(..))
 import LoginWidget.HttpRequests exposing (getLoggedInUser)
 import LoginWidget.Message exposing (Msg(..))
 import LoginWidget.Model exposing (LoginStatus(..))
@@ -33,7 +33,7 @@ init flags url key =
             , focused = Nothing
             , selected = Nothing
             , filter = Nothing
-            , showArchive = False
+            , specialFilter = DocumentList.Model.None
             , documents = []
             , loadTime = Nothing
             }

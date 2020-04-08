@@ -1,6 +1,7 @@
 module DocumentList.Views.Categories exposing (view)
 
 import DocumentList.Message exposing (Msg(..))
+import DocumentList.Model exposing (SpecialFilter(..))
 import Html exposing (Html, text)
 import Html.Attributes exposing (class, id)
 import Html.Events exposing (onClick)
@@ -11,7 +12,7 @@ import Views.MaterialIcon as MaterialIcon
 type alias Model =
     { categories : List String
     , filter : Maybe String
-    , showArchive : Bool
+    , specialFilter : SpecialFilter
     }
 
 
@@ -26,10 +27,7 @@ categoryView category isSelected =
                 Just category
 
         icon =
-            if category == "Trash" then
-                "delete"
-
-            else if isSelected then
+            if isSelected then
                 "radio_button_checked"
 
             else
@@ -64,18 +62,30 @@ view model =
             [ Html.button
                 [ class <|
                     "categoryButton"
-                        ++ (if model.showArchive then
+                        ++ (if model.specialFilter == Archive then
                                 " categorySelected"
 
                             else
                                 ""
                            )
-                , onClick (DocumentListMessage <| SetShowArchive (not model.showArchive))
+                , onClick (DocumentListMessage ToggleShowArchive)
                 ]
                 [ MaterialIcon.view "description"
                 , text "All Documents"
                 ]
             ]
         , Html.div [ class "trashButtonContainer" ]
-            [ categoryView "Trash" (Maybe.withDefault "" model.filter == "Trash") ]
+            [ Html.button
+                [ class <|
+                    "categoryButton"
+                        ++ (if model.specialFilter == Trash then
+                                " categorySelected"
+
+                            else
+                                ""
+                           )
+                , onClick (DocumentListMessage ToggleShowTrash)
+                ]
+                [ MaterialIcon.view "delete", text "Trash" ]
+            ]
         ]

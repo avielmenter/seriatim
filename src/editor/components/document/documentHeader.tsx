@@ -2,11 +2,11 @@ import * as React from 'react';
 import { connect } from 'react-redux';
 import { List } from 'immutable';
 
-import { Document, getLastItem, getEmptyDocument, updateItems } from '../../store/data/document';
+import { getLastItem, getEmptyDocument } from '../../store/data/document';
 import { Item } from '../../store/data/item';
 import Style from '../../store/data/style';
 
-import { DispatchProps, mapDispatchToProps, ApplicationState, handleClick } from '../../store';
+import { DispatchProps, mapDispatchToProps, ApplicationState } from '../../store';
 
 import MenuItem from './menuItem';
 import ErrorMessage from '../util/errorMessage';

@@ -33,7 +33,8 @@ type Msg
     | FocusSelected
     | DeleteSelected
     | ArchiveSelected
-    | SetShowArchive Bool
+    | ToggleShowArchive
+    | ToggleShowTrash
     | SetFilter (Maybe String)
     | ClearError
     | MouseEvent MousePosition

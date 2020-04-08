@@ -1,4 +1,4 @@
-module DocumentList.Model exposing (DocumentSettings, ListDocument, Model, PageStatus(..), getDocumentByID)
+module DocumentList.Model exposing (DocumentSettings, ListDocument, Model, PageStatus(..), SpecialFilter(..), getDocumentByID, specialFilterString)
 
 import Data.Document exposing (Document, DocumentID)
 import Settings.Model exposing (Setting)
@@ -25,6 +25,25 @@ type alias ListDocument =
     }
 
 
+type SpecialFilter
+    = None
+    | Archive
+    | Trash
+
+
+specialFilterString : SpecialFilter -> String
+specialFilterString s =
+    case s of
+        Archive ->
+            "Archive"
+
+        Trash ->
+            "Trash"
+
+        None ->
+            ""
+
+
 type alias Model =
     { status : PageStatus
     , config : Flags
@@ -32,7 +51,7 @@ type alias Model =
     , focused : Maybe ( DocumentID, String )
     , selected : Maybe DocumentID
     , filter : Maybe String
-    , showArchive : Bool
+    , specialFilter : SpecialFilter
     , documents : List ListDocument
     , loadTime : Maybe Posix
     }

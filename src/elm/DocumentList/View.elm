@@ -1,8 +1,8 @@
 module DocumentList.View exposing (view)
 
-import Data.Document exposing (inArchive, inTrash)
+import Data.Document exposing (inArchive)
 import DocumentList.Message exposing (Msg(..))
-import DocumentList.Model exposing (ListDocument, PageStatus(..))
+import DocumentList.Model exposing (ListDocument, PageStatus(..), SpecialFilter(..), specialFilterString)
 import DocumentList.Views.Actions as ActionsView
 import DocumentList.Views.Categories as CategoriesView
 import DocumentList.Views.DocumentList as DLView
@@ -18,11 +18,9 @@ import Set
 import Views.MaterialIcon as MaterialIcon
 
 
-getCategories : Model -> List String
-getCategories model =
-    model.documentList.documents
-        |> List.filter (\d -> (not <| inTrash d.data) && (model.documentList.showArchive || (not <| inArchive d.data)))
-        -- [Document]   -> [Document]
+getCategories : List ListDocument -> List String
+getCategories documents =
+    documents
         |> List.map (\d -> d.data.categories)
         -- [Document]   -> [[Category]]
         |> List.foldl (++) []
@@ -54,29 +52,23 @@ categoryFilter category =
             \l -> l
 
 
-archiveFilter : Bool -> List ListDocument -> List ListDocument
-archiveFilter showArchive =
-    if not showArchive then
-        List.filter (\d -> not <| inCategory "Archive" d)
+specialFilter : SpecialFilter -> List ListDocument -> List ListDocument
+specialFilter f =
+    case f of
+        Trash ->
+            List.filter <| inCategory (specialFilterString Trash)
 
-    else
-        \l -> l
+        Archive ->
+            List.filter (\d -> not <| inCategory (specialFilterString Trash) d)
 
-
-trashFilter : Bool -> List ListDocument -> List ListDocument
-trashFilter showTrash =
-    if not showTrash then
-        List.filter (\d -> not <| inCategory "Trash" d)
-
-    else
-        categoryFilter <| Just "Trash"
+        DocumentList.Model.None ->
+            List.filter (\d -> (not <| inCategory (specialFilterString Trash) d) && (not <| inCategory (specialFilterString Archive) d))
 
 
 filterDocuments : Model -> List ListDocument
 filterDocuments model =
     model.documentList.documents
-        |> trashFilter (Maybe.withDefault "" model.documentList.filter == "Trash")
-        |> archiveFilter model.documentList.showArchive
+        |> specialFilter model.documentList.specialFilter
         |> categoryFilter model.documentList.filter
 
 
@@ -99,17 +91,27 @@ isSelectedInArchive model =
 
 view : Model -> Html Message.Msg
 view model =
+    let
+        showTrash =
+            model.documentList.specialFilter == Trash
+
+        showArchive =
+            model.documentList.specialFilter == Archive
+    in
     div [ id "dlContent" ]
         [ div [ id "dlSidebar" ]
             [ ActionsView.view
                 { documentSelected = model.documentList.selected
-                , inTrash = Maybe.withDefault "" model.documentList.filter == "Trash"
+                , inTrash = showTrash
                 , inArchive = isSelectedInArchive model
                 }
             , CategoriesView.view
-                { categories = getCategories model
+                { categories =
+                    model.documentList.documents
+                        |> specialFilter model.documentList.specialFilter
+                        |> getCategories
                 , filter = model.documentList.filter
-                , showArchive = model.documentList.showArchive
+                , specialFilter = model.documentList.specialFilter
                 }
             ]
         , div [ id "documentList" ]

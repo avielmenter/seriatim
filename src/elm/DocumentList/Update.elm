@@ -25,7 +25,7 @@ import DocumentList.HttpRequests
         , renameDocumentRequest
         )
 import DocumentList.Message exposing (Msg(..))
-import DocumentList.Model exposing (DocumentSettings, ListDocument, Model, PageStatus(..), getDocumentByID)
+import DocumentList.Model exposing (DocumentSettings, ListDocument, Model, PageStatus(..), SpecialFilter(..), getDocumentByID)
 import DocumentList.Views.Document as Document
 import Message exposing (Msg(..))
 import SeriatimHttp exposing (HttpResult)
@@ -445,8 +445,29 @@ update msg model =
                 Nothing ->
                     ( model, Cmd.none )
 
-        SetShowArchive s ->
-            ( { model | showArchive = s }, Cmd.none )
+        ToggleShowArchive ->
+            let
+                sf =
+                    case model.specialFilter of
+                        Archive ->
+                            DocumentList.Model.None
+
+                        _ ->
+                            Archive
+            in
+            ( { model | specialFilter = sf }, Cmd.none )
+
+        ToggleShowTrash ->
+            let
+                sf =
+                    case model.specialFilter of
+                        Trash ->
+                            DocumentList.Model.None
+
+                        _ ->
+                            Trash
+            in
+            ( { model | specialFilter = sf }, Cmd.none )
 
         SetFilter f ->
             ( { model | filter = f }, Cmd.none )

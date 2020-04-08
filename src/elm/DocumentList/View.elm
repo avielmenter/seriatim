@@ -91,18 +91,11 @@ isSelectedInArchive model =
 
 view : Model -> Html Message.Msg
 view model =
-    let
-        showTrash =
-            model.documentList.specialFilter == Trash
-
-        showArchive =
-            model.documentList.specialFilter == Archive
-    in
     div [ id "dlContent" ]
         [ div [ id "dlSidebar" ]
             [ ActionsView.view
                 { documentSelected = model.documentList.selected
-                , inTrash = showTrash
+                , inTrash = model.documentList.specialFilter == Trash
                 , inArchive = isSelectedInArchive model
                 }
             , CategoriesView.view

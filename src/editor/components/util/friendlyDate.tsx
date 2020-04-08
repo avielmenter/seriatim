@@ -48,6 +48,8 @@ const FriendlyDate: React.SFC<ComponentProps> = (props) => {
 		return () => clearInterval(interval);
 	});
 
+	React.useEffect(() => { setFriendlyDateString(getFriendlyDateString(props.date)); }, [props.date]);
+
 	return (
 		<span className="friendlyDate" title={props.date?.toString()}>
 			{friendlyDateString}

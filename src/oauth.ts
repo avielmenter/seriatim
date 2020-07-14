@@ -14,8 +14,6 @@ export async function verifyLogin(loginMethod: LoginMethod, queryString: string,
 		(merge ? '/merge' : '/callback') +
 		(queryString.startsWith('?') ? queryString : '?' + queryString);
 
-	console.log(url);
-
 	const callbackResponse = await httpGet(url);
 	const redirectURL = await parseHttpResponse(callbackResponse, parseRedirectURL);
 

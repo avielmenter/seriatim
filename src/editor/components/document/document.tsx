@@ -303,6 +303,8 @@ class Document extends React.Component<ComponentProps> {
 				}
 			})
 			.catch(_response => {
+				console.log(_response);
+
 				errors.addError({
 					status: "error",
 					code: "OTHER_ERROR",

@@ -24,7 +24,6 @@ function friendlyErrorMessage(e: Error): JSX.Element {
 		case 'NOT_FOUND':
 			return <span>No document could be found with the specified ID</span>;
 		default:
-			console.log("WEIRD ERROR: " + e.code);
 			return <span>{e.error}</span>;
 	}
 }

@@ -75,10 +75,12 @@ function parseServerItem(sItem: ServerItem, root_id: string): Item | undefined {
 	const styles = !sItem.styles ?
 		Map<string, Style>() :
 		Map<string, Style>(
-			Object.values(sItem.styles).flatMap(ss => {
+			Object.values(sItem.styles).map(ss => {
 				const style = parseServerStyle(ss);
 				return !style ? [] : [style];
-			}).map(s => [s.property, s] as [string, Style])
+			}).reduce(
+				(p, c) => [...p, ...c], []
+			).map(s => [s.property, s] as [string, Style])
 		);
 
 	return {

@@ -1,7 +1,7 @@
 import { AnyAction } from 'redux';
 import { List } from 'immutable';
 
-import { Error } from '../data/error';
+import { Error } from '../../network/error';
 
 // ACTION TYPES
 

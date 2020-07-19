@@ -3,8 +3,8 @@ import undoable, { ActionCreators, groupByActionTypes, StateWithHistory } from '
 
 import { List, Map, Range } from 'immutable';
 
-import * as Item from '../data/item';
-import * as Document from '../data/document';
+import * as Item from '../../io/document/item';
+import * as Document from '../../io/document';
 
 import * as ItemReducers from './item';
 

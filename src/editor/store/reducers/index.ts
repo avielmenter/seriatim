@@ -1,11 +1,12 @@
 import { AnyAction } from 'redux';
 import { StateWithHistory } from 'redux-undo';
 
-import { List } from 'immutable';
+import { List, Map } from 'immutable';
 
 import { SeriatimSuccess, SeriatimError } from '../../../server';
 
-import * as Document from '../data/document';
+import * as Item from '../../io/document/item';
+import * as Document from '../../io/document';
 
 import { ApplicationState } from '..';
 
@@ -40,10 +41,23 @@ type LoadDocument = {
 	}
 }
 
+type CopyItem = {
+	type: "CopyItem",
+	data: {
+		item: Item.Item | undefined
+	}
+}
+
+type CopySelection = {
+	type: "CopySelection",
+	data: {}
+}
 export type Action
 	= LoadDocument
 	| StartSaving
-	| StopSaving;
+	| StopSaving
+	| CopyItem
+	| CopySelection;
 
 // REDUCERS
 
@@ -80,6 +94,72 @@ function loadDocument(state: ApplicationState, action: LoadDocument): Applicatio
 	}
 }
 
+function copyItem(state: ApplicationState, action: CopyItem): ApplicationState {
+	const document = state.document.present;
+
+	if (!document)
+		return state;
+
+	const item = action.data.item;
+
+	if (!item) {
+		return {
+			...state,
+			clipboard: null
+		}
+	}
+
+	return {
+		...state,
+		clipboard: {
+			...document,
+			rootItemID: item.itemID,
+			selection: {
+				start: item.itemID,
+				end: item.itemID
+			},
+			items: Map<Item.ItemID, Item.Item>([
+				[item.itemID, item]
+			]),
+		}
+	};
+}
+
+function copySelection(state: ApplicationState, action: CopySelection): ApplicationState {
+	const document = state.document.present;
+
+	if (!document)
+		return state;
+	if (!document.selection) {
+		return {
+			...state,
+			clipboard: null
+		};
+	}
+
+	const selectedItems = Document.getSelectedItems(document);
+
+	const selectionRoot = Document.getSelectionParent(document);
+	if (!selectionRoot) {
+		return {
+			...state,
+			clipboard: null
+		};
+	}
+
+	const selectionSubtree = Document.copySubtree(document, selectionRoot);
+
+	return {
+		...state,
+		clipboard: {
+			...document,
+			rootItemID: selectionRoot.itemID,
+			items: selectionSubtree,
+			selection: { ...document.selection }
+		}
+	};
+}
+
 export function reducer(state: ApplicationState | undefined, anyAction: AnyAction): ApplicationState {
 	const action = anyAction as Action;
 
@@ -87,6 +167,7 @@ export function reducer(state: ApplicationState | undefined, anyAction: AnyActio
 		document: newDocumentHistory(),
 		errors: List<SeriatimError>(),
 		permissions: null,
+		clipboard: null,
 		saving: false
 	};
 
@@ -97,6 +178,10 @@ export function reducer(state: ApplicationState | undefined, anyAction: AnyActio
 			return startSaving(appState, action);
 		case "StopSaving":
 			return stopSaving(appState, action);
+		case "CopyItem":
+			return copyItem(appState, action);
+		case "CopySelection":
+			return copySelection(appState, action);
 		default:
 			return appState;
 	}
@@ -119,11 +204,20 @@ export const creators = (dispatch: Dispatch) => ({
 		type: "StopSaving",
 		data: {}
 	}),
+	copyItem: (item: Item.Item | undefined) => dispatch({
+		type: "CopyItem",
+		data: { item }
+	}),
+	copySelection: () => dispatch({
+		type: "CopySelection",
+		data: {}
+	})
 })
 
 export type DispatchProps = {
-
 	loadDocument: (document: SeriatimSuccess<Document.Document>) => void,
 	startSaving: () => void,
 	stopSaving: () => void,
+	copyItem: (item: Item.Item | undefined) => void,
+	copySelection: () => void
 }

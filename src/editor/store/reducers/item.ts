@@ -1,8 +1,8 @@
 import { AnyAction } from 'redux';
 import { List, Map } from 'immutable';
 
-import Style from '../data/style';
-import { Item, CursorPosition, getHeaderLevel, changeStyle } from '../data/item';
+import Style from '../../io/document/style';
+import { Item, CursorPosition, getHeaderLevel, changeStyle } from '../../io/document/item';
 
 // UTILITY
 
@@ -464,15 +464,15 @@ export const creators = (dispatch: Dispatch) => {
 	return {
 		updateItemText: (item: Item, newText: string) => itemDispatch(
 			item, {
-				type: "UpdateItemText",
-				data: { newText }
-			}
+			type: "UpdateItemText",
+			data: { newText }
+		}
 		),
 		emboldenItem: (item: Item) => itemDispatch(
 			item, {
-				type: "EmboldenItem",
-				data: {}
-			}
+			type: "EmboldenItem",
+			data: {}
+		}
 		),
 		emboldenSelection: () => selectionDispatch({
 			type: "EmboldenItem",
@@ -480,9 +480,9 @@ export const creators = (dispatch: Dispatch) => {
 		}),
 		italicizeItem: (item: Item) => itemDispatch(
 			item, {
-				type: "ItalicizeItem",
-				data: {}
-			}
+			type: "ItalicizeItem",
+			data: {}
+		}
 		),
 		italicizeSelection: () => selectionDispatch({
 			type: "ItalicizeItem",
@@ -490,21 +490,21 @@ export const creators = (dispatch: Dispatch) => {
 		}),
 		addURL: (item: Item) => itemDispatch(
 			item, {
-				type: "AddURL",
-				data: {}
-			}
+			type: "AddURL",
+			data: {}
+		}
 		),
 		addImage: (item: Item) => itemDispatch(
 			item, {
-				type: "AddImage",
-				data: {}
-			}
+			type: "AddImage",
+			data: {}
+		}
 		),
 		blockQuote: (item: Item) => itemDispatch(
 			item, {
-				type: "BlockQuote",
-				data: {}
-			}
+			type: "BlockQuote",
+			data: {}
+		}
 		),
 		blockQuoteSelection: () => selectionDispatch({
 			type: "BlockQuote",
@@ -512,9 +512,9 @@ export const creators = (dispatch: Dispatch) => {
 		}),
 		unquote: (item: Item) => itemDispatch(
 			item, {
-				type: "Unquote",
-				data: {}
-			}
+			type: "Unquote",
+			data: {}
+		}
 		),
 		unquoteSelection: () => selectionDispatch({
 			type: "Unquote",
@@ -522,9 +522,9 @@ export const creators = (dispatch: Dispatch) => {
 		}),
 		clearFormatting: (item: Item) => itemDispatch(
 			item, {
-				type: "ClearFormatting",
-				data: {}
-			}
+			type: "ClearFormatting",
+			data: {}
+		}
 		),
 		clearSelectionFormatting: () => selectionDispatch({
 			type: "ClearFormatting",
@@ -532,17 +532,17 @@ export const creators = (dispatch: Dispatch) => {
 		}),
 		updateCursor: (item: Item, cursorPosition?: CursorPosition) => itemDispatch(
 			item, {
-				type: "UpdateCursor",
-				data: {
-					cursorPosition
-				}
+			type: "UpdateCursor",
+			data: {
+				cursorPosition
 			}
+		}
 		),
 		updateStyle: (item: Item, style: Style) => itemDispatch(
 			item, {
-				type: "UpdateStyle",
-				data: { style }
-			}
+			type: "UpdateStyle",
+			data: { style }
+		}
 		),
 		updateSelectionStyles: (style: Style) => selectionDispatch({
 			type: "UpdateStyle",
@@ -550,9 +550,9 @@ export const creators = (dispatch: Dispatch) => {
 		}),
 		clearStyle: (item: Item, style: string) => itemDispatch(
 			item, {
-				type: "ClearStyle",
-				data: { style }
-			}
+			type: "ClearStyle",
+			data: { style }
+		}
 		),
 		clearSelectionStyles: (style: string) => selectionDispatch({
 			type: "ClearStyle",

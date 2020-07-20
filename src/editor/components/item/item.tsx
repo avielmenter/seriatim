@@ -5,7 +5,7 @@ import { Range } from 'immutable';
 import * as classNames from 'classnames';
 
 import { ApplicationState, DispatchProps, mapDispatchToProps, handleClick } from '../../store';
-import { ListItem, ItemID, ItemType, Item as ItemData } from '../../store/data/item';
+import { ListItem, ItemID, ItemType, Item as ItemData } from '../../io/document/item';
 
 import ItemContent from './itemContent';
 import MaterialIcon from '../util/materialIcon';

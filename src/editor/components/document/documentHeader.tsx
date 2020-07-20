@@ -2,16 +2,16 @@ import * as React from 'react';
 import { connect } from 'react-redux';
 import { List } from 'immutable';
 
-import { getLastItem, getEmptyDocument } from '../../store/data/document';
-import { Item } from '../../store/data/item';
-import Style from '../../store/data/style';
+import { getLastItem, getEmptyDocument } from '../../io/document';
+import { Item } from '../../io/document/item';
+import Style from '../../io/document/style';
 
 import { DispatchProps, mapDispatchToProps, ApplicationState } from '../../store';
 
 import MenuItem from './menuItem';
 import ErrorMessage from '../util/errorMessage';
 
-import * as Server from '../../network/server';
+import * as Server from '../../network/db';
 import SavingSpinner from '../util/savingSpinner';
 import FriendlyDate from '../util/friendlyDate';
 
@@ -141,20 +141,24 @@ const DocumentHeader: React.SFC<ComponentProps> = (props) => {
 							<MenuItem text="Unindent" icon="format_indent_decrease" shortcut="Ctrl-[" enabled={focused != undefined || document.selection != undefined} ID="unindentItem"
 								callback={() => document.selection ? actions.unindentSelection() : actions.unindentItem(focused || lastItem)} />
 							<MenuItem text="Copy" icon="assignment" shortcut="Ctrl-C" enabled={focused != undefined || document.selection != undefined} ID="copy"
-								callback={() => document.selection ? actions.copySelection() : actions.copyItem(focused || lastItem)} />
+								callback={() => document.selection ? props.actions.copySelection() : props.actions.copyItem(focused || lastItem)} />
 							<MenuItem text="Cut" icon="✂" shortcut="Ctrl-X" enabled={(focused != undefined && focused.itemID != document.rootItemID) || document.selection != undefined}
 								ID="cut"
 								callback={() => {
 									if (document.selection) {
-										actions.copySelection();
+										props.actions.copySelection();
 										actions.removeSelection();
 									} else if (focused) {
-										actions.copyItem(focused);
+										props.actions.copyItem(focused);
 										actions.removeItem(focused);
 									}
 								}} />
-							<MenuItem text="Paste" icon="⎗" shortcut="Ctrl-V" ID="paste" enabled={document.clipboard != undefined}
-								callback={() => actions.paste(focused || lastItem)} />
+							<MenuItem text="Paste" icon="⎗" shortcut="Ctrl-V" ID="paste" enabled={props.state.clipboard != undefined}
+								callback={() => {
+									const cb = props.state?.clipboard;
+									if (cb)
+										actions.paste(focused || lastItem, cb)
+								}} />
 							<MenuItem text="Undo" icon="undo" shortcut="Ctrl-Z" ID="undo" enabled={state.document.past.length > 0}
 								callback={() => actions.undo()} />
 							<MenuItem text="Redo" icon="redo" shortcut="Ctrl-⇧-Z" ID="redo" enabled={state.document.future.length > 0}

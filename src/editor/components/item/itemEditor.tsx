@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 
 import { DispatchProps, mapDispatchToProps, ApplicationState, handleClick } from '../../store';
 
-import { ListItem, CursorPosition } from '../../store/data/item';
+import { ListItem, CursorPosition } from '../../io/document/item';
 
 type StateProps = {}
 

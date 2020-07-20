@@ -93,13 +93,6 @@ type MakeItem = {
 	}
 }
 
-type CopyItem = {
-	type: "CopyItem",
-	data: {
-		item: Item.Item | undefined
-	}
-}
-
 type MultiSelect = {
 	type: "MultiSelect",
 	data: {
@@ -142,18 +135,6 @@ type RefreshTableOfContents = {
 	data: {}
 }
 
-type CopySelection = {
-	type: "CopySelection",
-	data: {}
-}
-
-type Paste = {
-	type: "Paste",
-	data: {
-		item: Item.Item
-	}
-}
-
 type UpdateItem = {
 	type: "UpdateItem",
 	data: {
@@ -173,6 +154,14 @@ type UpdateItemIDs = {
 	type: "UpdateItemIDs",
 	data: {
 		newIDs: Map<Item.ItemID, Item.ItemID>
+	}
+}
+
+type Paste = {
+	type: "Paste",
+	data: {
+		item: Item.Item,
+		clipboard: Document.Document
 	}
 }
 
@@ -199,8 +188,6 @@ export type Action
 	| UnindentItem
 	| MakeHeader
 	| MakeItem
-	| CopyItem
-	| Paste
 	| MakeSelectionItem
 	| MakeSelectionHeader
 	| RemoveSelection
@@ -208,11 +195,11 @@ export type Action
 	| UnindentSelection
 	| AddTableOfContents
 	| RefreshTableOfContents
-	| CopySelection
 	| MultiSelect
 	| UpdateItem
 	| UpdateSelection
 	| UpdateItemIDs
+	| Paste
 	| MarkSaved
 	| MarkUnsaved;
 
@@ -460,70 +447,6 @@ function makeItem(document: Document.Document | null, action: MakeItem): Documen
 	return Document.updateItems({ ...document, editedSinceSave: true }, newItem);
 }
 
-function copyItem(document: Document.Document | null, action: CopyItem): Document.Document | null {
-	if (!document)
-		return null;
-
-	const item = action.data.item;
-
-	if (!item) {
-		return {
-			...document,
-			clipboard: undefined
-		}
-	}
-
-	return {
-		...document,
-		clipboard: {
-			...document,
-			rootItemID: item.itemID,
-			selection: {
-				start: item.itemID,
-				end: item.itemID
-			},
-			items: Map<Item.ItemID, Item.Item>([
-				[item.itemID, item]
-			]),
-			clipboard: undefined
-		}
-	};
-}
-
-function copySelection(document: Document.Document | null, action: CopySelection): Document.Document | null {
-	if (!document)
-		return null;
-	if (!document.selection) {
-		return {
-			...document,
-			clipboard: undefined
-		};
-	}
-
-	const selectedItems = Document.getSelectedItems(document);
-
-	const selectionRoot = Document.getSelectionParent(document);
-	if (!selectionRoot) {
-		return {
-			...document,
-			clipboard: undefined
-		};
-	}
-
-	const selectionSubtree = Document.copySubtree(document, selectionRoot);
-
-	return {
-		...document,
-		clipboard: {
-			...document,
-			rootItemID: selectionRoot.itemID,
-			items: selectionSubtree,
-			selection: { ...document.selection },
-			clipboard: undefined
-		}
-	};
-}
-
 function makeSelectionItem(document: Document.Document | null, action: MakeSelectionItem): Document.Document | null {
 	if (!document)
 		return null;
@@ -674,71 +597,6 @@ function refreshTableOfContents(document: Document.Document | null, action: Refr
 	};
 }
 
-function paste(document: Document.Document | null, action: Paste): Document.Document | null {
-	if (!document)
-		return null;
-	if (!document.clipboard || !document.clipboard.selection)
-		return document;
-
-	let newDocument = document;
-
-	let clipboard = Document.regenerateIDs(document.clipboard);
-	let inSelection = false;
-
-	const selectedItems = Document.getSelectedItems(clipboard);
-	const selection = clipboard.selection;
-
-	const item = action.data.item;
-
-	const addToParent = (item.children.count() > 0 && !item.view.collapsed) || item.itemID == document.rootItemID;
-	const pasteBelow = !addToParent ? item : Item.newItemFromParent(item);
-	if (!pasteBelow)
-		return document;
-
-	if (addToParent)
-		newDocument = Document.addItem(newDocument, item, 0, pasteBelow);
-
-	let prevDoc: Item.Item | undefined = pasteBelow;
-	let prevSel: Item.Item | undefined = undefined;
-
-	for (let curr: Item.Item | undefined = clipboard.items.get(clipboard.rootItemID); curr != undefined; curr = Document.getNextItem(clipboard, curr)) {
-		if (!curr || !prevDoc || !selection)
-			break;
-
-		if (curr.itemID == selection.start || curr.itemID == selection.end)
-			inSelection = !inSelection;
-		if (!inSelection && curr.itemID != selection.start && curr.itemID != selection.end)
-			continue;
-
-		let newItem = curr;
-
-		if (!prevSel || prevSel.itemID != curr.parentID) {
-			const prevParent = newDocument.items.get(prevDoc.parentID);
-			if (!prevParent)
-				continue;
-
-			const prevIndex = prevParent.children.indexOf(prevDoc.itemID);
-
-			newItem = { ...curr, parentID: prevParent.itemID, children: List<Item.ItemID>() };
-			newDocument = Document.addItem(newDocument, prevParent, prevIndex + 1, newItem);
-		} else {
-			newItem = { ...curr, parentID: prevDoc.itemID, children: List<Item.ItemID>() };
-			newDocument = Document.addItem(newDocument, prevDoc, 0, newItem);
-		}
-
-		prevSel = curr;
-		prevDoc = newItem;
-	}
-
-	if (addToParent)
-		newDocument = Document.removeItem(document, pasteBelow);
-
-	return {
-		...newDocument,
-		editedSinceSave: true
-	};
-}
-
 function multiSelect(document: Document.Document | null, action: MultiSelect): Document.Document | null {
 	if (!document)
 		return null;
@@ -836,6 +694,71 @@ function updateSelection(document: Document.Document | null, action: UpdateSelec
 	}), unfocusedDocument);
 }
 
+function paste(document: Document.Document | null, action: Paste): Document.Document | null {
+	if (!document)
+		return null;
+	if (!action.data.clipboard || !action.data.clipboard.selection)
+		return document;
+
+	let newDocument = document;
+
+	let clipboard = Document.regenerateIDs(action.data.clipboard);
+	let inSelection = false;
+
+	const selectedItems = Document.getSelectedItems(clipboard);
+	const selection = clipboard.selection;
+
+	const item = action.data.item;
+
+	const addToParent = (item.children.count() > 0 && !item.view.collapsed) || item.itemID == document.rootItemID;
+	const pasteBelow = !addToParent ? item : Item.newItemFromParent(item);
+	if (!pasteBelow)
+		return document;
+
+	if (addToParent)
+		newDocument = Document.addItem(newDocument, item, 0, pasteBelow);
+
+	let prevDoc: Item.Item | undefined = pasteBelow;
+	let prevSel: Item.Item | undefined = undefined;
+
+	for (let curr: Item.Item | undefined = clipboard.items.get(clipboard.rootItemID); curr != undefined; curr = Document.getNextItem(clipboard, curr)) {
+		if (!curr || !prevDoc || !selection)
+			break;
+
+		if (curr.itemID == selection.start || curr.itemID == selection.end)
+			inSelection = !inSelection;
+		if (!inSelection && curr.itemID != selection.start && curr.itemID != selection.end)
+			continue;
+
+		let newItem = curr;
+
+		if (!prevSel || prevSel.itemID != curr.parentID) {
+			const prevParent = newDocument.items.get(prevDoc.parentID);
+			if (!prevParent)
+				continue;
+
+			const prevIndex = prevParent.children.indexOf(prevDoc.itemID);
+
+			newItem = { ...curr, parentID: prevParent.itemID, children: List<Item.ItemID>() };
+			newDocument = Document.addItem(newDocument, prevParent, prevIndex + 1, newItem);
+		} else {
+			newItem = { ...curr, parentID: prevDoc.itemID, children: List<Item.ItemID>() };
+			newDocument = Document.addItem(newDocument, prevDoc, 0, newItem);
+		}
+
+		prevSel = curr;
+		prevDoc = newItem;
+	}
+
+	if (addToParent)
+		newDocument = Document.removeItem(document, pasteBelow);
+
+	return {
+		...newDocument,
+		editedSinceSave: true
+	};
+}
+
 function markSaved(document: Document.Document | null, action: MarkSaved): Document.Document | null {
 	return !document
 		? null
@@ -877,8 +800,6 @@ function undoableReducer(document: Document.Document | undefined | null, anyActi
 			return makeHeader(doc, action);
 		case "MakeItem":
 			return makeItem(doc, action);
-		case "CopyItem":
-			return copyItem(doc, action);
 		case "MultiSelect":
 			return multiSelect(doc, action);
 		case "MakeSelectionItem":
@@ -895,16 +816,14 @@ function undoableReducer(document: Document.Document | undefined | null, anyActi
 			return addTableOfContents(doc, action);
 		case "RefreshTableOfContents":
 			return refreshTableOfContents(doc, action);
-		case "CopySelection":
-			return copySelection(doc, action);
-		case "Paste":
-			return paste(doc, action);
 		case "UpdateItemIDs":
 			return updateItemIDs(doc, action);
 		case "UpdateItem":
 			return updateItem(doc, action);
 		case "UpdateSelection":
 			return updateSelection(doc, action);
+		case "Paste":
+			return paste(doc, action);
 		case "MarkSaved":
 			return markSaved(doc, action);
 		case "MarkUnsaved":
@@ -977,10 +896,6 @@ export const creators = (dispatch: Dispatch) => ({
 		type: "MakeItem",
 		data: { item }
 	}),
-	copyItem: (item: Item.Item | undefined) => dispatch({
-		type: "CopyItem",
-		data: { item }
-	}),
 	multiSelect: (item: Item.Item | undefined) => dispatch({
 		type: "MultiSelect",
 		data: { item }
@@ -1013,13 +928,9 @@ export const creators = (dispatch: Dispatch) => ({
 		type: "RefreshTableOfContents",
 		data: {}
 	}),
-	copySelection: () => dispatch({
-		type: "CopySelection",
-		data: {}
-	}),
-	paste: (item: Item.Item) => dispatch({
+	paste: (item: Item.Item, clipboard: Document.Document) => dispatch({
 		type: "Paste",
-		data: { item }
+		data: { item, clipboard }
 	}),
 	updateItemIDs: (newIDs: Map<Item.ItemID, Item.ItemID>) => dispatch({
 		type: "UpdateItemIDs",
@@ -1046,7 +957,6 @@ export type DispatchProps = {
 	unindentItem: (item: Item.Item) => void,
 	makeHeader: (item: Item.Item) => void,
 	makeItem: (item: Item.Item) => void,
-	copyItem: (item: Item.Item | undefined) => void,
 	multiSelect: (item: Item.Item | undefined) => void,
 	makeSelectionItem: () => void,
 	makeSelectionHeader: () => void,
@@ -1055,8 +965,7 @@ export type DispatchProps = {
 	unindentSelection: () => void,
 	addTableOfContents: () => void,
 	refreshTableOfContents: () => void,
-	copySelection: () => void,
-	paste: (item: Item.Item) => void,
+	paste: (item: Item.Item, clipboard: Document.Document) => void,
 	updateItemIDs: (newIDs: Map<Item.ItemID, Item.ItemID>) => void,
 	markUnsaved: () => void,
 	undo: () => void,

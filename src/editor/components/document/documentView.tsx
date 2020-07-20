@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { List } from 'immutable';
 
-import { Document, getSelectedItems, getItemList } from '../../store/data/document';
+import { Document, getSelectedItems, getItemList } from '../../io/document';
 
 import Item from '../item/item';
 import LoadingSpinner from '../util/loadingSpinner'

@@ -2,9 +2,9 @@ import { List, Map } from 'immutable';
 
 import * as Server from '../../server';
 
-import { Item, ItemID } from '../store/data/item';
-import { Document } from '../store/data/document';
-import Style, { LengthUnit } from '../store/data/style';
+import { Item, ItemID } from '../io/document/item';
+import { Document } from '../io/document';
+import Style, { LengthUnit } from '../io/document/style';
 
 type ServerStyle = {
 	property?: string,
@@ -154,7 +154,6 @@ function parseServerDocument(sDoc: ServerDocument): Document | undefined {
 		documentID: sDoc.document_id,
 		lastModified: Server.parseServerDate(sDoc.modified_at) || created_at,
 		editedSinceSave: false,
-		clipboard: undefined,
 		selection: undefined,
 		focusedItemID: rootItemID,
 		rootItemID,

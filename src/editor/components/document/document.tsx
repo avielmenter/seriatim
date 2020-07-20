@@ -2,21 +2,22 @@ import * as React from 'react';
 import { connect } from 'react-redux';
 import { List } from 'immutable';
 
-import { Error } from '../../store/data/error';
-import { Document as DocumentData, getLastItem } from '../../store/data/document';
+import { Error } from '../../network/error';
+import { Document as DocumentData, getLastItem } from '../../io/document';
 
 import DocumentView from './documentView';
 import DocumentHeader from './documentHeader';
 
 import { DispatchProps, mapDispatchToProps, ApplicationState } from '../../store';
 
-import * as Server from '../../network/server';
+import * as Server from '../../network/db';
 import { Permissions } from '../../../server';
 
 type StateProps = {
 	errors: List<Error>,
-	document: DocumentData | null
-	permissions: Permissions | null
+	document: DocumentData | null,
+	permissions: Permissions | null,
+	clipboard: DocumentData | null
 }
 
 type AttrProps = {
@@ -69,6 +70,8 @@ class Document extends React.Component<ComponentProps> {
 
 	handleKeyDown = (event: KeyboardEvent): void => {
 		const actions = this.props.actions.document;
+		const stateActions = this.props.actions;
+
 		let preventDefault = true;
 
 		const doc = this.props.document;
@@ -160,31 +163,31 @@ class Document extends React.Component<ComponentProps> {
 
 				case 'c':
 					if (this.getTextAreaSelection()) {
-						actions.copyItem(undefined);
+						stateActions.copyItem(undefined);
 						preventDefault = false;
 					} else {
 						if (doc.selection)
-							actions.copySelection();
+							stateActions.copySelection();
 						else if (focusedItem != undefined)
-							actions.copyItem(focusedItem);
+							stateActions.copyItem(focusedItem);
 					}
 					break;
 
 				case 'x':
 					if (doc.selection) {
-						actions.copySelection();
+						stateActions.copySelection();
 						actions.removeSelection();
 					} else if (focusedItem) {
-						actions.copyItem(focusedItem);
+						stateActions.copyItem(focusedItem);
 						actions.removeItem(focusedItem);
 					}
 					break;
 
 				case 'v':
-					if (focusedItem && !doc.clipboard)
+					if (focusedItem && this.props.clipboard === null)
 						preventDefault = false;
-					else
-						actions.paste(item);
+					else if (this.props.clipboard !== null)
+						actions.paste(item, this.props.clipboard);
 
 					break;
 
@@ -338,7 +341,8 @@ class Document extends React.Component<ComponentProps> {
 const mapStateToProps = (state: ApplicationState | {}) => ({
 	errors: state == {} ? List<Error>() : (state as ApplicationState).errors,
 	document: state == {} || !(state as ApplicationState).document.present ? null : (state as ApplicationState).document.present,
-	permissions: state == {} ? null : (state as ApplicationState).permissions
+	permissions: state == {} ? null : (state as ApplicationState).permissions,
+	clipboard: (state as ApplicationState)?.clipboard || null
 })
 
 export default connect<StateProps, DispatchProps, AttrProps>(mapStateToProps, mapDispatchToProps)(Document);

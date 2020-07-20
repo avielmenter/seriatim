@@ -6,7 +6,8 @@ import * as classNames from 'classnames';
 
 import { DispatchProps, mapDispatchToProps, ApplicationState, handleClick } from '../../store';
 
-import { ListItem, ItemID, getReactStyles } from '../../store/data/item';
+import { ListItem, Item, ItemID } from '../../io/document/item';
+import { toValueString } from '../../io/document/style';
 
 import ItemEditor from './itemEditor';
 import MaterialIcon from '../util/materialIcon';
@@ -40,6 +41,11 @@ function handleContentClick(event: React.MouseEvent<HTMLDivElement>, props: Comp
 function getContentDivId(itemID: ItemID) {
 	return '__content__' + itemID;
 }
+
+const getReactStyles = (item: Item): React.CSSProperties => item.styles.reduce((prev, curr) => ({
+	...prev,
+	[curr.property]: toValueString(curr)
+}), {});
 
 const areComponentsEqual = (prevProps: ComponentProps, nextProps: ComponentProps) =>
 	prevProps.node.item.text == nextProps.node.item.text &&

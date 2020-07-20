@@ -10,15 +10,16 @@ import * as ErrorReducers from './reducers/error';
 import * as ItemReducers from './reducers/item';
 import * as StateReducers from './reducers';
 
-import * as Document from './data/document';
-import { Error } from './data/error';
+import * as Document from '../io/document';
+import { Error } from '../network/error';
 import { Permissions } from '../../server';
 
 export type ApplicationState = {
     errors: List<Error>,
     saving: boolean,
     permissions: Permissions | null,
-    document: StateWithHistory<Document.Document | null>
+    document: StateWithHistory<Document.Document | null>,
+    clipboard: Document.Document | null
 };
 
 const rootReducer = (state: ApplicationState | undefined, action: AnyAction): ApplicationState => {
@@ -42,7 +43,7 @@ export type DispatchProps = {
 }
 
 export type Dispatch = (action: AnyAction) => void;
-export const mapDispatchToProps = (dispatch: Dispatch) => ({
+export const mapDispatchToProps = (dispatch: Dispatch): DispatchProps => ({
     actions: {
         ...StateReducers.creators(dispatch),
         errors: ErrorReducers.creators(dispatch),

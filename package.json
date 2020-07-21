@@ -27,7 +27,8 @@
     "react-markdown": "^4.3.1",
     "react-redux": "^6.0.1",
     "react-router-dom": "^5.1.2",
-    "redux-undo": "^1.0.1"
+    "redux-undo": "^1.0.1",
+    "socket.io-client": "^2.3.0"
   },
   "devDependencies": {
     "@types/classnames": "^2.2.10",
@@ -39,6 +40,7 @@
     "@types/react-dom": "^16.9.6",
     "@types/react-redux": "^6.0.14",
     "@types/react-router-dom": "^4.3.5",
+    "@types/socket.io-client": "^1.4.33",
     "css-loader": "^2.1.1",
     "dotenv": "^6.2.0",
     "elm-webpack-loader": "^6.0.1",

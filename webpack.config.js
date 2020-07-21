@@ -89,6 +89,7 @@ module.exports = (env, argv) => ({
         new webpack.DefinePlugin({
             SERIATIM_SERVER_URL: JSON.stringify(argv.mode == 'production' ? process.env.PROD_SERVER_URL : process.env.DEV_SERVER_URL),
             SERIATIM_CLIENT_URL: JSON.stringify(argv.mode == 'production' ? process.env.PROD_CLIENT_URL : process.env.DEV_CLIENT_URL),
+            SERIATIM_EDIT_URL: JSON.stringify(argv.mode == 'production' ? process.env.PROD_EDIT_URL : process.env.DEV_EDIT_URL),
             SERIATIM_TWITTER_KEY: process.env.SERIATIM_TWITTER_KEY,
             SERIATIM_TWITTER_SECRET: process.env.SERIATIM_TWITTER_SECRET,
         }),

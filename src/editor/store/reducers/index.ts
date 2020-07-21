@@ -52,6 +52,7 @@ type CopySelection = {
 	type: "CopySelection",
 	data: {}
 }
+
 export type Action
 	= LoadDocument
 	| StartSaving
@@ -137,8 +138,6 @@ function copySelection(state: ApplicationState, action: CopySelection): Applicat
 		};
 	}
 
-	const selectedItems = Document.getSelectedItems(document);
-
 	const selectionRoot = Document.getSelectionParent(document);
 	if (!selectionRoot) {
 		return {
@@ -166,6 +165,7 @@ export function reducer(state: ApplicationState | undefined, anyAction: AnyActio
 	const appState = state || {
 		document: newDocumentHistory(),
 		errors: List<SeriatimError>(),
+		socket: undefined,
 		permissions: null,
 		clipboard: null,
 		saving: false
